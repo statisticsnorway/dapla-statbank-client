@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 
 from .auth import StatbankAuth  # Needed for inheritance

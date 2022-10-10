@@ -10,7 +10,9 @@ import os
 @pytest.fixture(autouse=True)
 def mock_settings_env_vars():
     with mock.patch.dict(os.environ, {"STATBANK_BASE_URL": "https://fake_url/",
-                                     "STATBANK_ENCRYPT_URL": "https://fake_url2/"}):
+                                     "STATBANK_ENCRYPT_URL": "https://fake_url2/",
+                                     "JUPYTERHUB_USER": "ssb" 
+                                     }):
         yield
 
 # Fake Auth

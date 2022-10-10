@@ -129,11 +129,10 @@ class StatbankTransfer(StatbankAuth):
             self.fagansvarlig2 = fagansvarlig2
         else: 
             self.fagansvarlig2 = os.environ['JUPYTERHUB_USER'].split("@")[0]
-        print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
+        #print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
         
         self.publisering = publisering
         
-        self.fagansvarlig2 = fagansvarlig2
         self.overskriv_data = auto_overskriv_data
         self.godkjenn_data = auto_godkjenn_data
         self.validation = validation
@@ -170,10 +169,10 @@ class StatbankTransfer(StatbankAuth):
         if not isinstance(self.lastebruker, str) or not self.lastebruker:
             raise ValueError("Du må sette en lastebruker korrekt")
         
-        print("fag2:", self.fagansvarlig2)
+        #print("fag2:", self.fagansvarlig2)
         
         for i, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
-            print(i, tbf)
+            #print(i, tbf)
             if len(tbf) != 3 or not isinstance(tbf, str):
                 raise ValueError(f'Brukeren {tbf} - "trebokstavsforkortelse" - må være tre bokstaver...')
 

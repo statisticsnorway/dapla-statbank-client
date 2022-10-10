@@ -71,7 +71,7 @@ def fake_post_response_transfer_successful():
 def uttrekksbeskrivelse_success(test_encrypt, test_make_request):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
-    return dapla.statbank.StatbankUttrekksBeskrivelse("10000", fake_user())
+    return StatbankUttrekksBeskrivelse("10000", fake_user())
 
 @pytest.fixture
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
@@ -83,7 +83,7 @@ def transfer_success(test_transfer_encrypt, test_transfer_make_request, test_bes
     test_besk_encrypt.return_value = fake_post_response_key_service()
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    return dapla.statbank.StatbankTransfer(fake_data(), "10000", fake_user())
+    return StatbankTransfer(fake_data(), "10000", fake_user())
 
 
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):

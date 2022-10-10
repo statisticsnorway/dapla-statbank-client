@@ -4,6 +4,7 @@ import os
 import getpass
 import base64
 import requests as r
+import json
 
 from dapla import AuthClient
 

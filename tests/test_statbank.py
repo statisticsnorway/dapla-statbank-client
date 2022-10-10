@@ -7,11 +7,16 @@ from unittest import mock
 import requests
 import os
 
+def fake_tbf():
+    return "ssb"
+
+os.environ["JUPYTERHUB_USER"] = fake_tbf()
+
 @pytest.fixture(autouse=True)
 def mock_settings_env_vars():
     with mock.patch.dict(os.environ, {"STATBANK_BASE_URL": "https://fake_url/",
                                      "STATBANK_ENCRYPT_URL": "https://fake_url2/",
-                                     "JUPYTERHUB_USER": "ssb" 
+                                     "JUPYTERHUB_USER": fake_tbf() 
                                      }):
         yield
 

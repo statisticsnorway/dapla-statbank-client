@@ -1,4 +1,4 @@
-import datetime as dt
+from datetime import datetime as dt
 
 from .auth import StatbankAuth  # Needed for inheritance
 from .transfer import StatbankTransfer  # Needed for typecheck

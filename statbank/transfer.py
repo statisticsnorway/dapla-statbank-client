@@ -100,10 +100,10 @@ class StatbankTransfer(StatbankAuth):
                 data: pd.DataFrame,
                     tabellid: str = None,
                     lastebruker: str = "",
-                    bruker_trebokstaver: str = os.environ['JUPYTERHUB_USER'].split("@")[0], 
+                    bruker_trebokstaver: str = "", 
                     publisering: dt = (dt.now() + td(days=100)).strftime('%Y-%m-%d'),
-                    fagansvarlig1: str = os.environ['JUPYTERHUB_USER'].split("@")[0],
-                    fagansvarlig2: str = os.environ['JUPYTERHUB_USER'].split("@")[0],
+                    fagansvarlig1: str = "",
+                    fagansvarlig2: str = "",
                     auto_overskriv_data: str = '1',
                     auto_godkjenn_data: str = '2',
                     validation: bool = True,
@@ -116,9 +116,21 @@ class StatbankTransfer(StatbankAuth):
         else:
             raise ValueError("You must set lastebruker as a parameter")
         self.hovedtabell = None
-        self.tbf = bruker_trebokstaver
+        
+        if bruker_trebokstaver:
+            self.tbf = bruker_trebokstaver
+        else:
+            self.tbf = os.environ['JUPYTERHUB_USER'].split("@")[0]
+        if fagansvarlig1:
+            self.fagansvarlig1 = fagansvarlig1
+        else: 
+            self.fagansvarlig1 = os.environ['JUPYTERHUB_USER'].split("@")[0]
+        if fagansvarlig2:
+            self.fagansvarlig2 = fagansvarlig2
+        else: 
+            self.fagansvarlig2 = os.environ['JUPYTERHUB_USER'].split("@")[0]
         self.publisering = publisering
-        self.fagansvarlig1 = fagansvarlig1
+        
         self.fagansvarlig2 = fagansvarlig2
         self.overskriv_data = auto_overskriv_data
         self.godkjenn_data = auto_godkjenn_data

@@ -5,6 +5,8 @@ import getpass
 import base64
 import requests as r
 
+from dapla import AuthClient
+
 class StatbankAuth:
     """
     Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"

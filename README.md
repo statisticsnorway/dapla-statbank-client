@@ -1,7 +1,10 @@
 # dapla-statbank-client
+Used internally by SSB.
+Can transfer data from Dapla to Statbank.
+Can get data from public and internal statbank-
 
 
-**Brukseksempler**
+**Usage Transferring**
 ```python
 from dapla_toolbelt.dapla.statbank import StatbankTransfer
 job1 = StatbankTransfer(df_06399, 

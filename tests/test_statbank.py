@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import dapla.statbank
+from statbank import *
 import pandas as pd
 import pytest
 from unittest import mock

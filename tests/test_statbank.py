@@ -66,18 +66,18 @@ def fake_post_response_transfer_successful():
 
 # Our only get-request is for the "uttrekksbeskrivelse"
 @pytest.fixture
-@mock.patch.object(dapla.statbank.StatbankUttrekksBeskrivelse, "_make_request")
-@mock.patch.object(dapla.statbank.StatbankUttrekksBeskrivelse, "_encrypt_request")            
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")            
 def uttrekksbeskrivelse_success(test_encrypt, test_make_request):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
     return dapla.statbank.StatbankUttrekksBeskrivelse("10000", fake_user())
 
 @pytest.fixture
-@mock.patch.object(dapla.statbank.StatbankUttrekksBeskrivelse, "_make_request")
-@mock.patch.object(dapla.statbank.StatbankUttrekksBeskrivelse, "_encrypt_request")  
-@mock.patch.object(dapla.statbank.StatbankTransfer, "_make_transfer_request")
-@mock.patch.object(dapla.statbank.StatbankTransfer, "_encrypt_request")  
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")  
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")  
 def transfer_success(test_transfer_encrypt, test_transfer_make_request, test_besk_encrypt, test_besk_make_request):
     test_besk_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_besk_encrypt.return_value = fake_post_response_key_service()

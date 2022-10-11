@@ -10,6 +10,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 import json
 import urllib
+import requests as r
 
 
 class StatbankTransfer(StatbankAuth):

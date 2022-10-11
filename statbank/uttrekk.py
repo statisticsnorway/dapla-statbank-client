@@ -54,7 +54,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     __init__():
     
     """
-    def __init__(self, tabellid, lastebruker, raise_errors = True, headers=None):
+    def __init__(self, tabellid, lastebruker, raise_errors = False, headers=None):
         self.lastebruker = lastebruker
         self.url = self._build_urls()['uttak']
         self.lagd = ""
@@ -107,6 +107,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         return f'StatbankUttrekksBeskrivelse(tabellid="{self.tabellid}", lastebruker="{self.lastebruker}")'
     
     def validate_dfs(self, data, raise_errors: bool = False) -> dict:
+        if not raise_errors:
+            raise_errors = self.raise_errors
+        
         validation_errors = {}
         print("\nvalidating...")
         ### Number deltabelltitler should match length of data-iterable
@@ -190,11 +193,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     if "format = " in variabel["Kodeliste_text"]:
                         col_num = int(variabel['kolonnenummer']) - 1
                         timeformat_raw = variabel["Kodeliste_text"].split(" format = ")[1].strip().replace("Å", "å")
+                        # Check length of coloumn matches length of format
+                        if not 1 == len(to_validate[i].iloc[:,col_num].astype(str).str.len().unique()):
+                            validation_errors[f'time_single_length_format_{col_num}'] = ValueError(f'Column number {col_num} does not have a single time format in the shape: {timeformat_raw}')
+                        if not len(timeformat_raw) == to_validate[i].iloc[:,col_num].astype(str).str.len().unique()[0]:
+                            validation_errors[f'time_formatlength_{col_num}'] = ValueError(f'Column number {col_num} does not match time format in the shape: {timeformat_raw}')
+                        
                         timeformat = {
                             "nums" : [i for i, c in enumerate(timeformat_raw) if c.islower()],
                             "chars" : {i:c for i, c in enumerate(timeformat_raw) if c.isupper()},
                             "specials": {i:c for i, c in enumerate(timeformat_raw) if not c.isalnum()}
                         }
+                        
                         #print(timeformat)
                         if timeformat['nums']:
                             for num in timeformat['nums']:
@@ -214,6 +224,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             elif 'character_match_column' in k:
                 break
             elif 'special_character_match_column' in k:
+                break
+            elif 'time_single_length_format' in k:
+                break
+            elif 'time_formatlength' in k:
                 break
         else:
             print("Timeformat validation ok.")
@@ -237,7 +251,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         
         
         if raise_errors and validation_errors:
-            raise Exception(validation_errors)
+            raise Exception(list(validation_errors.values()))
         print()
         
         return validation_errors

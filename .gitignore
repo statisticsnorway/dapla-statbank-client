@@ -1,3 +1,9 @@
+# Papermill output
+*_output.ipynb
+
+# Mock databases
+*.db
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -76,6 +82,9 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+# CSV-files
+*.csv
 
 # IPython
 profile_default/

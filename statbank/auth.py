@@ -45,7 +45,6 @@ class StatbankAuth:
             'Accept' : r'*/*',
             }
 
-
     def _build_auth(self):
         response = self._encrypt_request()
         try:

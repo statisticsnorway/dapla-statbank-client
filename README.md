@@ -42,9 +42,10 @@ StatbankBatchTransfer([job1, job2])
 
 ```python
 from statbank import apidata_all
-apidata_all("06339")
+apidata_all("06339", include_id=True)
 ```
 "apidata_all", trenger ingen spesifisert query, den bygger sin egen, men henter da *all data* fra tabellen. Dette kan fort bli for mye...
+Med "include_id"-parameteret satt til `True` vil funksjonen flette id/kode-kolonner med kodenes verdier, der disse er ulike. (Prøv med og uten, for å se forskjellen.)
 
 Med "apidata" må man spesifisere en query. Her hentes en "intern" tabell, som trenger en query for å ikke bli for stor...
 ```python
@@ -55,3 +56,5 @@ apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v_intern/START/be/be01/folkeme
         include_id = True
        )
 ```
+
+

@@ -9,6 +9,7 @@ import os
 from datetime import datetime as dt
 from datetime import timedelta as td
 import json
+import urllib
 
 
 class StatbankTransfer(StatbankAuth):

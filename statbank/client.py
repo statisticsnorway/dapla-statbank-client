@@ -31,6 +31,7 @@ class StatbankClient(StatbankAuth):
         self.approve = approve
         self.validation = validation
         self._validate_params_init()
+        self.__headers = self._build_headers()
 
     def __str__(self):
         pass
@@ -60,40 +61,58 @@ class StatbankClient(StatbankAuth):
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
         self._validate_params_action(tableids=[tableid])
         return StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                          lastebruker=self.loaduser)
+                                          loaduser=self.loaduser)
     
     def get_description_batch(self, tableids: list) -> dict:
         self._validate_params_action(tableids=tableids)
-        headers = self._build_headers()
-        try:
-            descriptions = {}
-            for tableid in tableids:
-                descriptions[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                            lastebruker=self.loaduser,
-                                            headers=headers)
-        finally:
-            del headers
+        descriptions = {}
+        for tableid in tableids:
+            descriptions[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
+                                        loaduser=self.loaduser,
+                                        headers=self.__headers)
         return descriptions
     
 
     def validate(self, 
                  dfs: pd.DataFrame, 
-                 table_id: str = "00000") -> dict:
-        self._validate_params_action()
+                 tableid: str = "00000") -> dict:
+        self._validate_params_action([tableid])
 
     def validate_batch(self, data: dict) -> dict:
-        self._validate_params_action()
-
+        self._validate_params_action(list(data.keys()))
+        headers = self._build_headers()
+        try:
+            for tableid in data.keys():
+                transfers[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
+                                            loaduser=self.loaduser,
+                                            headers=headers)
+        finally:
+            del headers
+    
     def transfer(self,
                  dfs: pd.DataFrame, 
-                 table_id: str = "00000") -> StatbankTransfer:
-        self._validate_params_action()
+                 tableid: str = "00000") -> StatbankTransfer:
+        self._validate_params_action([tableid])
 
-    def transfer_batch(self) -> StatbankBatchTransfer:
-        self._validate_params_action()
-        
+    def transfer_batch(self, data: dict) -> dict:
+        self._validate_params_action(list(data.keys()))
+        headers = self._build_headers()
+        try:
+            transfers = {}
+            for tableid in data.keys():
+                transfers[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
+                                            loaduser=self.loaduser,
+                                            headers=headers)
+        finally:
+            del headers
+        return transfers
+    
     def _validate_params_action(self, tableids: list) -> None:
-        pass
+        for tableid in tableids:
+            if not isinstance(tableid, str):
+                raise TypeError(f"{tableid} is not a string.")
+            if not len(tableid) == 5:
+                raise ValueError(f"{tableid} is not 5 characters long.")
 
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):

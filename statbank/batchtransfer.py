@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from datetime import datetime as dt
 
 from .auth import StatbankAuth  # Needed for inheritance

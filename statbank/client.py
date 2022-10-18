@@ -8,6 +8,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 import pandas as pd
 import ipywidgets as widgets
+import os
 
 class StatbankClient:
     def __init__(self,
@@ -38,12 +39,12 @@ class StatbankClient:
 
     def date_picker(self) -> None:
         self.datepicker =  widgets.DatePicker(
-            description='Pick a Date for publishing',
+            description='Date for publish',
             disabled=False,
             value=self.date
         )
         display(self.datepicker)
-    
+
     def set_date(self) -> None:
         self.date = self.datepicker.value
         print("Publishing date set to:", self.date)
@@ -73,3 +74,14 @@ class StatbankClient:
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):
             raise TypeError('Please pass in "loaduser" as a string.')
+        if not self.shortuser:
+            self.shortuser = os.environ['JUPYTERHUB_USER'].split("@")[0]
+        if not self.cc:
+            self.cc = self.shortuser
+        if not self.bcc:
+            self.bcc = self.cc
+        if self.overwrite not in ['0', '1']:
+            raise ValueError("(String) Set overwrite to either '0' = no overwrite (dublicates give errors), or  '1' = automatic overwrite")
+        if self.apporve not in ['0', '1', '2']:
+            raise ValueError("(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)")
+            

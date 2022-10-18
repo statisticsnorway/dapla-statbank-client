@@ -59,7 +59,7 @@ class StatbankClient(StatbankAuth):
             value=self.date
         )
         display(datepicker)
-        self.log.append(f'Datepicker created at {datetime.datetime.now().strptime("%Y-%m-%d %H:%M")}')
+        self.log.append(f'Datepicker created at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
@@ -71,7 +71,7 @@ class StatbankClient(StatbankAuth):
             self.date = date
         print("Publishing date set to:", self.date)
         self.log.append(f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        return self.date
+        #return self.date
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:

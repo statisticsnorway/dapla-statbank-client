@@ -110,6 +110,7 @@ class StatbankTransfer(StatbankAuth):
                     auto_godkjenn_data: str = '2',
                     validation: bool = True,
                     delay: bool = False,
+                    headers = None
                     ):
         self.data = data
         self.tabellid = tabellid
@@ -146,7 +147,10 @@ class StatbankTransfer(StatbankAuth):
 
         self.urls = self._build_urls()
         if not self.delay:
-            self.transfer()
+            if headers:
+                self.transfer(headers)
+            else:
+                self.transfer()
             
     def __str__(self):
         if self.delay:

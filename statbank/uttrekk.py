@@ -15,7 +15,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
     Attributes
     ----------
-    lastebruker : str
+    loaduser : str
         Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
     url : str
         Main url for transfer
@@ -54,8 +54,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     __init__():
     
     """
-    def __init__(self, tabellid, lastebruker, raise_errors = False, headers=None):
-        self.lastebruker = lastebruker
+    def __init__(self, tabellid, loaduser, raise_errors = False, headers=None):
+        self.loaduser = loaduser
         self.url = self._build_urls()['uttak']
         self.lagd = ""
         self.tabellid = tabellid
@@ -95,7 +95,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             variabel_text += f'\nEksempellinje: {deltabell["eksempel_linje"]}'
             
         return f'''Uttrekksbeskrivelse for statbanktabell {self.tabellid}. 
-        Lastebruker: {self.lastebruker}. 
+        loaduser: {self.loaduser}. 
         
         Hele filbeskrivelsen "rå" ligger under .filbeskrivelse
         Andre attributter: 
@@ -104,7 +104,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         '''
         
     def __repr__(self):
-        return f'StatbankUttrekksBeskrivelse(tabellid="{self.tabellid}", lastebruker="{self.lastebruker}")'
+        return f'StatbankUttrekksBeskrivelse(tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
     
     def validate_dfs(self, data, raise_errors: bool = False) -> dict:
         if not raise_errors:

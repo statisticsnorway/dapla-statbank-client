@@ -15,8 +15,8 @@ class StatbankBatchTransfer(StatbankAuth):
     ----------    
     jobs: 
         list of delayed StatbankTransfers.
-    lastebruker:
-        extracts the "lastebruker" from the first transfer-job. 
+    loaduser:
+        extracts the "loaduser" from the first transfer-job. 
         All jobs in the batch-transfer must use the same user and password.
     headers:
         Deleted without warning. Temporarily holds the headers to Authenticate the transfers.
@@ -38,7 +38,7 @@ class StatbankBatchTransfer(StatbankAuth):
                 raise TypeError(f"Transfer-job {i} is not a StatbankTransfer-object.")
             if not job.delay:
                 raise ValueError(f"Transfer-job {i} was not delayed?")
-        self.lastebruker = self.jobs[0].lastebruker
+        self.loaduser = self.jobs[0].loaduser
         self.transfer()
         self.transfertime = dt.now().strftime("%Y-%m-%d")
         
@@ -51,7 +51,7 @@ class StatbankBatchTransfer(StatbankAuth):
             del self.headers
             
     def __str__(self):
-        return f'StatbankBatchTransfer with {len(self.jobs)} jobs, lastebruker: {self.lastebruker}, transferred at {self.transfertime}'
+        return f'StatbankBatchTransfer with {len(self.jobs)} jobs, loaduser: {self.loaduser}, transferred at {self.transfertime}'
         
     def __repr__(self):
         transfers = []

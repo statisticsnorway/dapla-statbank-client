@@ -24,7 +24,7 @@ class StatbankTransfer(StatbankAuth):
     data : pd.DataFrame or list of pd.DataFrames
         Number of DataFrames needs to match the number of "deltabeller" in the uttakksbeskrivelse.
         Data-shape can be validated before transfer with the Uttakksbeskrivelses-class.
-    lastebruker : str
+    loaduser : str
         Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
     tabellid: str
         The numeric id of the table, matching the one found on the website. Should be a 5-length string.
@@ -101,7 +101,7 @@ class StatbankTransfer(StatbankAuth):
     def __init__(self,
                 data: pd.DataFrame,
                     tabellid: str = None,
-                    lastebruker: str = "",
+                    loaduser: str = "",
                     bruker_trebokstaver: str = "", 
                     publisering: dt = dt.now() + td(days=1),
                     fagansvarlig1: str = "",
@@ -113,10 +113,10 @@ class StatbankTransfer(StatbankAuth):
                     ):
         self.data = data
         self.tabellid = tabellid
-        if lastebruker:
-            self.lastebruker = lastebruker
+        if loaduser:
+            self.loaduser = loaduser
         else:
-            raise ValueError("You must set lastebruker as a parameter")
+            raise ValueError("You must set loaduser as a parameter")
         self.hovedtabell = None
         
         if bruker_trebokstaver:
@@ -150,15 +150,15 @@ class StatbankTransfer(StatbankAuth):
             
     def __str__(self):
         if self.delay:
-            return f'Overføring for statbanktabell {self.tabellid}. \nLastebruker: {self.lastebruker}.\nIkke overført enda.'
+            return f'Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda.'
         else:
             return f'''Overføring for statbanktabell {self.tabellid}. 
-    Lastebruker: {self.lastebruker}.
+    loaduser: {self.loaduser}.
     Publisering: {self.publisering}.
     Lastelogg: {self.urls['gui'] + self.oppdragsnummer}'''
         
     def __repr__(self):
-        return f'StatbankTransfer([data], tabellid="{self.tabellid}", lastebruker="{self.lastebruker}")'
+        return f'StatbankTransfer([data], tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
     
     @property
     def delay(self):
@@ -168,8 +168,8 @@ class StatbankTransfer(StatbankAuth):
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
         #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
 
-        if not isinstance(self.lastebruker, str) or not self.lastebruker:
-            raise ValueError("Du må sette en lastebruker korrekt")
+        if not isinstance(self.loaduser, str) or not self.loaduser:
+            raise ValueError("Du må sette en loaduser korrekt")
         
         #print("fag2:", self.fagansvarlig2)
         
@@ -289,7 +289,7 @@ class StatbankTransfer(StatbankAuth):
 
     def _get_filbeskrivelse(self) -> StatbankUttrekksBeskrivelse:
         return StatbankUttrekksBeskrivelse(tabellid=self.tabellid, 
-                                           lastebruker=self.lastebruker, 
+                                           loaduser=self.loaduser, 
                                            headers=self.headers)
     
     def _make_transfer_request(self, url_params: str,):

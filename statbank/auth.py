@@ -48,7 +48,7 @@ class StatbankAuth:
     def _build_auth(self):
         response = self._encrypt_request()
         try:
-            username_encryptedpassword = bytes(self.lastebruker, 'UTF-8') + bytes(':', 'UTF-8') + bytes(json.loads(response.text)['message'], 'UTF-8')
+            username_encryptedpassword = bytes(self.loaduser, 'UTF-8') + bytes(':', 'UTF-8') + bytes(json.loads(response.text)['message'], 'UTF-8')
         finally:
             del response
         return bytes('Basic ', 'UTF-8') + base64.b64encode(username_encryptedpassword)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from .auth import StatbankAuth
 from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
 from .batchtransfer import StatbankBatchTransfer
@@ -10,7 +11,7 @@ import pandas as pd
 import ipywidgets as widgets
 import os
 
-class StatbankClient:
+class StatbankClient(StatbankAuth):
     def __init__(self,
             loaduser = "",
             date: datetime.datetime = datetime.datetime.now() + td(days=1),
@@ -46,37 +47,52 @@ class StatbankClient:
         display(datepicker)
         return datepicker
 
-    def set_date(self, date: datetime.datetime) -> None:
+    def set_publish_date(self, date: datetime.datetime) -> None:
         if isinstance(date, widgets.widget_date.DatePicker):
-            print("date is widget")
             self.date = date.value
         elif isinstance(date, str):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
-        print("Publishing date set to:", self.date, type(self.date))
+        print("Publishing date set to:", self.date)
         return self.date
 
-    def get_description(self) -> StatbankUttrekksBeskrivelse:
-        pass
+    def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
+        self._validate_params_action(tableids=[tableid])
+        return StatbankUttrekksBeskrivelse(tabellid=tableid,
+                                          lastebruker=self.loaduser)
+    
+    def get_description_batch(self, tableids: list) -> dict:
+        self._validate_params_action(tableids=tableids)
+        headers = self._build_headers()
+        try:
+            descriptions = {}
+            for tableid in tableids:
+                descriptions[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
+                                            lastebruker=self.loaduser,
+                                            headers=headers)
+        finally:
+            del headers
+        return descriptions
+    
 
     def validate(self, 
                  dfs: pd.DataFrame, 
                  table_id: str = "00000") -> dict:
-        pass
+        self._validate_params_action()
 
     def validate_batch(self, data: dict) -> dict:
-        pass
+        self._validate_params_action()
 
     def transfer(self,
                  dfs: pd.DataFrame, 
                  table_id: str = "00000") -> StatbankTransfer:
-        pass
+        self._validate_params_action()
 
     def transfer_batch(self) -> StatbankBatchTransfer:
-        pass
-
-    def _validate_params_action(self) -> None:
+        self._validate_params_action()
+        
+    def _validate_params_action(self, tableids: list) -> None:
         pass
 
     def _validate_params_init(self) -> None:

@@ -5,7 +5,7 @@ description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 authors = ["Statistics Norway", "Carl F. Corneil <cfc@ssb.no>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "dapla_statbank_client"}]
+packages = [{include = "statbank"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"

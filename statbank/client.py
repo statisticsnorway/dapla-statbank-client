@@ -12,6 +12,12 @@ import ipywidgets as widgets
 import os
 
 class StatbankClient(StatbankAuth):
+    """
+    The 
+    
+    """
+    
+    
     def __init__(self,
             loaduser = "",
             date: datetime.datetime = datetime.datetime.now() + td(days=1),

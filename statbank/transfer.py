@@ -103,7 +103,7 @@ class StatbankTransfer(StatbankAuth):
                     tabellid: str = None,
                     lastebruker: str = "",
                     bruker_trebokstaver: str = "", 
-                    publisering: dt = (dt.now() + td(days=100)).strftime('%Y-%m-%d'),
+                    publisering: dt = dt.now() + td(days=1),
                     fagansvarlig1: str = "",
                     fagansvarlig2: str = "",
                     auto_overskriv_data: str = '1',

@@ -46,7 +46,7 @@ class StatbankClient:
     def transfer(dfs: pd.DataFrame, table_id: str = "00000") -> StatbankTransfer:
         pass
 
-    def transfer_batch():
+    def transfer_batch() -> StatbankBatchTransfer:
         pass
 
     def _validate_params(self):

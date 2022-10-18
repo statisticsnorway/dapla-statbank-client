@@ -4,7 +4,7 @@ from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
 from .batchtransfer import StatbankBatchTransfer
 
-from datetime import datetime as dt
+import datetime
 from datetime import timedelta as td
 import pandas as pd
 import ipywidgets as widgets
@@ -13,7 +13,7 @@ import os
 class StatbankClient:
     def __init__(self,
             loaduser = "",
-            date: dt = dt.now() + td(days=1),
+            date: datetime.datetime = datetime.datetime.now() + td(days=1),
             shortuser: str = "",
             cc: str = "",
             bcc: str = "",
@@ -37,17 +37,25 @@ class StatbankClient:
     def __repr__(self):
         pass
 
-    def date_picker(self) -> None:
-        self.datepicker =  widgets.DatePicker(
-            description='Date for publish',
+    def date_picker(self) -> None:        
+        datepicker =  widgets.DatePicker(
+            description='Publish-date',
             disabled=False,
             value=self.date
         )
-        display(self.datepicker)
+        display(datepicker)
+        return datepicker
 
-    def set_date(self) -> None:
-        self.date = self.datepicker.value
-        print("Publishing date set to:", self.date)
+    def set_date(self, date: datetime.datetime) -> None:
+        if isinstance(date, widgets.widget_date.DatePicker):
+            print("date is widget")
+            self.date = date.value
+        elif isinstance(date, str):
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        else:
+            self.date = date
+        print("Publishing date set to:", self.date, type(self.date))
+        return self.date
 
     def get_description(self) -> StatbankUttrekksBeskrivelse:
         pass
@@ -82,6 +90,6 @@ class StatbankClient:
             self.bcc = self.cc
         if self.overwrite not in ['0', '1']:
             raise ValueError("(String) Set overwrite to either '0' = no overwrite (dublicates give errors), or  '1' = automatic overwrite")
-        if self.apporve not in ['0', '1', '2']:
+        if self.approve not in ['0', '1', '2']:
             raise ValueError("(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)")
             

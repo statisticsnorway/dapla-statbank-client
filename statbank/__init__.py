@@ -3,3 +3,4 @@ from .auth import StatbankAuth
 from .batchtransfer import StatbankBatchTransfer
 from .transfer import StatbankTransfer
 from .uttrekk import StatbankUttrekksBeskrivelse
+from .client import StatbankClient

@@ -5,7 +5,9 @@ from .transfer import StatbankTransfer
 from .batchtransfer import StatbankBatchTransfer
 
 from datetime import datetime as dt
+from datetime import timedelta as td
 import pandas as pd
+import ipywidgets as widgets
 
 class StatbankClient:
     def __init__(self,
@@ -18,7 +20,7 @@ class StatbankClient:
             approve: str = '2',
             validation: bool = True,
             ):
-        self.user = user
+        self.loaduser = loaduser
         self.date = date
         self.shortuser = shortuser
         self.cc = cc
@@ -26,7 +28,7 @@ class StatbankClient:
         self.overwrite = overwrite
         self.approve = approve
         self.validation = validation
-        self._validate_params()
+        self._validate_params_init()
 
     def __str__(self):
         pass
@@ -34,20 +36,40 @@ class StatbankClient:
     def __repr__(self):
         pass
 
-    def get_uttrekksbeskrivelse() -> StatbankUttrekksBeskrivelse:
+    def date_picker(self) -> None:
+        self.datepicker =  widgets.DatePicker(
+            description='Pick a Date for publishing',
+            disabled=False,
+            value=self.date
+        )
+        display(self.datepicker)
+    
+    def set_date(self) -> None:
+        self.date = self.datepicker.value
+        print("Publishing date set to:", self.date)
+
+    def get_description(self) -> StatbankUttrekksBeskrivelse:
         pass
 
-    def validate(dfs: pd.DataFrame, table_id: str = "00000") -> dict:
+    def validate(self, 
+                 dfs: pd.DataFrame, 
+                 table_id: str = "00000") -> dict:
         pass
 
-    def validate_batch(data: dict) -> dict:
+    def validate_batch(self, data: dict) -> dict:
         pass
 
-    def transfer(dfs: pd.DataFrame, table_id: str = "00000") -> StatbankTransfer:
+    def transfer(self,
+                 dfs: pd.DataFrame, 
+                 table_id: str = "00000") -> StatbankTransfer:
         pass
 
-    def transfer_batch() -> StatbankBatchTransfer:
+    def transfer_batch(self) -> StatbankBatchTransfer:
         pass
 
-    def _validate_params(self):
+    def _validate_params_action(self) -> None:
         pass
+
+    def _validate_params_init(self) -> None:
+        if not self.loaduser or not isinstance(self.loaduser, str):
+            raise TypeError('Please pass in "loaduser" as a string.')

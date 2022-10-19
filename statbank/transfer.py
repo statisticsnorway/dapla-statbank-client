@@ -24,7 +24,7 @@ class StatbankTransfer(StatbankAuth):
     data : pd.DataFrame or list of pd.DataFrames
         Number of DataFrames needs to match the number of "deltabeller" in the uttakksbeskrivelse.
         Data-shape can be validated before transfer with the Uttakksbeskrivelses-class.
-    lastebruker : str
+    loaduser : str
         Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
     tabellid: str
         The numeric id of the table, matching the one found on the website. Should be a 5-length string.
@@ -101,22 +101,23 @@ class StatbankTransfer(StatbankAuth):
     def __init__(self,
                 data: pd.DataFrame,
                     tabellid: str = None,
-                    lastebruker: str = "",
+                    loaduser: str = "",
                     bruker_trebokstaver: str = "", 
-                    publisering: dt = (dt.now() + td(days=100)).strftime('%Y-%m-%d'),
+                    publisering: dt = dt.now() + td(days=1),
                     fagansvarlig1: str = "",
                     fagansvarlig2: str = "",
                     auto_overskriv_data: str = '1',
                     auto_godkjenn_data: str = '2',
                     validation: bool = True,
                     delay: bool = False,
+                    headers = None
                     ):
         self.data = data
         self.tabellid = tabellid
-        if lastebruker:
-            self.lastebruker = lastebruker
+        if loaduser:
+            self.loaduser = loaduser
         else:
-            raise ValueError("You must set lastebruker as a parameter")
+            raise ValueError("You must set loaduser as a parameter")
         self.hovedtabell = None
         
         if bruker_trebokstaver:
@@ -133,7 +134,10 @@ class StatbankTransfer(StatbankAuth):
             self.fagansvarlig2 = os.environ['JUPYTERHUB_USER'].split("@")[0]
         #print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
         
-        self.publisering = publisering
+        if isinstance(publisering, str):
+            self.publisering = publisering
+        else:
+            self.publisering = publisering.strftime("%Y-%m-%d")
         
         self.overskriv_data = auto_overskriv_data
         self.godkjenn_data = auto_godkjenn_data
@@ -146,19 +150,59 @@ class StatbankTransfer(StatbankAuth):
 
         self.urls = self._build_urls()
         if not self.delay:
-            self.transfer()
+            if headers:
+                self.transfer(headers)
+            else:
+                self.transfer()
+
+
+    def transfer(self, headers: dict = {}):
+        """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
+        # In case transfer has already happened, dont transfer again
+        if hasattr(self, "oppdragsnummer"):
+            raise ValueError(f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. ")
+        if not headers:
+            self.headers = self._build_headers()
+        else:
+            self.headers = headers
+        try:
+            self.filbeskrivelse = self._get_filbeskrivelse()
+            self.hovedtabell = self.filbeskrivelse.hovedtabell
+            # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
+            self.tabellid = self.filbeskrivelse.tabellid
+            self.params = self._build_params()
             
+            self.data_type, self.data_iter = self._identify_data_type()
+            if self.data_type != pd.DataFrame: 
+                raise ValueError(f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}")
+            if self.validation: 
+                self.validation_errors = self.filbeskrivelse.validate_dfs(self.data, raise_errors = True)
+                
+            self.body = self._body_from_data()
+            
+            url_load_params = self.urls['loader'] + urllib.parse.urlencode(self.params)
+            #print(url_load_params, self.headers, self.body)
+            self.response = self._make_transfer_request(url_load_params)
+            print(self.response)
+            if self.response.status_code == 200:
+                del self.response.request.headers  # Auth is stored here also, for some reason
+        finally:
+            del self.headers  # Cleaning up auth-storing
+            self.__delay = False
+        self._handle_response()
+
+
     def __str__(self):
         if self.delay:
-            return f'Overføring for statbanktabell {self.tabellid}. \nLastebruker: {self.lastebruker}.\nIkke overført enda.'
+            return f'Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda.'
         else:
             return f'''Overføring for statbanktabell {self.tabellid}. 
-    Lastebruker: {self.lastebruker}.
+    loaduser: {self.loaduser}.
     Publisering: {self.publisering}.
     Lastelogg: {self.urls['gui'] + self.oppdragsnummer}'''
         
     def __repr__(self):
-        return f'StatbankTransfer([data], tabellid="{self.tabellid}", lastebruker="{self.lastebruker}")'
+        return f'StatbankTransfer([data], tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
     
     @property
     def delay(self):
@@ -168,8 +212,8 @@ class StatbankTransfer(StatbankAuth):
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
         #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
 
-        if not isinstance(self.lastebruker, str) or not self.lastebruker:
-            raise ValueError("Du må sette en lastebruker korrekt")
+        if not isinstance(self.loaduser, str) or not self.loaduser:
+            raise ValueError("Du må sette en loaduser korrekt")
         
         #print("fag2:", self.fagansvarlig2)
         
@@ -252,44 +296,11 @@ class StatbankTransfer(StatbankAuth):
             'auto_godkjenn_data': self.godkjenn_data,
         }
 
-    def transfer(self, headers: dict = {}):
-        """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
-        # In case transfer has already happened, dont transfer again
-        if hasattr(self, "oppdragsnummer"):
-            raise ValueError(f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. ")
-        if not headers:
-            self.headers = self._build_headers()
-        else:
-            self.headers = headers
-        try:
-            self.filbeskrivelse = self._get_filbeskrivelse()
-            self.hovedtabell = self.filbeskrivelse.hovedtabell
-            # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
-            self.tabellid = self.filbeskrivelse.tabellid
-            self.params = self._build_params()
-            
-            self.data_type, self.data_iter = self._identify_data_type()
-            if self.data_type != pd.DataFrame: 
-                raise ValueError(f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}")
-            if self.validation: 
-                self.validation_errors = self.filbeskrivelse.validate_dfs(self.data, raise_errors = True)
-                
-            self.body = self._body_from_data()
-            
-            url_load_params = self.urls['loader'] + urllib.parse.urlencode(self.params)
-            #print(url_load_params, self.headers, self.body)
-            self.response = self._make_transfer_request(url_load_params)
-            print(self.response)
-            if self.response.status_code == 200:
-                del self.response.request.headers  # Auth is stored here also, for some reason
-        finally:
-            del self.headers  # Cleaning up auth-storing
-            self.__delay = False
-        self._handle_response()
+    
 
     def _get_filbeskrivelse(self) -> StatbankUttrekksBeskrivelse:
         return StatbankUttrekksBeskrivelse(tabellid=self.tabellid, 
-                                           lastebruker=self.lastebruker, 
+                                           loaduser=self.loaduser, 
                                            headers=self.headers)
     
     def _make_transfer_request(self, url_params: str,):

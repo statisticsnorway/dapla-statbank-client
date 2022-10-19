@@ -3,7 +3,7 @@
 from .auth import StatbankAuth
 from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
-form .apidata import apidata_all, apidata
+from .apidata import apidata_all, apidata
 
 import datetime
 from datetime import timedelta as td
@@ -18,13 +18,99 @@ class StatbankClient(StatbankAuth):
     that often is shared, among all transfers within a statistical production.
     Call methods under this client to:
     - transfer the data
+        .transfer()
     - only validate the data against a description
-    - get transfer/data description (filbeskrivelse),
+        .validate()
+    - get transfer/data description (filbeskrivelse)
+        .get_description()
     - set the publish date with a datepicker
+        .date_picker() + .set_publish_date()
     - get published data from the external or internal API of statbanken
-    
-    
-    
+        apidata_all() / apidata()
+    ...
+
+    Attributes
+    ----------
+    loaduser : str
+        Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
+    date : str
+        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01". 
+        Statbanken only allows publishing four months into the future?
+    shortuser : str
+        The abbrivation of username at ssb. Three letters, like "cfc".
+        If not specified, we will try to get this from daplas environement variables.
+    cc : str
+        First person to be notified by email of transfer. Defaults to the same as "shortuser"
+    bcc : str
+        Second person to be notified by email of transfer. Defaults to the same as "cc"
+    overwrite : bool
+        False = no overwrite
+        True = overwrite
+    approve : str
+        "0" = manual approval
+        "1" = automatic approval at transfer-time (immediately)
+        "2" = JIT (Just In Time), approval right before publishing time
+    validation : bool
+        Set to True, if you want the python-validation code to run user-side.
+        Set to False, if its slow and unnecessary.
+    log: list
+        Each "action" (method used) on the client is appended to the log.
+        Nice to use for appending to your own logging after you are done,
+        or printing it in a try-except-block to see what the last actions were,
+        before error being raised.
+
+    Methods
+    -------
+    get_description(tableid):
+        Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
+        about shape of data to be transferred, and metadata about the table
+        itself in Statbankens system, like ID, name and content of codelists.
+        Returns an object of the internal class "StatbankUttrekksBeskrivelse"
+    validate(data, tableid):
+        Gets an "uttrekksbeskrivelse" and validates the data against this.
+        All validation happens locally, so dont be afraid of any data
+        being sent to statbanken using this method.
+        Logic is built in Python, and can probably be expanded upon.
+    transfer(data, tableid):
+        Transfers your data to Statbanken.
+        First it gets an uttrekksbeskrivelse, validates against this,
+        then makes the actual transfer. Validation can be set to False,
+        to avoid this checking beforehand. 
+        Make sure you've set the publish-date correctly before sending.
+
+    date = date_picker():
+        Shows a date-picker widget using ipywidget.
+    set_publish_date(date):
+        To actually set the date,
+        the result of the picker must be sent into this function after editing.
+        This method also excepts a datetime, datetime.date,
+        or a string in the format YYYY-mm-dd.
+
+    apidata_all(tableid):
+        Finds "all the codes" of data for the table, using a first request.
+        Then builds a query from this to get all the data using apidata().
+        Use this if you want "all the data" from a table, and this isnt too big.
+    apidata(tableid, query):
+        Lets you specify a query, to limit the data in the response. 
+        Get this query from the bottom of the statbank-webpage (API-spørring).
+
+
+    get_description_batch(tableids):
+        Send in a list of tableids: ['00000', '00000'].
+        Returns a list of StatbankUttrekksBeskrivelse,
+        which you may inspect / use as you wish.
+    validate_batch({tableids:datas}):
+        Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will validate all in the list, until one returns an error.
+    transfer_batch({tableids:datas}):
+        Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will try to transfer all of them, until it reaches an error.
+        Publishing a table to statbanken many times before the publishing date is ok.
+        But if you do it too fast, in succession, you might encounter an error like
+        "ikke unik skranke" or similar.
+
+    __init__():
+        Sets attributes, validates them, builds header, initializes log.
     
     """
     
@@ -35,7 +121,7 @@ class StatbankClient(StatbankAuth):
             shortuser: str = "",
             cc: str = "",
             bcc: str = "",
-            overwrite: str = '1',
+            overwrite: bool = True,
             approve: str = '2',
             validation: bool = True,
             ):
@@ -147,7 +233,7 @@ class StatbankClient(StatbankAuth):
                                 publisering=self.date,
                                 fagansvarlig1=self.cc,
                                 fagansvarlig2r=self.bcc,
-                                auto_overskriv_data=self.overwrite,
+                                auto_overskriv_data=int(self.overwrite),
                                 auto_godkjenn_data=self.approve,
                                 validation=self.validation,
                                )
@@ -164,7 +250,7 @@ class StatbankClient(StatbankAuth):
                                                   publisering=self.date,
                                                   fagansvarlig1=self.cc,
                                                   fagansvarlig2r=self.bcc,
-                                                  auto_overskriv_data=self.overwrite,
+                                                  auto_overskriv_data=int(self.overwrite),
                                                   auto_godkjenn_data=self.approve,
                                                   validation=self.validation,)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')

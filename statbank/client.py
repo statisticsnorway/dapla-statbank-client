@@ -3,7 +3,7 @@
 from .auth import StatbankAuth
 from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
-from .batchtransfer import StatbankBatchTransfer
+form .apidata import apidata_all, apidata
 
 import datetime
 from datetime import timedelta as td
@@ -13,7 +13,18 @@ import os
 
 class StatbankClient(StatbankAuth):
     """
-    The 
+    This is the main interface towards the rest of the statbank-package.
+    An initialized client, an object of this class, will contain data/parameters
+    that often is shared, among all transfers within a statistical production.
+    Call methods under this client to:
+    - transfer the data
+    - only validate the data against a description
+    - get transfer/data description (filbeskrivelse),
+    - set the publish date with a datepicker
+    - get published data from the external or internal API of statbanken
+    
+    
+    
     
     """
     
@@ -101,20 +112,23 @@ class StatbankClient(StatbankAuth):
     # Validation
     def validate(self, 
                  dfs: pd.DataFrame, 
-                 tableid: str = "00000") -> dict:
+                 tableid: str = "00000",
+                 raise_errors: bool = False) -> dict:
         self._validate_params_action([tableid])
         validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
                                         loaduser=self.loaduser,
+                                        raise_errors=raise_errors,
                                         headers=self.__headers)
         validator.validate_dfs(dfs)
         self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
-    def validate_batch(self, data: dict) -> dict:
+    def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
         self._validate_params_action(list(data.keys()))
         validators = {}
         for tableid, dfs in data.items():
             validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
                                         loaduser=self.loaduser,
+                                        raise_errors=raise_errors,
                                         headers=self.__headers)
             validator.validate_dfs(dfs)
             self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
@@ -128,7 +142,15 @@ class StatbankClient(StatbankAuth):
         return StatbankTransfer(dfs,
                                 tabellid=tableid,
                                 loaduser=self.loaduser,
-                                headers=self.__headers)
+                                headers=self.__headers,
+                                bruker_trebokstaver=self.shortuser,
+                                publisering=self.date,
+                                fagansvarlig1=self.cc,
+                                fagansvarlig2r=self.bcc,
+                                auto_overskriv_data=self.overwrite,
+                                auto_godkjenn_data=self.approve,
+                                validation=self.validation,
+                               )
 
     def transfer_batch(self, data: dict) -> dict:
         self._validate_params_action(list(data.keys()))
@@ -137,9 +159,37 @@ class StatbankClient(StatbankAuth):
             transfers[tableid] = StatbankTransfer(dfs,
                                                   tabellid=tableid,
                                                   loaduser=self.loaduser,
-                                                  headers=self.__headers)
+                                                  headers=self.__headers,
+                                                  bruker_trebokstaver=self.shortuser,
+                                                  publisering=self.date,
+                                                  fagansvarlig1=self.cc,
+                                                  fagansvarlig2r=self.bcc,
+                                                  auto_overskriv_data=self.overwrite,
+                                                  auto_godkjenn_data=self.approve,
+                                                  validation=self.validation,)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
+    
+    # Get apidata
+    def apidata(id_or_url: str = "",
+                payload: dict = {"query": [], "response": {"format": "json-stat2"}},
+                include_id: bool = False) -> pd.DataFrame:
+        """
+        Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        Parameter2: Payload, the query to include with the request.
+        Parameter3: If you want to include "codes" in the dataframe, set this to True
+        Returns: a pandas dataframe with the table
+        """
+        return apidata(id_or_url, payload, include_id)
+    
+    def apidata_all(id_or_url: str = "",
+                include_id: bool = False) -> pd.DataFrame:
+        """
+        Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        Returns: a pandas dataframe with the table
+        """
+        return apidata_all(id_or_url, include_id)
+    
     
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:

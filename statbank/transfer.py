@@ -151,7 +151,44 @@ class StatbankTransfer(StatbankAuth):
                 self.transfer(headers)
             else:
                 self.transfer()
+
+
+    def transfer(self, headers: dict = {}):
+        """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
+        # In case transfer has already happened, dont transfer again
+        if hasattr(self, "oppdragsnummer"):
+            raise ValueError(f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. ")
+        if not headers:
+            self.headers = self._build_headers()
+        else:
+            self.headers = headers
+        try:
+            self.filbeskrivelse = self._get_filbeskrivelse()
+            self.hovedtabell = self.filbeskrivelse.hovedtabell
+            # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
+            self.tabellid = self.filbeskrivelse.tabellid
+            self.params = self._build_params()
             
+            self.data_type, self.data_iter = self._identify_data_type()
+            if self.data_type != pd.DataFrame: 
+                raise ValueError(f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}")
+            if self.validation: 
+                self.validation_errors = self.filbeskrivelse.validate_dfs(self.data, raise_errors = True)
+                
+            self.body = self._body_from_data()
+            
+            url_load_params = self.urls['loader'] + urllib.parse.urlencode(self.params)
+            #print(url_load_params, self.headers, self.body)
+            self.response = self._make_transfer_request(url_load_params)
+            print(self.response)
+            if self.response.status_code == 200:
+                del self.response.request.headers  # Auth is stored here also, for some reason
+        finally:
+            del self.headers  # Cleaning up auth-storing
+            self.__delay = False
+        self._handle_response()
+
+
     def __str__(self):
         if self.delay:
             return f'Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda.'
@@ -256,40 +293,7 @@ class StatbankTransfer(StatbankAuth):
             'auto_godkjenn_data': self.godkjenn_data,
         }
 
-    def transfer(self, headers: dict = {}):
-        """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
-        # In case transfer has already happened, dont transfer again
-        if hasattr(self, "oppdragsnummer"):
-            raise ValueError(f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. ")
-        if not headers:
-            self.headers = self._build_headers()
-        else:
-            self.headers = headers
-        try:
-            self.filbeskrivelse = self._get_filbeskrivelse()
-            self.hovedtabell = self.filbeskrivelse.hovedtabell
-            # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
-            self.tabellid = self.filbeskrivelse.tabellid
-            self.params = self._build_params()
-            
-            self.data_type, self.data_iter = self._identify_data_type()
-            if self.data_type != pd.DataFrame: 
-                raise ValueError(f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}")
-            if self.validation: 
-                self.validation_errors = self.filbeskrivelse.validate_dfs(self.data, raise_errors = True)
-                
-            self.body = self._body_from_data()
-            
-            url_load_params = self.urls['loader'] + urllib.parse.urlencode(self.params)
-            #print(url_load_params, self.headers, self.body)
-            self.response = self._make_transfer_request(url_load_params)
-            print(self.response)
-            if self.response.status_code == 200:
-                del self.response.request.headers  # Auth is stored here also, for some reason
-        finally:
-            del self.headers  # Cleaning up auth-storing
-            self.__delay = False
-        self._handle_response()
+    
 
     def _get_filbeskrivelse(self) -> StatbankUttrekksBeskrivelse:
         return StatbankUttrekksBeskrivelse(tabellid=self.tabellid, 

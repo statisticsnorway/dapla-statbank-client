@@ -134,7 +134,10 @@ class StatbankTransfer(StatbankAuth):
             self.fagansvarlig2 = os.environ['JUPYTERHUB_USER'].split("@")[0]
         #print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
         
-        self.publisering = publisering
+        if isinstance(publisering, str):
+            self.publisering = publisering
+        else:
+            self.publisering = publisering.strftime("%Y-%m-%d")
         
         self.overskriv_data = auto_overskriv_data
         self.godkjenn_data = auto_godkjenn_data

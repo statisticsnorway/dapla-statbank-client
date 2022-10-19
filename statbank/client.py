@@ -232,8 +232,8 @@ class StatbankClient(StatbankAuth):
                                 bruker_trebokstaver=self.shortuser,
                                 publisering=self.date,
                                 fagansvarlig1=self.cc,
-                                fagansvarlig2r=self.bcc,
-                                auto_overskriv_data=int(self.overwrite),
+                                fagansvarlig2=self.bcc,
+                                auto_overskriv_data=str(int(self.overwrite)),
                                 auto_godkjenn_data=self.approve,
                                 validation=self.validation,
                                )
@@ -249,8 +249,8 @@ class StatbankClient(StatbankAuth):
                                                   bruker_trebokstaver=self.shortuser,
                                                   publisering=self.date,
                                                   fagansvarlig1=self.cc,
-                                                  fagansvarlig2r=self.bcc,
-                                                  auto_overskriv_data=int(self.overwrite),
+                                                  fagansvarlig2=self.bcc,
+                                                  auto_overskriv_data=str(int(self.overwrite)),
                                                   auto_godkjenn_data=self.approve,
                                                   validation=self.validation,)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')

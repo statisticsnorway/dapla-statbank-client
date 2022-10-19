@@ -294,7 +294,7 @@ class StatbankClient(StatbankAuth):
             self.cc = self.shortuser
         if not self.bcc:
             self.bcc = self.cc
-        if self.overwrite not in ['0', '1']:
-            raise ValueError("(String) Set overwrite to either '0' = no overwrite (dublicates give errors), or  '1' = automatic overwrite")
+        if not isinstance(self.overwrite, bool):
+            raise ValueError("(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite")
         if self.approve not in ['0', '1', '2']:
             raise ValueError("(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)")

@@ -140,8 +140,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         for k in validation_errors.keys():
             if "col_count_data" in k:
                   break
-            else:
-                  print("Correct number of columns...")
+        else:
+              print("Correct number of columns...")
         
         ### No values outside, warn of missing from codelists on categorical columns
         categorycode_outside = []

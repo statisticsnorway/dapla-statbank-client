@@ -36,7 +36,7 @@ stat_client.apidata_all("06339", include_id=True)
 ```
 `apidata_all`, does not need a specified query, it will build its own query, trying to get *all the data* from the table. This might be too much, resulting in an error.
 
-The `include_id`-parameter is a bit *magical*, it gets both codes and value-columns for categorical columns, and tries to merge these next to each other, it also makes a check if the content i the same, then it will not include the content twice.
+The `include_id`-parameter is a bit *magical*, it gets both codes and value-columns for categorical columns, and tries to merge these next to each other, it also makes a check if the content is the same, then it will not include the content twice.
 
 If you want to specify a query, to limit the response, use the method `apidata` instead.\
 Here we are requesting an "internal table" which only people at SSB have access to, with a specified URL and query.
@@ -51,7 +51,8 @@ stat_client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v_intern/START/be/
 
 
 ### Usage batches
-For the transferring methods, there are "twin" batch-methods. 
+For the non-apidata-methods, there are "twin" batch-methods. 
+For .transfer there is .transfer_batch and so on.
 Alternatively you can just run the methods above multiple times...
 
 To transfer many tables at the same time.
@@ -67,7 +68,7 @@ stat_client.validate_batch({"06339": df_06399,
                             "05300": df_05300})
 ```
 
-To get many descriptions at once send a list.
+To get many descriptions at once send a list of tableids.
 ```python
 descriptions = stat_client.validate_batch(["06339","05300"])
 print(descriptions["06339"])

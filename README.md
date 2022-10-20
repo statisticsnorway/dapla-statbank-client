@@ -51,7 +51,7 @@ client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v_intern/START/be/be01/
 
 
 ### Usage batches
-For the transferring methods, there are "twin" batch-methods. 
+For the transferring methods, there are "twin" batch-methods.
 Alternatively you can just run the methods above multiple times...
 
 To transfer many tables at the same time.

@@ -280,6 +280,14 @@ class StatbankClient(StatbankAuth):
     
     @staticmethod
     def apidata_rotate(df, ind='year', val='value'):
+        """Rotate the dataframe so that time is used as the index
+        Args:
+            df (pandas.dataframe): dataframe (from <get_from_ssb> function
+            ind (str): string of column name denoting time
+            val (str): string of column name denoting values
+        Returns:
+            dataframe: pivoted dataframe
+        """
         return apidata_rotate(df, ind, val)
     
     # Class meta-validation

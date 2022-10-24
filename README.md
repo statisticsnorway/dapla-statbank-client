@@ -49,6 +49,10 @@ df_folkemengde = stat_client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v
                                     )
 ```
 
+`apidata_rotate` is a thin wrapper around pivot_table. Stolen from: https://github.com/sehyoun/SSB_API_helper/blob/master/src/ssb_api_helper.py
+```python
+df_folkemengde_rotert = stat_client.rotate(df_folkemengde, 'tidskolonne', "verdikolonne")
+```
 
 ### Usage batches
 For the non-apidata-methods, there are "twin" batch-methods. 

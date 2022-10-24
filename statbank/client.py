@@ -3,7 +3,7 @@
 from .auth import StatbankAuth
 from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
-from .apidata import apidata_all, apidata
+from .apidata import apidata_all, apidata, apidata_rotate
 
 import datetime
 from datetime import timedelta as td
@@ -257,6 +257,7 @@ class StatbankClient(StatbankAuth):
         return transfers
     
     # Get apidata
+    @staticmethod
     def apidata(id_or_url: str = "",
                 payload: dict = {"query": [], "response": {"format": "json-stat2"}},
                 include_id: bool = False) -> pd.DataFrame:
@@ -266,16 +267,20 @@ class StatbankClient(StatbankAuth):
         Parameter3: If you want to include "codes" in the dataframe, set this to True
         Returns: a pandas dataframe with the table
         """
-        return apidata(id_or_url, payload, include_id)
+        return apidata(id_or_url=id_or_url, payload=payload, include_id=include_id)
     
+    @staticmethod
     def apidata_all(id_or_url: str = "",
                 include_id: bool = False) -> pd.DataFrame:
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
         Returns: a pandas dataframe with the table
         """
-        return apidata_all(id_or_url, include_id)
+        return apidata_all(id_or_url=id_or_url, include_id=include_id)
     
+    @staticmethod
+    def apidata_rotate(df, ind='year', val='value'):
+        return apidata_rotate(df, ind, val)
     
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:

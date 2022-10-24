@@ -211,7 +211,10 @@ class StatbankTransfer(StatbankAuth):
     def _validate_original_parameters(self) -> None:
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
         #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
-
+        
+        # Date should not be on the weekend?
+        
+        
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
         

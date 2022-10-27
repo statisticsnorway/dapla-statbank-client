@@ -146,11 +146,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         ### No values outside, warn of missing from codelists on categorical columns
         categorycode_outside = []
         categorycode_missing = []
-        for kodeliste in self.kodelister:
-            kodeliste_id = kodeliste['kodeliste']
+        for navn, kodeliste  in self.kodelister.items():
+            kodeliste_id = navn
             for deltabell in self.variabler:
                 for i, deltabell2 in enumerate(self.deltabelltitler):
-                    if deltabell2["Filnavn"] == deltabell["deltabell"]:
+                    if deltabell2 == deltabell["deltabell"]:
                         deltabell_nr = i + 1
                 for variabel in deltabell["variabler"]:
                     if variabel["Kodeliste_id"] == kodeliste_id:
@@ -160,7 +160,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             #if 'SumIALtTotalKode' in kodeliste.keys():
                 #print(kodeliste["SumIALtTotalKode"])
             col_unique = to_validate[deltabell_nr-1].iloc[:,int(variabel["kolonnenummer"])-1].unique()
-            kod_unique = [i["kode"] for i in kodeliste['koder']]
+            kod_unique = set(kodeliste['koder'].keys())
             for kod in col_unique:
                 if kod not in kod_unique:
                     categorycode_outside += [f"Code {kod} in data, but not in uttrekksbeskrivelse, add to statbank admin? From column number {variabel['kolonnenummer']}, in deltabell number {deltabell_nr}, ({deltabell['deltabell']})"]
@@ -285,8 +285,21 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         self.lagd = self.filbeskrivelse['Uttaksbeskrivelse_lagd']
         self.tabellid = self.filbeskrivelse['TabellId']
         self.hovedtabell = self.filbeskrivelse['Huvudtabell']
-        self.deltabelltitler = self.filbeskrivelse['DeltabellTitler']
+        self.deltabelltitler = {x['Filnavn']:x['Filtext'] for x in self.filbeskrivelse['DeltabellTitler']}
         self.variabler = self.filbeskrivelse['deltabller']
-        self.kodelister = self.filbeskrivelse['kodelister']
+        self.kodelister = {}
+        for kodeliste in self.filbeskrivelse['kodelister']:
+            new_kodeliste = {}
+            for kode in kodeliste['koder']:
+                new_kodeliste[kode['kode']] = kode['text']
+            self.kodelister[kodeliste["kodeliste"]] = {
+                'koder' : new_kodeliste
+            }
+            remain_keys = list(kodeliste.keys())
+            remain_keys.remove('koder')
+            remain_keys.remove('kodeliste')
+            for k in remain_keys:
+                self.kodelister[kodeliste["kodeliste"]][k] = kodeliste[k]
+
         if 'null_prikk_missing_kodeliste' in self.filbeskrivelse.keys():
             self.prikking = self.filbeskrivelse['null_prikk_missing_kodeliste']

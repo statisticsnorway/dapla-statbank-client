@@ -271,6 +271,21 @@ class StatbankClient(StatbankAuth):
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
     
+    @staticmethod
+    def read_transfer_json(json_path_or_str: str) -> StatbankTransfer:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankTransfer-object.
+        """
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankTransfer.__new__(StatbankTransfer)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
+    
+    
     # Get apidata
     @staticmethod
     def apidata(id_or_url: str = "",

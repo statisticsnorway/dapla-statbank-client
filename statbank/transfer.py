@@ -207,6 +207,18 @@ class StatbankTransfer(StatbankAuth):
     @property
     def delay(self):
         return self.__delay
+    
+    def to_json(self, path: str = "") -> dict:
+        """If path is provided, tries to write to it, 
+        otherwise will return a json-string for you to handle like you wish.
+        """
+        print("Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized")
+        if path:
+            print(f'Writing to {path}')
+            with open(path, mode="w") as json_file:
+                json_file.write(json.dumps(self.__dict__, default=lambda o: '<not serializable>'))
+        else:
+            return json.dumps(self.__dict__, default=lambda o: '<not serializable>')
             
     def _validate_original_parameters(self) -> None:
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:

@@ -1,11 +1,8 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
-      - master
-
+  release:
+    types: [published]
 jobs:
   release:
     name: Release

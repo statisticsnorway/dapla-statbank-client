@@ -107,6 +107,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         return f'StatbankUttrekksBeskrivelse(tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
     
     def to_json(self, path: str = "") -> dict:
+        """If path is provided, tries to write to it, 
+        otherwise will return a json-string for you to handle like you wish.
+        """
         if path:
             print(f'Writing to {path}')
             with open(path, mode="w") as json_file:

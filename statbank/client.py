@@ -198,6 +198,10 @@ class StatbankClient(StatbankAuth):
     
     @staticmethod
     def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankUttrekksBeskrivelse-object.
+        """
         if os.path.exists(json_path_or_str):
             with open(json_path_or_str, mode="r") as json_file:
                 json_path_or_str = json_file.read()

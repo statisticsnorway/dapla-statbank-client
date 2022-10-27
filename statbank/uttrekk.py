@@ -106,6 +106,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def __repr__(self):
         return f'StatbankUttrekksBeskrivelse(tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
     
+    def to_json(self, path: str = "") -> dict:
+        if path:
+            print(f'Writing to {path}')
+            with open(path, mode="w") as json_file:
+                json_file.write(json.dumps(self.__dict__))
+        else:
+            return json.dumps(self.__dict__)
+    
     def validate_dfs(self, data, raise_errors: bool = False) -> dict:
         if not raise_errors:
             raise_errors = self.raise_errors

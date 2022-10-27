@@ -10,6 +10,7 @@ from datetime import timedelta as td
 import pandas as pd
 import ipywidgets as widgets
 import os
+import json
 
 class StatbankClient(StatbankAuth):
     """
@@ -194,6 +195,16 @@ class StatbankClient(StatbankAuth):
                                         headers=self.__headers)
             self.log.append(f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return descriptions
+    
+    @staticmethod
+    def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
     
     # Validation
     def validate(self, 

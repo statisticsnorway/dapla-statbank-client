@@ -12,6 +12,7 @@ import ipywidgets as widgets
 import os
 import json
 
+
 class StatbankClient(StatbankAuth):
     """
     This is the main interface towards the rest of the statbank-package.
@@ -33,17 +34,22 @@ class StatbankClient(StatbankAuth):
     Attributes
     ----------
     loaduser : str
-        Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
+        Username for Statbanken, not the same as "tbf"
+        or "common personal username" in other SSB-systems
     date : str
-        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01". 
+        Date for publishing the transfer. Shape should be "yyyy-mm-dd",
+        like "2022-01-01".
         Statbanken only allows publishing four months into the future?
     shortuser : str
         The abbrivation of username at ssb. Three letters, like "cfc".
-        If not specified, we will try to get this from daplas environement variables.
+        If not specified,
+        we will try to get this from daplas environement variables.
     cc : str
-        First person to be notified by email of transfer. Defaults to the same as "shortuser"
+        First person to be notified by email of transfer.
+        Defaults to the same as "shortuser"
     bcc : str
-        Second person to be notified by email of transfer. Defaults to the same as "cc"
+        Second person to be notified by email of transfer.
+        Defaults to the same as "cc"
     overwrite : bool
         False = no overwrite
         True = overwrite
@@ -93,7 +99,7 @@ class StatbankClient(StatbankAuth):
         Tries to restore a StatbankUttrekksBeskrivelse-object from a stored, serialized json.
     read_transfer_json(path.json):
         Tries to restore a StatbankTransfer-object from a stored, serialized json.
-        
+
     get_description_batch(tableids):
         Send in a list of tableids: ['00000', '00000'].
         Returns a list of StatbankUttrekksBeskrivelse,
@@ -110,19 +116,17 @@ class StatbankClient(StatbankAuth):
 
     __init__():
         Sets attributes, validates them, builds header, initializes log.
-    
     """
-    
-    
+
     def __init__(self,
-            loaduser = "",
-            date: datetime.datetime = datetime.datetime.now() + td(days=1),
-            shortuser: str = "",
-            cc: str = "",
-            bcc: str = "",
-            overwrite: bool = True,
-            approve: str = '2',
-            ):
+                 loaduser: str = "",
+                 date: datetime.datetime = datetime.datetime.now() + td(days=1),
+                 shortuser: str = "",
+                 cc: str = "",
+                 bcc: str = "",
+                 overwrite: bool = True,
+                 approve: str = '2',
+                 ):
         self.loaduser = loaduser
         if isinstance(date, str):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
@@ -147,17 +151,18 @@ class StatbankClient(StatbankAuth):
         And sending mail to {self.bcc}
         Overwrite set to {self.overwrite}
         Approve set to {self.approve}
-        
+
         Log:
         ''' + "\n\t".join(self.log)
 
     def __repr__(self):
         return f'StatbankClient(loaduser = "{self.loaduser}")'
-    
+
     # Publishing date handeling
     def date_picker(self) -> None:
         """Displays a datapicker-widget.
-        Assign it to a variable, that you after editing the date, pass into set_publish_date()
+        Assign it to a variable, that you after editing the date, 
+        pass into set_publish_date()
         date = client.datepicker()
         # Edit date
         client.set_publish_date(date)
@@ -184,7 +189,6 @@ class StatbankClient(StatbankAuth):
         self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        #return self.date
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
@@ -198,7 +202,6 @@ class StatbankClient(StatbankAuth):
                                           loaduser=self.loaduser,
                                           headers=self.__headers)
     
-    
     def get_description_batch(self, tableids: list) -> dict:
         """Send in a list of tableids: ['00000', '00000'].
         Returns a list of StatbankUttrekksBeskrivelse,
@@ -207,8 +210,8 @@ class StatbankClient(StatbankAuth):
         descriptions = {}
         for tableid in tableids:
             descriptions[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        headers=self.__headers)
+                                                                loaduser=self.loaduser,
+                                                                headers=self.__headers)
             self.log.append(f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return descriptions
     
@@ -222,12 +225,12 @@ class StatbankClient(StatbankAuth):
             with open(json_path_or_str, mode="r") as json_file:
                 json_path_or_str = json_file.read()
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
-        for k,v in json.loads(json_path_or_str).items():
+        for k, v in json.loads(json_path_or_str).items():
             setattr(new, k, v)
         return new
-    
+
     # Validation
-    def validate(self, 
+    def validate(self,
                  dfs: pd.DataFrame, 
                  tableid: str = "00000",
                  raise_errors: bool = False) -> dict:
@@ -237,9 +240,9 @@ class StatbankClient(StatbankAuth):
         Logic is built in Python, and can probably be expanded upon."""
         self._validate_params_action([tableid])
         validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        raise_errors=raise_errors,
-                                        headers=self.__headers)
+                                                loaduser=self.loaduser,
+                                                raise_errors=raise_errors,
+                                                headers=self.__headers)
         validator.validate_dfs(dfs)
         self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
@@ -247,12 +250,11 @@ class StatbankClient(StatbankAuth):
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
         Will validate all in the list, until one returns an error."""
         self._validate_params_action(list(data.keys()))
-        validators = {}
         for tableid, dfs in data.items():
             validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        raise_errors=raise_errors,
-                                        headers=self.__headers)
+                                                    loaduser=self.loaduser,
+                                                    raise_errors=raise_errors,
+                                                    headers=self.__headers)
             validator.validate_dfs(dfs)
             self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
@@ -297,7 +299,7 @@ class StatbankClient(StatbankAuth):
                                                   auto_godkjenn_data=self.approve)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
-    
+
     @staticmethod
     def read_transfer_json(json_path_or_str: str) -> StatbankTransfer:
         """Checks if provided string exists on disk, if it does, tries to load it as json.
@@ -308,10 +310,9 @@ class StatbankClient(StatbankAuth):
             with open(json_path_or_str, mode="r") as json_file:
                 json_path_or_str = json_file.read()
         new = StatbankTransfer.__new__(StatbankTransfer)
-        for k,v in json.loads(json_path_or_str).items():
+        for k, v in json.loads(json_path_or_str).items():
             setattr(new, k, v)
         return new
-    
     
     # Get apidata
     @staticmethod
@@ -319,7 +320,8 @@ class StatbankClient(StatbankAuth):
                 payload: dict = {"query": [], "response": {"format": "json-stat2"}},
                 include_id: bool = False) -> pd.DataFrame:
         """
-        Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        Parameter1 - id_or_url: The id of the STATBANK-table to
+        get the total query for, or supply the total url, if the table is "internal".
         Parameter2: Payload, the query to include with the request.
         Parameter3: If you want to include "codes" in the dataframe, set this to True
         Returns: a pandas dataframe with the table
@@ -330,7 +332,8 @@ class StatbankClient(StatbankAuth):
     def apidata_all(id_or_url: str = "",
                 include_id: bool = False) -> pd.DataFrame:
         """
-        Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        Parameter1 - id_or_url: The id of the STATBANK-table to
+        get the total query for, or supply the total url, if the table is "internal".
         Returns: a pandas dataframe with the table
         """
         return apidata_all(id_or_url=id_or_url, include_id=include_id)
@@ -346,14 +349,14 @@ class StatbankClient(StatbankAuth):
             dataframe: pivoted dataframe
         """
         return apidata_rotate(df, ind, val)
-    
+
     def _validate_date(self) -> None:
         if not (isinstance(self.date, datetime.datetime) or isinstance(self.date, datetime.date)):
             raise TypeError("Date must be a datetime.datetime or datetime.date")
         # Date should not be on a weekend
         if self.date.weekday() in [5, 6]:
             print("Warning, you are publishing during a weekend, this is not common practice.")
-        
+
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:
         for tableid in tableids:

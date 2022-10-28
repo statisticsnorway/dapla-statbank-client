@@ -11,7 +11,7 @@ from datetime import timedelta as td
 import json
 import urllib
 import requests as r
-
+import math
 
 class StatbankTransfer(StatbankAuth):
     """
@@ -166,6 +166,8 @@ class StatbankTransfer(StatbankAuth):
         else:
             self.headers = headers
         try:
+            if not self.validation:
+                print("Even with no validation, we still need to get the uttrekksbeskrivelse, to get table-name from table-id.")
             self.filbeskrivelse = self._get_filbeskrivelse()
             self.hovedtabell = self.filbeskrivelse.hovedtabell
             # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
@@ -207,6 +209,20 @@ class StatbankTransfer(StatbankAuth):
     @property
     def delay(self):
         return self.__delay
+    
+    def to_json(self, path: str = "") -> dict:
+        """If path is provided, tries to write to it, 
+        otherwise will return a json-string for you to handle like you wish.
+        """
+        print("Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized")
+        json_content = json.dumps(self.__dict__, default=lambda o: '<not serializable>')        
+        # If path provided write to it, otherwise return the string-content
+        if path:
+            print(f'Writing to {path}')
+            with open(path, mode="w") as json_file:
+                json_file.write(json_content)
+        else:
+            return json.dumps(json_content)
             
     def _validate_original_parameters(self) -> None:
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
@@ -260,10 +276,15 @@ class StatbankTransfer(StatbankAuth):
             raise TypeError("Only programmed for Pandas DataFrames as data at this point.")
 
         # We need the filenames in the body, and they must match up with amount of data-elements we have
-        deltabeller_filnavn = [x['Filnavn'] for x in self.filbeskrivelse.deltabelltitler]
+        deltabeller_filnavn = list(self.filbeskrivelse.deltabelltitler.keys())
         if len(deltabeller_filnavn) != len(self.data):
             raise ValueError("Length mismatch between data-iterable and number of Uttaksbeskrivelse deltabellers filnavn.")
-            
+        
+        def round_up(n, decimals=0):
+            """Python uses "round to even" as default, wanted behaviour is "round up".
+            So let's implement our own."""
+            multiplier = 10 ** decimals
+            return math.ceil(n * multiplier) / multiplier
         # Shorten all floats to specified decimal-length and convert to strings
         for i, deltabell in enumerate(self.filbeskrivelse.variabler):
             deltabell_navn = deltabell['deltabell']
@@ -276,7 +297,8 @@ class StatbankTransfer(StatbankAuth):
                         print(f"Converting column {col_num+1} into a string, with {decimal_num} decimals.")
                         self.data[i].iloc[:,col_num] = (self.data[i].iloc[:,col_num]
                                                     .astype("Float64")
-                                                    .map('{'+f':,.{decimal_num}f'+'}'.format)
+                                                    .apply(round_up, decimals=decimal_num)
+                                                    .astype(str)
                                                     .str.replace("<NA>","")
                                                     .str.replace(".",",")
                                                    )

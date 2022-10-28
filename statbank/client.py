@@ -10,6 +10,7 @@ from datetime import timedelta as td
 import pandas as pd
 import ipywidgets as widgets
 import os
+import json
 
 class StatbankClient(StatbankAuth):
     """
@@ -124,16 +125,18 @@ class StatbankClient(StatbankAuth):
             bcc: str = "",
             overwrite: bool = True,
             approve: str = '2',
-            validation: bool = True,
             ):
         self.loaduser = loaduser
-        self.date = date
+        if isinstance(date, str):
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        else:
+            self.date = date
+        self._validate_date()
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
         self.approve = approve
-        self.validation = validation
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
@@ -182,6 +185,7 @@ class StatbankClient(StatbankAuth):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
+        self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         #return self.date
@@ -211,6 +215,20 @@ class StatbankClient(StatbankAuth):
                                         headers=self.__headers)
             self.log.append(f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return descriptions
+    
+    @staticmethod
+    def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankUttrekksBeskrivelse-object.
+        """
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
     
     # Validation
     def validate(self, 
@@ -259,8 +277,7 @@ class StatbankClient(StatbankAuth):
                                 fagansvarlig1=self.cc,
                                 fagansvarlig2=self.bcc,
                                 auto_overskriv_data=str(int(self.overwrite)),
-                                auto_godkjenn_data=self.approve,
-                                validation=self.validation,
+                                auto_godkjenn_data=self.approve
                                )
 
     def transfer_batch(self, data: dict) -> dict:
@@ -281,10 +298,24 @@ class StatbankClient(StatbankAuth):
                                                   fagansvarlig1=self.cc,
                                                   fagansvarlig2=self.bcc,
                                                   auto_overskriv_data=str(int(self.overwrite)),
-                                                  auto_godkjenn_data=self.approve,
-                                                  validation=self.validation,)
+                                                  auto_godkjenn_data=self.approve)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
+    
+    @staticmethod
+    def read_transfer_json(json_path_or_str: str) -> StatbankTransfer:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankTransfer-object.
+        """
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankTransfer.__new__(StatbankTransfer)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
+    
     
     # Get apidata
     @staticmethod
@@ -320,6 +351,13 @@ class StatbankClient(StatbankAuth):
         """
         return apidata_rotate(df, ind, val)
     
+    def _validate_date(self) -> None:
+        if not (isinstance(self.date, datetime.datetime) or isinstance(self.date, datetime.date)):
+            raise TypeError("Date must be a datetime.datetime or datetime.date")
+        # Date should not be on a weekend
+        if self.date.weekday() in [5, 6]:
+            print("Warning, you are publishing during a weekend, this is not common practice.")
+        
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:
         for tableid in tableids:
@@ -331,6 +369,8 @@ class StatbankClient(StatbankAuth):
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):
             raise TypeError('Please pass in "loaduser" as a string.')
+        if isinstance(self.date, str):
+            self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
             self.shortuser = os.environ['JUPYTERHUB_USER'].split("@")[0]
         if not self.cc:

@@ -352,7 +352,7 @@ class StatbankTransfer(StatbankAuth):
                 self.oppdragsnummer = response_message.split("lasteoppdragsnummer:")[
                     1
                 ].split(" =")[0]
-            except:
+            except Exception:
                 raise ValueError(response_json)
             if not self.oppdragsnummer.isdigit():
                 raise ValueError(

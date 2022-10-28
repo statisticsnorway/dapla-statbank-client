@@ -100,3 +100,8 @@ filbesk_06339_new = stat_client.read_description_json("path.json")
 ```
 
 Some deeper data-structures, like the dataframes in the transfer will not be serialized and stored with the transfer-object in its json.
+
+---
+### Version history
+
+- 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.

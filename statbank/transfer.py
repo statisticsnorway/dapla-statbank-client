@@ -215,16 +215,14 @@ class StatbankTransfer(StatbankAuth):
         otherwise will return a json-string for you to handle like you wish.
         """
         print("Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized")
-        json_content = json.dumps(self.__dict__, default=lambda o: '<not serializable>')
-        json_content = 
-        
-        
+        json_content = json.dumps(self.__dict__, default=lambda o: '<not serializable>')        
+        # If path provided write to it, otherwise return the string-content
         if path:
             print(f'Writing to {path}')
             with open(path, mode="w") as json_file:
-                json_file.write()
+                json_file.write(json_content)
         else:
-            return json.dumps(self.__dict__, default=lambda o: '<not serializable>')
+            return json.dumps(json_content)
             
     def _validate_original_parameters(self) -> None:
         # if not self.tabellid.isdigit() or len(self.tabellid) != 5:

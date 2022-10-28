@@ -279,7 +279,10 @@ class StatbankClient(StatbankAuth):
     @staticmethod
     def apidata(
         id_or_url: str = "",
-        payload: dict = {"query": [], "response": {"format": "json-stat2"}},
+        payload: dict = {  # noqa: B006
+            "query": [],
+            "response": {"format": "json-stat2"},
+        },
         include_id: bool = False,
     ) -> pd.DataFrame:
         """

@@ -12,7 +12,7 @@ from pyjstat import pyjstat
 
 def apidata(
     id_or_url: str = "",
-    payload: dict = {"query": [], "response": {"format": "json-stat2"}},
+    payload: dict = {"query": [], "response": {"format": "json-stat2"}},  # noqa: B006
     include_id: bool = False,
 ) -> pd.DataFrame:
     """
@@ -27,7 +27,7 @@ def apidata(
         try:
             urllib.parse.urlparse(id_or_url)
             url = id_or_url
-        except:
+        except Exception:
             raise ValueError(
                 "First parameter not recognized as a statbank ID or a direct url"
             )
@@ -87,7 +87,7 @@ def apidata_query_all(id_or_url: str = "") -> dict:
         try:
             urllib.parse.urlparse(id_or_url)
             url = id_or_url
-        except:
+        except Exception:
             raise ValueError(
                 "First parameter not recognized as a statbank ID or a direct url"
             )

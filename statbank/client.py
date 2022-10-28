@@ -163,7 +163,7 @@ class StatbankClient(StatbankAuth):
         datepicker = widgets.DatePicker(
             description="Publish-date", disabled=False, value=self.date
         )
-        display(datepicker)
+        display(datepicker)  # noqa: F821
         self.log.append(
             f'Datepicker created at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
@@ -180,7 +180,6 @@ class StatbankClient(StatbankAuth):
         self.log.append(
             f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
-        # return self.date
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
@@ -277,6 +276,7 @@ class StatbankClient(StatbankAuth):
         return transfers
 
     # Get apidata
+    @staticmethod
     def apidata(
         id_or_url: str = "",
         payload: dict = {"query": [], "response": {"format": "json-stat2"}},
@@ -290,6 +290,7 @@ class StatbankClient(StatbankAuth):
         """
         return apidata(id_or_url, payload, include_id)
 
+    @staticmethod
     def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".

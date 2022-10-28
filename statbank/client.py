@@ -74,9 +74,6 @@ class StatbankClient(StatbankAuth):
         Logic is built in Python, and can probably be expanded upon.
     transfer(data, tableid):
         Transfers your data to Statbanken.
-        First it gets an uttrekksbeskrivelse, validates against this,
-        then makes the actual transfer. Validation can be set to False,
-        to avoid this checking beforehand. 
         Make sure you've set the publish-date correctly before sending.
 
     date = date_picker():
@@ -95,7 +92,11 @@ class StatbankClient(StatbankAuth):
         Lets you specify a query, to limit the data in the response. 
         Get this query from the bottom of the statbank-webpage (API-spørring).
 
-
+    read_description_json(path.json):
+        Tries to restore a StatbankUttrekksBeskrivelse-object from a stored, serialized json.
+    read_transfer_json(path.json):
+        Tries to restore a StatbankTransfer-object from a stored, serialized json.
+        
     get_description_batch(tableids):
         Send in a list of tableids: ['00000', '00000'].
         Returns a list of StatbankUttrekksBeskrivelse,
@@ -158,7 +159,13 @@ class StatbankClient(StatbankAuth):
         return f'StatbankClient(loaduser = "{self.loaduser}")'
     
     # Publishing date handeling
-    def date_picker(self) -> None:        
+    def date_picker(self) -> None:
+        """Displays a datapicker-widget.
+        Assign it to a variable, that you after editing the date, pass into set_publish_date()
+        date = client.datepicker()
+        # Edit date
+        client.set_publish_date(date)
+        """
         datepicker =  widgets.DatePicker(
             description='Publish-date',
             disabled=False,
@@ -169,10 +176,13 @@ class StatbankClient(StatbankAuth):
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
+        """Set the publishing date on the client.
+        If sending a string, use the format 2000-12-31
+        """
         if isinstance(date, widgets.widget_date.DatePicker):
             self.date = date.value
         elif isinstance(date, str):
-            self.date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M")
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
         self._validate_date()
@@ -182,6 +192,10 @@ class StatbankClient(StatbankAuth):
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
+        """Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
+        about shape of data to be transferred, and metadata about the table
+        itself in Statbankens system, like ID, name and content of codelists.
+        """
         self._validate_params_action(tableids=[tableid])
         self.log.append(f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return StatbankUttrekksBeskrivelse(tabellid=tableid,
@@ -190,6 +204,9 @@ class StatbankClient(StatbankAuth):
     
     
     def get_description_batch(self, tableids: list) -> dict:
+        """Send in a list of tableids: ['00000', '00000'].
+        Returns a list of StatbankUttrekksBeskrivelse,
+        which you may inspect / use as you wish."""
         self._validate_params_action(tableids=tableids)
         descriptions = {}
         for tableid in tableids:
@@ -218,6 +235,10 @@ class StatbankClient(StatbankAuth):
                  dfs: pd.DataFrame, 
                  tableid: str = "00000",
                  raise_errors: bool = False) -> dict:
+        """Gets an "uttrekksbeskrivelse" and validates the data against this.
+        All validation happens locally, so dont be afraid of any data
+        being sent to statbanken using this method.
+        Logic is built in Python, and can probably be expanded upon."""
         self._validate_params_action([tableid])
         validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
                                         loaduser=self.loaduser,
@@ -227,6 +248,8 @@ class StatbankClient(StatbankAuth):
         self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
 
     def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
+        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will validate all in the list, until one returns an error."""
         self._validate_params_action(list(data.keys()))
         validators = {}
         for tableid, dfs in data.items():
@@ -240,8 +263,9 @@ class StatbankClient(StatbankAuth):
     # Transfers
     def transfer(self,
                  dfs: pd.DataFrame, 
-                 tableid: str = "00000",
-                 validation: bool = True) -> StatbankTransfer:
+                 tableid: str = "00000") -> StatbankTransfer:
+        """Transfers your data to Statbanken.
+        Make sure you've set the publish-date correctly before sending."""
         self._validate_params_action([tableid])
         self.log.append(f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return StatbankTransfer(dfs,
@@ -253,11 +277,15 @@ class StatbankClient(StatbankAuth):
                                 fagansvarlig1=self.cc,
                                 fagansvarlig2=self.bcc,
                                 auto_overskriv_data=str(int(self.overwrite)),
-                                auto_godkjenn_data=self.approve,
-                                validation=validation,
+                                auto_godkjenn_data=self.approve
                                )
 
-    def transfer_batch(self, data: dict, validation: bool = True) -> dict:
+    def transfer_batch(self, data: dict) -> dict:
+        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will try to transfer all of them, until it reaches an error.
+        Publishing a table to statbanken many times before the publishing date is ok.
+        But if you do it too fast, in succession, you might encounter an error like
+        "ikke unik skranke" or similar."""
         self._validate_params_action(list(data.keys()))
         transfers = {}
         for tableid, dfs in data.items():
@@ -270,8 +298,7 @@ class StatbankClient(StatbankAuth):
                                                   fagansvarlig1=self.cc,
                                                   fagansvarlig2=self.bcc,
                                                   auto_overskriv_data=str(int(self.overwrite)),
-                                                  auto_godkjenn_data=self.approve,
-                                                  validation=validation,)
+                                                  auto_godkjenn_data=self.approve)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
     

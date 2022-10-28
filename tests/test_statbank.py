@@ -54,14 +54,7 @@ def fake_data():
     )
 
 
-# @pytest.fixture
-# def fake_body():
-#    return "--12345\r\nContent-Disposition:form-data; filename=delfil1.dat\r\nContent-type:text/plain\r\n\r\n01;2022;100\r\n02;2022;2000\r\n04;2022;30000\r\n--12345--\r\n"
-
-
 # Fake responses from APIs
-
-
 def fake_get_response_uttrekksbeskrivelse_successful():
     response = requests.Response()
     response.status_code = 200

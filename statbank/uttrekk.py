@@ -64,9 +64,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         self.tabellid = tabellid
         self.raise_errors = raise_errors
         self.hovedtabell = ""
-        self.deltabelltitler = dict()
-        self.variabler = dict()
-        self.kodelister = dict()
+        self.deltabelltitler = {}
+        self.variabler = {}
+        self.kodelister = {}
         self.prikking = None
         if headers:
             self.headers = headers

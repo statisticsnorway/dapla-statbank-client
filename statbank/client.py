@@ -124,7 +124,6 @@ class StatbankClient(StatbankAuth):
             bcc: str = "",
             overwrite: bool = True,
             approve: str = '2',
-            validation: bool = True,
             ):
         self.loaduser = loaduser
         self.date = date
@@ -133,7 +132,6 @@ class StatbankClient(StatbankAuth):
         self.bcc = bcc
         self.overwrite = overwrite
         self.approve = approve
-        self.validation = validation
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
@@ -237,7 +235,8 @@ class StatbankClient(StatbankAuth):
     # Transfers
     def transfer(self,
                  dfs: pd.DataFrame, 
-                 tableid: str = "00000") -> StatbankTransfer:
+                 tableid: str = "00000",
+                 validation: bool = True) -> StatbankTransfer:
         self._validate_params_action([tableid])
         self.log.append(f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return StatbankTransfer(dfs,
@@ -250,10 +249,10 @@ class StatbankClient(StatbankAuth):
                                 fagansvarlig2=self.bcc,
                                 auto_overskriv_data=str(int(self.overwrite)),
                                 auto_godkjenn_data=self.approve,
-                                validation=self.validation,
+                                validation=validation,
                                )
 
-    def transfer_batch(self, data: dict) -> dict:
+    def transfer_batch(self, data: dict, validation: bool = True) -> dict:
         self._validate_params_action(list(data.keys()))
         transfers = {}
         for tableid, dfs in data.items():
@@ -267,7 +266,7 @@ class StatbankClient(StatbankAuth):
                                                   fagansvarlig2=self.bcc,
                                                   auto_overskriv_data=str(int(self.overwrite)),
                                                   auto_godkjenn_data=self.approve,
-                                                  validation=self.validation,)
+                                                  validation=validation,)
             self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return transfers
     

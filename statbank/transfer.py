@@ -166,6 +166,8 @@ class StatbankTransfer(StatbankAuth):
         else:
             self.headers = headers
         try:
+            if not self.validation:
+                print("Even with no validation, we still need to get the uttrekksbeskrivelse, to get table-name from table-id.")
             self.filbeskrivelse = self._get_filbeskrivelse()
             self.hovedtabell = self.filbeskrivelse.hovedtabell
             # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
@@ -213,10 +215,14 @@ class StatbankTransfer(StatbankAuth):
         otherwise will return a json-string for you to handle like you wish.
         """
         print("Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized")
+        json_content = json.dumps(self.__dict__, default=lambda o: '<not serializable>')
+        json_content = 
+        
+        
         if path:
             print(f'Writing to {path}')
             with open(path, mode="w") as json_file:
-                json_file.write(json.dumps(self.__dict__, default=lambda o: '<not serializable>'))
+                json_file.write()
         else:
             return json.dumps(self.__dict__, default=lambda o: '<not serializable>')
             

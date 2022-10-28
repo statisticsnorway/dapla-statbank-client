@@ -11,6 +11,7 @@ import pandas as pd
 import ipywidgets as widgets
 import os
 import json
+from IPython.display import display
 
 
 class StatbankClient(StatbankAuth):
@@ -92,7 +93,7 @@ class StatbankClient(StatbankAuth):
         Then builds a query from this to get all the data using apidata().
         Use this if you want "all the data" from a table, and this isnt too big.
     apidata(tableid, query):
-        Lets you specify a query, to limit the data in the response. 
+        Lets you specify a query, to limit the data in the response.
         Get this query from the bottom of the statbank-webpage (API-spørring).
 
     read_description_json(path.json):
@@ -161,13 +162,13 @@ class StatbankClient(StatbankAuth):
     # Publishing date handeling
     def date_picker(self) -> None:
         """Displays a datapicker-widget.
-        Assign it to a variable, that you after editing the date, 
+        Assign it to a variable, that you after editing the date,
         pass into set_publish_date()
         date = client.datepicker()
         # Edit date
         client.set_publish_date(date)
         """
-        datepicker =  widgets.DatePicker(
+        datepicker = widgets.DatePicker(
             description='Publish-date',
             disabled=False,
             value=self.date

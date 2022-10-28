@@ -260,7 +260,7 @@ class StatbankTransfer(StatbankAuth):
             raise TypeError("Only programmed for Pandas DataFrames as data at this point.")
 
         # We need the filenames in the body, and they must match up with amount of data-elements we have
-        deltabeller_filnavn = [x['Filnavn'] for x in self.filbeskrivelse.deltabelltitler]
+        deltabeller_filnavn = list(self.filbeskrivelse.deltabelltitler.keys())
         if len(deltabeller_filnavn) != len(self.data):
             raise ValueError("Length mismatch between data-iterable and number of Uttaksbeskrivelse deltabellers filnavn.")
             

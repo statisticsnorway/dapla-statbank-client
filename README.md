@@ -4,7 +4,7 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
-### Usage Transferring
+### Transferring
 ```python
 from statbank import StatbankClient
 stat_client = StatbankClient(loaduser = "LASTEBRUKER")
@@ -13,23 +13,27 @@ stat_client.transfer(df_06399, tabellid="06339")
 ```
 The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.
 
-Validation will happen by default on user-side, in Python, using the "UttrekksBeskrivelse" (filbeskrivelse). Validation can be disabled using the "validation"-parameter on the client.
-Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
-
+### Building datasets
 You can validate the data using the validate-method, without starting a transfer, like this:
+Validation will happen by default on user-side, in Python, using the "UttrekksBeskrivelse" (filbeskrivelse).
+Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
 
 ```python
 stat_client.validate(df_06339, tableid="06339")
 ```
 
-You can also look at the "filbeskrivelse" which is in its own local class: StatbankUttrekksBeskrivelse
+You can also look at the "filbeskrivelse" which is returned in its own local class: StatbankUttrekksBeskrivelse
 ```python
 description_06339 = stat_client.get_description(tableid="06339")
 print(description_06339)
+# Interesting attributes
+description_06339.deltabelltitler
+description_06339.variabler
+description_06339.kodelister
+description_06339.prikking
 ```
 
-
-### Usage get apidata
+### Getting apidata
 
 ```python
 df_06339 = stat_client.apidata_all("06339", include_id=True)
@@ -54,7 +58,12 @@ df_folkemengde = stat_client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v
 df_folkemengde_rotert = stat_client.rotate(df_folkemengde, 'tidskolonne', "verdikolonne")
 ```
 
-### Usage batches
+To import the apidata-functions outside the client (no need for password) do the imports like this:
+```python
+from statbank.apidata import apidata_all, apidata, apidata_rotate
+```
+
+### Batches
 For the non-apidata-methods, there are "twin" batch-methods. 
 For .transfer there is .transfer_batch and so on.
 Alternatively you can just run the methods above multiple times...
@@ -77,3 +86,17 @@ To get many descriptions at once send a list of tableids.
 descriptions = stat_client.validate_batch(["06339","05300"])
 print(descriptions["06339"])
 ```
+
+### Saving and restoring Uttrekksbeskrivelser and Transfers as json
+\*Might still be in development
+
+From `stat_client.transfer()` you will recieve a StatbankTransfer object, from `stat_client.get_description` a StatbankUttrekksBeskrivelse-object. These can be serialized and saved to disk, and later be restored.
+
+```python
+filbesk_06339 = stat_client.get_description("06339")
+filbesk_06339.to_json("path.json")
+# Later the file can be restored with
+filbesk_06339_new = stat_client.read_description_json("path.json")
+```
+
+Some deeper data-structures, like the dataframes in the transfer will not be serialized and stored with the transfer-object in its json.

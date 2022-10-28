@@ -174,8 +174,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     raise KeyError(
                         f"Can't find {kodeliste_id} among deltabells variables."
                     )
-            # if 'SumIALtTotalKode' in kodeliste.keys():
-            # print(kodeliste["SumIALtTotalKode"])
+
             col_unique = (
                 to_validate[deltabell_nr - 1]
                 .iloc[:, int(variabel["kolonnenummer"]) - 1]
@@ -267,7 +266,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                             },
                         }
 
-                        # print(timeformat)
                         if timeformat["nums"]:
                             for num in timeformat["nums"]:
                                 if not all(
@@ -348,7 +346,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         finally:
             if hasattr(self, "headers"):
                 del self.headers
-        # print(filbeskrivelse.text)
+
         if filbeskrivelse.status_code != 200:
             raise ConnectionError(filbeskrivelse, filbeskrivelse.text)
         # Also deletes / overwrites returned Auth-header from get-request

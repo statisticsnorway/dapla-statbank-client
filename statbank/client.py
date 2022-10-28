@@ -119,7 +119,7 @@ class StatbankClient(StatbankAuth):
     def __init__(
         self,
         loaduser="",
-        date: datetime.datetime = datetime.datetime.now() + td(days=1),
+        date: datetime.datetime = datetime.datetime.now() + td(days=1),  # noqa: B008
         shortuser: str = "",
         cc: str = "",
         bcc: str = "",

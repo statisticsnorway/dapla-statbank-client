@@ -134,7 +134,6 @@ class StatbankTransfer(StatbankAuth):
             self.fagansvarlig2 = fagansvarlig2
         else:
             self.fagansvarlig2 = os.environ["JUPYTERHUB_USER"].split("@")[0]
-        # print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
 
         if isinstance(publisering, str):
             self.publisering = publisering
@@ -188,7 +187,6 @@ class StatbankTransfer(StatbankAuth):
             self.body = self._body_from_data()
 
             url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
-            # print(url_load_params, self.headers, self.body)
             self.response = self._make_transfer_request(url_load_params)
             print(self.response)
             if self.response.status_code == 200:
@@ -217,16 +215,12 @@ class StatbankTransfer(StatbankAuth):
         return self.__delay
 
     def _validate_original_parameters(self) -> None:
-        # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
-        #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
 
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
 
-        # print("fag2:", self.fagansvarlig2)
-
         for i, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
-            # print(i, tbf)
+
             if len(tbf) != 3 or not isinstance(tbf, str):
                 raise ValueError(
                     f'Brukeren {tbf} - "trebokstavsforkortelse" - må være tre bokstaver...'
@@ -317,7 +311,7 @@ class StatbankTransfer(StatbankAuth):
                 raise TypeError("Expecting Dataframe or Table at this point in code")
         body += f"\n--{self.boundary}--"
         body = body.replace("\n", "\r\n")  # Statbank likes this?
-        # print(repr(body))
+
         return body
 
     @staticmethod

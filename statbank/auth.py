@@ -77,10 +77,10 @@ class StatbankAuth:
     @staticmethod
     def _build_urls() -> dict:
         base_url = os.environ["STATBANK_BASE_URL"]
-        END_URLS = {
+        end_urls = {
             "loader": "statbank/sos/v1/DataLoader?",
             "uttak": "statbank/sos/v1/uttaksbeskrivelse?",
             "gui": "lastelogg/gui/",
             "api": "lastelogg/api/",
         }
-        return {k: base_url + v for k, v in END_URLS.items()}
+        return {k: base_url + v for k, v in end_urls.items()}

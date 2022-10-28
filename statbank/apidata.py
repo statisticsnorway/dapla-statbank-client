@@ -125,5 +125,5 @@ def apidata_rotate(df, ind="year", val="value"):
     return df.pivot_table(
         index=ind,
         values=val,
-        columns=[iter for iter in df.columns if iter != ind and iter != val],
+        columns=[i for i in df.columns if i != ind and i != val],
     )

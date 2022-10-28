@@ -219,7 +219,7 @@ class StatbankTransfer(StatbankAuth):
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
 
-        for i, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
+        for _, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
 
             if len(tbf) != 3 or not isinstance(tbf, str):
                 raise ValueError(

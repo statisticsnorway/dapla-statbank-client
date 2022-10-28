@@ -117,7 +117,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
         validation_errors = {}
         print("\nvalidating...")
-        ### Number deltabelltitler should match length of data-iterable
+        # Number deltabelltitler should match length of data-iterable
         if len(self.deltabelltitler) > 1:
             if not isinstance(data, list) or not isinstance(data, tuple):
                 raise TypeError(
@@ -140,7 +140,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         if "deltabell_num" not in validation_errors.keys():
             print("Correct number of DataFrames passed.")
 
-        ### Number of columns in data must match beskrivelse
+        # Number of columns in data must match beskrivelse
         for deltabell_num, deltabell in enumerate(self.variabler):
             deltabell_navn = deltabell["deltabell"]
             col_num = len(deltabell["variabler"]) + len(
@@ -158,7 +158,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         else:
             print("Correct number of columns...")
 
-        ### No values outside, warn of missing from codelists on categorical columns
+        # No values outside, warn of missing from codelists on categorical columns
         categorycode_outside = []
         categorycode_missing = []
         for kodeliste in self.kodelister:
@@ -193,9 +193,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         f"Code {kod} missing from column number {variabel['kolonnenummer']}, in deltabell number {deltabell_nr}, ({deltabell['deltabell']})"
                     ]
 
-        ### Check rounding on floats? And correct decimal
+        # Check rounding on floats? And correct decimal
 
-        ### Check formatting on time?
+        # Check formatting on time?
         if categorycode_outside:
             print("Codes in data, outside codelist:")
             print("\n".join(categorycode_outside))

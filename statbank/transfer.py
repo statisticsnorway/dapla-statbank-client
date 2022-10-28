@@ -362,7 +362,7 @@ class StatbankTransfer(StatbankAuth):
                 raise ValueError(response_json)
             if not self.oppdragsnummer.isdigit():
                 raise ValueError(
-                    f"Lasteoppdragsnummer: {oppdragsnummer} er ikke ett rent nummer."
+                    f"Lasteoppdragsnummer: {self.oppdragsnummer} er ikke ett rent nummer."
                 )
 
             publiseringdato = dt.strptime(

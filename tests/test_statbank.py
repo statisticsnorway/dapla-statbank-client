@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import requests
 
-from statbank import *
+from ..statbank.client import StatbankTransfer, StatbankUttrekksBeskrivelse
 
 
 def fake_mail():

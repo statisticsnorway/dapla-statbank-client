@@ -7,9 +7,7 @@ import pandas as pd
 import requests as r
 from pyjstat import pyjstat
 
-##############################
-# Getting data from Statbank #
-##############################
+# Getting data from Statbank
 
 
 def apidata(

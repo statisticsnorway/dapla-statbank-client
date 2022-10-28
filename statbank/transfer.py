@@ -11,7 +11,7 @@ from datetime import timedelta as td
 import json
 import urllib
 import requests as r
-
+import math
 
 class StatbankTransfer(StatbankAuth):
     """
@@ -263,7 +263,12 @@ class StatbankTransfer(StatbankAuth):
         deltabeller_filnavn = [x['Filnavn'] for x in self.filbeskrivelse.deltabelltitler]
         if len(deltabeller_filnavn) != len(self.data):
             raise ValueError("Length mismatch between data-iterable and number of Uttaksbeskrivelse deltabellers filnavn.")
-            
+        
+        def round_up(n, decimals=0):
+            """Python uses "round to even" as default, wanted behaviour is "round up".
+            So let's implement our own."""
+            multiplier = 10 ** decimals
+            return math.ceil(n * multiplier) / multiplier
         # Shorten all floats to specified decimal-length and convert to strings
         for i, deltabell in enumerate(self.filbeskrivelse.variabler):
             deltabell_navn = deltabell['deltabell']
@@ -276,7 +281,8 @@ class StatbankTransfer(StatbankAuth):
                         print(f"Converting column {col_num+1} into a string, with {decimal_num} decimals.")
                         self.data[i].iloc[:,col_num] = (self.data[i].iloc[:,col_num]
                                                     .astype("Float64")
-                                                    .map('{'+f':,.{decimal_num}f'+'}'.format)
+                                                    .apply(round_up, decimals=decimal_num)
+                                                    .astype(str)
                                                     .str.replace("<NA>","")
                                                     .str.replace(".",",")
                                                    )

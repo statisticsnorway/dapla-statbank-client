@@ -51,9 +51,6 @@ class StatbankClient(StatbankAuth):
         "0" = manual approval
         "1" = automatic approval at transfer-time (immediately)
         "2" = JIT (Just In Time), approval right before publishing time
-    validation : bool
-        Set to True, if you want the python-validation code to run user-side.
-        Set to False, if its slow and unnecessary.
     log: list
         Each "action" (method used) on the client is appended to the log.
         Nice to use for appending to your own logging after you are done,
@@ -150,7 +147,6 @@ class StatbankClient(StatbankAuth):
         And sending mail to {self.bcc}
         Overwrite set to {self.overwrite}
         Approve set to {self.approve}
-        Validation set to {self.validation}
         
         Log:
         ''' + "\n\t".join(self.log)

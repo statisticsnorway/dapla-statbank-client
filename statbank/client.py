@@ -126,7 +126,11 @@ class StatbankClient(StatbankAuth):
             validation: bool = True,
             ):
         self.loaduser = loaduser
-        self.date = date
+        if isinstance(date, str):
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        else:
+            self.date = date
+        self._validate_date()
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
@@ -172,6 +176,7 @@ class StatbankClient(StatbankAuth):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M")
         else:
             self.date = date
+        self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         #return self.date
@@ -290,6 +295,13 @@ class StatbankClient(StatbankAuth):
         """
         return apidata_rotate(df, ind, val)
     
+    def _validate_date(self) -> None:
+        if not (isinstance(self.date, datetime.datetime) or isinstance(self.date, datetime.date)):
+            raise TypeError("Date must be a datetime.datetime or datetime.date")
+        # Date should not be on a weekend
+        if self.date.weekday() in [5, 6]:
+            print("Warning, you are publishing during a weekend, this is not common practice.")
+        
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:
         for tableid in tableids:
@@ -301,6 +313,8 @@ class StatbankClient(StatbankAuth):
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):
             raise TypeError('Please pass in "loaduser" as a string.')
+        if isinstance(self.date, str):
+            self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
             self.shortuser = os.environ['JUPYTERHUB_USER'].split("@")[0]
         if not self.cc:

@@ -47,7 +47,7 @@ jobs:
       - name: Run coverage
         run: |
           poetry add pytest
-          pytest --cov statbank/
+          poetry run pytest --cov statbank/
 
       - name: Run pre-commit
         run: |

@@ -47,14 +47,8 @@ jobs:
       - name: Run coverage
         run: |
           poetry add pytest
-          poetry run pytest --cov-fail-under=50 statbank/
+          poetry run pytest --cov statbank/ --cov-fail-under=85
 
-      - name: Run pre-commit
-        run: |
-          poetry install
-          poetry add flake8
-          poetry add pre-commit
-          poetry run pre-commit run --all-files
 
       
 

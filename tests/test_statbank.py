@@ -157,7 +157,7 @@ def test_transfer_no_auth_residuals(transfer_success):
     assert 0 == len(search__dict__(transfer_success, fake_auth(), keep={}))
 
 
-def search__dict__(obj, searchterm: str, path="root", keep={}):
+def search__dict__(obj, searchterm: str, path="root", keep={}):  # noqa: B006
     """Recursive search through all nested objects having a __dict__-attribute"""
     if hasattr(obj, "__dict__"):
         for key, elem in obj.__dict__.items():

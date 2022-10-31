@@ -105,7 +105,7 @@ class StatbankTransfer(StatbankAuth):
         tabellid: str = None,
         loaduser: str = "",
         bruker_trebokstaver: str = "",
-        publisering: dt = dt.now() + td(days=1),
+        publisering: dt = dt.now() + td(days=1),  # noqa: B008
         fagansvarlig1: str = "",
         fagansvarlig2: str = "",
         auto_overskriv_data: str = "1",
@@ -156,7 +156,7 @@ class StatbankTransfer(StatbankAuth):
             else:
                 self.transfer()
 
-    def transfer(self, headers: dict = {}):
+    def transfer(self, headers: dict = {}):  # noqa: B006
         """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):

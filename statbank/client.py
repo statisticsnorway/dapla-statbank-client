@@ -277,7 +277,7 @@ class StatbankClient(StatbankAuth):
                                 fagansvarlig2=self.bcc,
                                 auto_overskriv_data=str(int(self.overwrite)),
                                 auto_godkjenn_data=self.approve
-                               )
+                                )
 
     def transfer_batch(self, data: dict) -> dict:
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
@@ -314,7 +314,7 @@ class StatbankClient(StatbankAuth):
         for k, v in json.loads(json_path_or_str).items():
             setattr(new, k, v)
         return new
-    
+
     # Get apidata
     @staticmethod
     def apidata(id_or_url: str = "",
@@ -328,7 +328,7 @@ class StatbankClient(StatbankAuth):
         Returns: a pandas dataframe with the table
         """
         return apidata(id_or_url=id_or_url, payload=payload, include_id=include_id)
-    
+
     @staticmethod
     def apidata_all(id_or_url: str = "",
                 include_id: bool = False) -> pd.DataFrame:
@@ -338,7 +338,7 @@ class StatbankClient(StatbankAuth):
         Returns: a pandas dataframe with the table
         """
         return apidata_all(id_or_url=id_or_url, include_id=include_id)
-    
+
     @staticmethod
     def apidata_rotate(df, ind='year', val='value'):
         """Rotate the dataframe so that time is used as the index

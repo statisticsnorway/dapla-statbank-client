@@ -4,6 +4,11 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
+
+### Installing from Pypi with Poetry
+poetr
+
+
 ### Usage Transferring
 ```python
 from statbank import StatbankClient

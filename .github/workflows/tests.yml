@@ -48,9 +48,3 @@ jobs:
         run: |
           poetry add pytest
           poetry run pytest --cov statbank/ --cov-fail-under=55
-
-
-      
-
-
-    

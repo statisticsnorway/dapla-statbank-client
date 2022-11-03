@@ -5,6 +5,7 @@ from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
 from .apidata import apidata_all, apidata, apidata_rotate
 
+import pandas as pd
 import datetime
 import os
 from datetime import timedelta as td

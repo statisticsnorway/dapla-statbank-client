@@ -6,8 +6,8 @@ from statbank.uttrekk import StatbankUttrekksBeskrivelse
 import pandas as pd
 import pytest
 import requests
-
-from statbank.client import StatbankTransfer, StatbankUttrekksBeskrivelse
+import os
+from unittest import mock
 
 
 def fake_mail():

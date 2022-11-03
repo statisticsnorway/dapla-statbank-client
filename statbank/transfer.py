@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+from .auth import StatbankAuth
+from .uttrekk import StatbankUttrekksBeskrivelse
+
 import json
 import os
 import urllib

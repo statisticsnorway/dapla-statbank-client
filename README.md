@@ -63,6 +63,7 @@ To import the apidata-functions outside the client (no need for password) do the
 from statbank.apidata import apidata_all, apidata, apidata_rotate
 ```
 
+
 ### Batches
 For the non-apidata-methods, there are "twin" batch-methods. 
 For .transfer there is .transfer_batch and so on.

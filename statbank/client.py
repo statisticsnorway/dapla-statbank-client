@@ -6,11 +6,14 @@ from .transfer import StatbankTransfer
 from .apidata import apidata_all, apidata, apidata_rotate
 
 import datetime
+import os
 from datetime import timedelta as td
-import pandas as pd
+
 import ipywidgets as widgets
+
 import os
 import json
+
 
 class StatbankClient(StatbankAuth):
     """
@@ -35,7 +38,7 @@ class StatbankClient(StatbankAuth):
     loaduser : str
         Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
     date : str
-        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01". 
+        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01".
         Statbanken only allows publishing four months into the future?
     shortuser : str
         The abbrivation of username at ssb. Three letters, like "cfc".
@@ -74,6 +77,10 @@ class StatbankClient(StatbankAuth):
         Logic is built in Python, and can probably be expanded upon.
     transfer(data, tableid):
         Transfers your data to Statbanken.
+        First it gets an uttrekksbeskrivelse, validates against this,
+        then makes the actual transfer. Validation can be set to False,
+        to avoid this checking beforehand.
+
         Make sure you've set the publish-date correctly before sending.
 
     date = date_picker():
@@ -89,7 +96,7 @@ class StatbankClient(StatbankAuth):
         Then builds a query from this to get all the data using apidata().
         Use this if you want "all the data" from a table, and this isnt too big.
     apidata(tableid, query):
-        Lets you specify a query, to limit the data in the response. 
+        Lets you specify a query, to limit the data in the response.
         Get this query from the bottom of the statbank-webpage (API-spørring).
 
     read_description_json(path.json):
@@ -113,7 +120,7 @@ class StatbankClient(StatbankAuth):
 
     __init__():
         Sets attributes, validates them, builds header, initializes log.
-    
+
     """
     
     
@@ -126,6 +133,7 @@ class StatbankClient(StatbankAuth):
             overwrite: bool = True,
             approve: str = '2',
             ):
+
         self.loaduser = loaduser
         if isinstance(date, str):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
@@ -143,7 +151,7 @@ class StatbankClient(StatbankAuth):
 
     # Representation
     def __str__(self):
-        return f'''StatbankClient for user {self.loaduser}
+        return f"""StatbankClient for user {self.loaduser}
         Publishing at {self.date}
         Shortuser {self.shortuser}
         Sending mail to {self.cc}
@@ -151,15 +159,18 @@ class StatbankClient(StatbankAuth):
         Overwrite set to {self.overwrite}
         Approve set to {self.approve}
         Validation set to {self.validation}
-        
+
         Log:
-        ''' + "\n\t".join(self.log)
+        """ + "\n\t".join(
+            self.log
+        )
 
     def __repr__(self):
         return f'StatbankClient(loaduser = "{self.loaduser}")'
-    
+
     # Publishing date handeling
     def date_picker(self) -> None:
+
         """Displays a datapicker-widget.
         Assign it to a variable, that you after editing the date, pass into set_publish_date()
         date = client.datepicker()
@@ -171,8 +182,6 @@ class StatbankClient(StatbankAuth):
             disabled=False,
             value=self.date
         )
-        display(datepicker)
-        self.log.append(f'Datepicker created at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
@@ -187,8 +196,9 @@ class StatbankClient(StatbankAuth):
             self.date = date
         self._validate_date()
         print("Publishing date set to:", self.date)
-        self.log.append(f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        #return self.date
+        self.log.append(
+            f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        )
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
@@ -197,12 +207,13 @@ class StatbankClient(StatbankAuth):
         itself in Statbankens system, like ID, name and content of codelists.
         """
         self._validate_params_action(tableids=[tableid])
-        self.log.append(f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
-        return StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                          loaduser=self.loaduser,
-                                          headers=self.__headers)
-    
-    
+        self.log.append(
+            f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        )
+        return StatbankUttrekksBeskrivelse(
+            tabellid=tableid, loaduser=self.loaduser, headers=self.__headers
+        )
+
     def get_description_batch(self, tableids: list) -> dict:
         """Send in a list of tableids: ['00000', '00000'].
         Returns a list of StatbankUttrekksBeskrivelse,
@@ -210,10 +221,12 @@ class StatbankClient(StatbankAuth):
         self._validate_params_action(tableids=tableids)
         descriptions = {}
         for tableid in tableids:
-            descriptions[tableid] = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        headers=self.__headers)
-            self.log.append(f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+            descriptions[tableid] = StatbankUttrekksBeskrivelse(
+                tabellid=tableid, loaduser=self.loaduser, headers=self.__headers
+            )
+            self.log.append(
+                f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            )
         return descriptions
     
     @staticmethod
@@ -240,27 +253,34 @@ class StatbankClient(StatbankAuth):
         being sent to statbanken using this method.
         Logic is built in Python, and can probably be expanded upon."""
         self._validate_params_action([tableid])
-        validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        raise_errors=raise_errors,
-                                        headers=self.__headers)
+        validator = StatbankUttrekksBeskrivelse(
+            tabellid=tableid,
+            loaduser=self.loaduser,
+            raise_errors=raise_errors,
+            headers=self.__headers,
+        )
         validator.validate_dfs(dfs)
-        self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        self.log.append(
+            f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        )
 
     def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
         Will validate all in the list, until one returns an error."""
         self._validate_params_action(list(data.keys()))
-        validators = {}
         for tableid, dfs in data.items():
-            validator = StatbankUttrekksBeskrivelse(tabellid=tableid,
-                                        loaduser=self.loaduser,
-                                        raise_errors=raise_errors,
-                                        headers=self.__headers)
+            validator = StatbankUttrekksBeskrivelse(
+                tabellid=tableid,
+                loaduser=self.loaduser,
+                raise_errors=raise_errors,
+                headers=self.__headers,
+            )
             validator.validate_dfs(dfs)
-            self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+            self.log.append(
+                f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            )
 
-    # Transfers
+    # Transfer
     def transfer(self,
                  dfs: pd.DataFrame, 
                  tableid: str = "00000") -> StatbankTransfer:
@@ -280,6 +300,7 @@ class StatbankClient(StatbankAuth):
                                 auto_godkjenn_data=self.approve
                                )
 
+
     def transfer_batch(self, data: dict) -> dict:
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
         Will try to transfer all of them, until it reaches an error.
@@ -289,6 +310,7 @@ class StatbankClient(StatbankAuth):
         self._validate_params_action(list(data.keys()))
         transfers = {}
         for tableid, dfs in data.items():
+
             transfers[tableid] = StatbankTransfer(dfs,
                                                   tabellid=tableid,
                                                   loaduser=self.loaduser,
@@ -333,6 +355,7 @@ class StatbankClient(StatbankAuth):
     @staticmethod
     def apidata_all(id_or_url: str = "",
                 include_id: bool = False) -> pd.DataFrame:
+
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
         Returns: a pandas dataframe with the table
@@ -372,12 +395,16 @@ class StatbankClient(StatbankAuth):
         if isinstance(self.date, str):
             self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
-            self.shortuser = os.environ['JUPYTERHUB_USER'].split("@")[0]
+            self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if not self.cc:
             self.cc = self.shortuser
         if not self.bcc:
             self.bcc = self.cc
         if not isinstance(self.overwrite, bool):
-            raise ValueError("(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite")
-        if self.approve not in ['0', '1', '2']:
-            raise ValueError("(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)")
+            raise ValueError(
+                "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"
+            )
+        if self.approve not in ["0", "1", "2"]:
+            raise ValueError(
+                "(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)"
+            )

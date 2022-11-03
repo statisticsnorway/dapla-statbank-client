@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-import pandas as pd
-
-from .auth import StatbankAuth  # Needed for inheritance
-from .uttrekk import StatbankUttrekksBeskrivelse  # Needed for validation
-
+import json
 import os
+import urllib
 from datetime import datetime as dt
 from datetime import timedelta as td
-import json
-import urllib
+
+import pandas as pd
 import requests as r
 import math
 
@@ -18,7 +15,7 @@ class StatbankTransfer(StatbankAuth):
     Class for talking with the "transfer-API", which actually recieves the data from the user.
     Create an instance of a StatbankUttrekksbeskrivelse.
     ...
-    
+
     Attributes
     ----------
     data : pd.DataFrame or list of pd.DataFrames
@@ -33,7 +30,7 @@ class StatbankTransfer(StatbankAuth):
     tbf : str
         The abbrivation of username at ssb. Three letters, like "cfc"
     publisering : str
-        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01". 
+        Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01".
         Statbanken only allows publishing four months into the future?
     fagansvarlig1 : str
         First person to be notified by email of transfer. Defaults to the same as "tbf"
@@ -50,10 +47,10 @@ class StatbankTransfer(StatbankAuth):
         Set to True, if you want the python-validation code to run user-side.
         Set to False, if its slow and unnecessary.
     boundary : str
-        String that defines the splitting of the body in the transfer-post-request. 
+        String that defines the splitting of the body in the transfer-post-request.
         Kept here for uniform choice through the class.
     urls : dict
-        Urls for transfer, observing the result etc., 
+        Urls for transfer, observing the result etc.,
         built from environment variables in Dapla-environment
     headers: dict
         Might be deleted without warning.
@@ -62,7 +59,7 @@ class StatbankTransfer(StatbankAuth):
         Transfer creates its own StatbankUttrekksBeskrivelse, to validate its data against.
         And also guarantee that "tabellid" and "hovedtabell" are set correctly.
     params: dict
-        This dict will be built into the url in the post request. 
+        This dict will be built into the url in the post request.
         Keep it in this nice shape for later introspection.
     data_iter: bool
         A record of if the data was sent into the class as an iterable or not.
@@ -73,9 +70,9 @@ class StatbankTransfer(StatbankAuth):
         The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
     response: requests.response
         The resulting response from the transfer-request. Headers might be deleted without warning.
-    delay: 
+    delay:
         Not editable, please dont try. Indicates if the Transfer has been sent yet, or not.
-    
+
     Methods
     -------
     transfer():
@@ -98,20 +95,22 @@ class StatbankTransfer(StatbankAuth):
         Handles the response back from the transfer post-request
     __init__():
     """
-    def __init__(self,
-                data: pd.DataFrame,
-                    tabellid: str = None,
-                    loaduser: str = "",
-                    bruker_trebokstaver: str = "", 
-                    publisering: dt = dt.now() + td(days=1),
-                    fagansvarlig1: str = "",
-                    fagansvarlig2: str = "",
-                    auto_overskriv_data: str = '1',
-                    auto_godkjenn_data: str = '2',
-                    validation: bool = True,
-                    delay: bool = False,
-                    headers = None
-                    ):
+
+    def __init__(
+        self,
+        data: pd.DataFrame,
+        tabellid: str = None,
+        loaduser: str = "",
+        bruker_trebokstaver: str = "",
+        publisering: dt = dt.now() + td(days=1),  # noqa: B008
+        fagansvarlig1: str = "",
+        fagansvarlig2: str = "",
+        auto_overskriv_data: str = "1",
+        auto_godkjenn_data: str = "2",
+        validation: bool = True,
+        delay: bool = False,
+        headers=None,
+    ):
         self.data = data
         self.tabellid = tabellid
         if loaduser:
@@ -119,34 +118,33 @@ class StatbankTransfer(StatbankAuth):
         else:
             raise ValueError("You must set loaduser as a parameter")
         self.hovedtabell = None
-        
+
         if bruker_trebokstaver:
             self.tbf = bruker_trebokstaver
         else:
-            self.tbf = os.environ['JUPYTERHUB_USER'].split("@")[0]
+            self.tbf = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if fagansvarlig1:
             self.fagansvarlig1 = fagansvarlig1
-        else: 
-            self.fagansvarlig1 = os.environ['JUPYTERHUB_USER'].split("@")[0]
+        else:
+            self.fagansvarlig1 = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if fagansvarlig2:
             self.fagansvarlig2 = fagansvarlig2
-        else: 
-            self.fagansvarlig2 = os.environ['JUPYTERHUB_USER'].split("@")[0]
-        #print("tbf:", self.tbf, "fag1:", self.fagansvarlig1, "fag2:", self.fagansvarlig2)
-        
+        else:
+            self.fagansvarlig2 = os.environ["JUPYTERHUB_USER"].split("@")[0]
+
         if isinstance(publisering, str):
             self.publisering = publisering
         else:
             self.publisering = publisering.strftime("%Y-%m-%d")
-        
+
         self.overskriv_data = auto_overskriv_data
         self.godkjenn_data = auto_godkjenn_data
         self.validation = validation
         self.__delay = delay
-        
-        
+
         self.boundary = "12345"
-        if validation: self._validate_original_parameters()
+        if validation:
+            self._validate_original_parameters()
 
         self.urls = self._build_urls()
         if not self.delay:
@@ -155,12 +153,13 @@ class StatbankTransfer(StatbankAuth):
             else:
                 self.transfer()
 
-
-    def transfer(self, headers: dict = {}):
+    def transfer(self, headers: dict = {}):  # noqa: B006
         """The headers-parameter is for a future implemention of a possible BatchTransfer, dont use it please."""
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):
-            raise ValueError(f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. ")
+            raise ValueError(
+                f"Already transferred?\n{self.urls['gui'] + self.oppdragsnummer} \nRemake the StatbankTransfer-object if intentional. "
+            )
         if not headers:
             self.headers = self._build_headers()
         else:
@@ -173,39 +172,43 @@ class StatbankTransfer(StatbankAuth):
             # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
             self.tabellid = self.filbeskrivelse.tabellid
             self.params = self._build_params()
-            
+
             self.data_type, self.data_iter = self._identify_data_type()
-            if self.data_type != pd.DataFrame: 
-                raise ValueError(f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}")
-            if self.validation: 
-                self.validation_errors = self.filbeskrivelse.validate_dfs(self.data, raise_errors = True)
-                
+            if self.data_type != pd.DataFrame:
+                raise ValueError(
+                    f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}"
+                )
+            if self.validation:
+                self.validation_errors = self.filbeskrivelse.validate_dfs(
+                    self.data, raise_errors=True
+                )
+
             self.body = self._body_from_data()
-            
-            url_load_params = self.urls['loader'] + urllib.parse.urlencode(self.params)
-            #print(url_load_params, self.headers, self.body)
+
+            url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
             self.response = self._make_transfer_request(url_load_params)
             print(self.response)
             if self.response.status_code == 200:
-                del self.response.request.headers  # Auth is stored here also, for some reason
+                del (
+                    self.response.request.headers
+                )  # Auth is stored here also, for some reason
         finally:
             del self.headers  # Cleaning up auth-storing
             self.__delay = False
         self._handle_response()
 
-
     def __str__(self):
         if self.delay:
-            return f'Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda.'
+            return f"Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda."
         else:
-            return f'''Overføring for statbanktabell {self.tabellid}. 
+            return f"""Overføring for statbanktabell {self.tabellid}.
     loaduser: {self.loaduser}.
     Publisering: {self.publisering}.
-    Lastelogg: {self.urls['gui'] + self.oppdragsnummer}'''
-        
+    Lastelogg: {self.urls['gui'] + self.oppdragsnummer}"""
+
     def __repr__(self):
         return f'StatbankTransfer([data], tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
-    
+
     @property
     def delay(self):
         return self.__delay
@@ -233,25 +236,28 @@ class StatbankTransfer(StatbankAuth):
         
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
-        
-        #print("fag2:", self.fagansvarlig2)
-        
-        for i, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
-            #print(i, tbf)
+
+        for _, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
+
             if len(tbf) != 3 or not isinstance(tbf, str):
-                raise ValueError(f'Brukeren {tbf} - "trebokstavsforkortelse" - må være tre bokstaver...')
+                raise ValueError(
+                    f'Brukeren {tbf} - "trebokstavsforkortelse" - må være tre bokstaver...'
+                )
 
         if not isinstance(self.publisering, dt):
             if not self._valid_date_form(self.publisering):
                 raise ValueError("Skriv inn datoformen for publisering som 1900-01-01")
 
-        if self.overskriv_data not in ['0', '1']:
-            raise ValueError("(Strengverdi) Sett overskriv_data til enten '0' = ingen overskriving (dubletter gir feil), eller  '1' = automatisk overskriving")
+        if self.overskriv_data not in ["0", "1"]:
+            raise ValueError(
+                "(Strengverdi) Sett overskriv_data til enten '0' = ingen overskriving (dubletter gir feil), eller  '1' = automatisk overskriving"
+            )
 
-        if self.godkjenn_data not in ['0', '1', '2']:
-            raise ValueError("(Strengverdi) Sett godkjenn_data til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)")
+        if self.godkjenn_data not in ["0", "1", "2"]:
+            raise ValueError(
+                "(Strengverdi) Sett godkjenn_data til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)"
+            )
 
-    
     def _identify_data_type(self) -> tuple[type, bool]:
         if isinstance(self.data, pd.DataFrame):
             data_type = pd.DataFrame
@@ -259,13 +265,14 @@ class StatbankTransfer(StatbankAuth):
         elif isinstance(self.data, list) or isinstance(self.data, tuple):
             for i, d in enumerate(self.data):
                 if not isinstance(d, pd.DataFrame):
-                      raise TypeError(f"Element {i} in data, is not a DataFrame :(")
+                    raise TypeError(f"Element {i} in data, is not a DataFrame :(")
             data_type = pd.DataFrame
             data_iter = True
         else:
-            raise TypeError("Expecting data to be either a single DataFrame, or a list/tuple of DataFrames.")
+            raise TypeError(
+                "Expecting data to be either a single DataFrame, or a list/tuple of DataFrames."
+            )
         return data_type, data_iter
-
 
     def _body_from_data(self) -> str:
         # If data is single pd.DataFrame, put into iterable, so code under works
@@ -273,7 +280,9 @@ class StatbankTransfer(StatbankAuth):
             self.data = [self.data]
 
         if not self.data_type == pd.DataFrame:
-            raise TypeError("Only programmed for Pandas DataFrames as data at this point.")
+            raise TypeError(
+                "Only programmed for Pandas DataFrames as data at this point."
+            )
 
         # We need the filenames in the body, and they must match up with amount of data-elements we have
         deltabeller_filnavn = list(self.filbeskrivelse.deltabelltitler.keys())
@@ -287,11 +296,11 @@ class StatbankTransfer(StatbankAuth):
             return math.ceil(n * multiplier) / multiplier
         # Shorten all floats to specified decimal-length and convert to strings
         for i, deltabell in enumerate(self.filbeskrivelse.variabler):
-            deltabell_navn = deltabell['deltabell']
-            for variabel in deltabell['variabler']:
-                if 'Antall_lagrede_desimaler' in variabel.keys():
-                    col_num = int(variabel["kolonnenummer"])-1
-                    decimal_num = int(variabel['Antall_lagrede_desimaler'])
+            deltabell["deltabell"]
+            for variabel in deltabell["variabler"]:
+                if "Antall_lagrede_desimaler" in variabel.keys():
+                    col_num = int(variabel["kolonnenummer"]) - 1
+                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     # Nan-handling?
                     if "float" in str(self.data[i].dtypes[col_num]).lower():  # If column is passed in as a float, we can handle it
                         print(f"Converting column {col_num+1} into a string, with {decimal_num} decimals.")
@@ -312,63 +321,82 @@ class StatbankTransfer(StatbankAuth):
             body += f"\nContent-Disposition:form-data; filename={filename}"
             body += "\nContent-type:text/plain\n\n"
             if self.data_type == pd.DataFrame:
-                body += elem.to_csv(sep=";", index = False, header = False)
+                body += elem.to_csv(sep=";", index=False, header=False)
             else:
                 raise TypeError("Expecting Dataframe or Table at this point in code")
         body += f"\n--{self.boundary}--"
         body = body.replace("\n", "\r\n")  # Statbank likes this?
-        #print(repr(body))
-        return body
 
+        return body
 
     @staticmethod
     def _valid_date_form(date) -> bool:
-        if (date[:4] + date[5:7] + date[8:]).isdigit() and (date[4]+date[7]) == "--":
+        if (date[:4] + date[5:7] + date[8:]).isdigit() and (date[4] + date[7]) == "--":
             return True
         return False
 
     def _build_params(self) -> dict:
         if isinstance(self.publisering, dt):
-            self.publisering = self.publisering.strftime('%Y-%m-%d')
+            self.publisering = self.publisering.strftime("%Y-%m-%d")
         return {
-            'initialier' : self.tbf,
-            'hovedtabell': self.hovedtabell,
-            'publiseringsdato': self.publisering,
-            'fagansvarlig1': self.fagansvarlig1,
-            'fagansvarlig2': self.fagansvarlig2,
-            'auto_overskriv_data': self.overskriv_data,
-            'auto_godkjenn_data': self.godkjenn_data,
+            "initialier": self.tbf,
+            "hovedtabell": self.hovedtabell,
+            "publiseringsdato": self.publisering,
+            "fagansvarlig1": self.fagansvarlig1,
+            "fagansvarlig2": self.fagansvarlig2,
+            "auto_overskriv_data": self.overskriv_data,
+            "auto_godkjenn_data": self.godkjenn_data,
         }
 
-    
-
     def _get_filbeskrivelse(self) -> StatbankUttrekksBeskrivelse:
-        return StatbankUttrekksBeskrivelse(tabellid=self.tabellid, 
-                                           loaduser=self.loaduser, 
-                                           headers=self.headers)
-    
-    def _make_transfer_request(self, url_params: str,):
-        return r.post(url_params, headers = self.headers, data = self.body)
-    
+        return StatbankUttrekksBeskrivelse(
+            tabellid=self.tabellid, loaduser=self.loaduser, headers=self.headers
+        )
+
+    def _make_transfer_request(
+        self,
+        url_params: str,
+    ):
+        return r.post(url_params, headers=self.headers, data=self.body)
+
     def _handle_response(self) -> None:
         response_json = json.loads(self.response.text)
         if self.response.status_code == 200:
-            response_message = response_json['TotalResult']['Message']
+            response_message = response_json["TotalResult"]["Message"]
             try:
-                self.oppdragsnummer = response_message.split("lasteoppdragsnummer:")[1].split(" =")[0]
-            except:
+                self.oppdragsnummer = response_message.split("lasteoppdragsnummer:")[
+                    1
+                ].split(" =")[0]
+            except Exception:
                 raise ValueError(response_json)
             if not self.oppdragsnummer.isdigit():
-                raise ValueError(f"Lasteoppdragsnummer: {oppdragsnummer} er ikke ett rent nummer.")
+                raise ValueError(
+                    f"Lasteoppdragsnummer: {self.oppdragsnummer} er ikke ett rent nummer."
+                )
 
-            publiseringdato = dt.strptime(response_message.split("Publiseringsdato '")[1].split("',")[0], "%d.%m.%Y %H:%M:%S")
-            publiseringstime = int(response_message.split("Publiseringstid '")[1].split(":")[0])
-            publiseringsminutt = int(response_message.split("Publiseringstid '")[1].split(":")[1].split("'")[0])
-            publisering = publiseringdato + td(0, (publiseringstime*3600+publiseringsminutt*60))
+            publiseringdato = dt.strptime(
+                response_message.split("Publiseringsdato '")[1].split("',")[0],
+                "%d.%m.%Y %H:%M:%S",
+            )
+            publiseringstime = int(
+                response_message.split("Publiseringstid '")[1].split(":")[0]
+            )
+            publiseringsminutt = int(
+                response_message.split("Publiseringstid '")[1]
+                .split(":")[1]
+                .split("'")[0]
+            )
+            publisering = publiseringdato + td(
+                0, (publiseringstime * 3600 + publiseringsminutt * 60)
+            )
             print(f"Publisering satt til: {publisering.strftime('%Y-%m-%d %H:%M')}")
-            print(f"Følg med på lasteloggen (tar noen minutter): {self.urls['gui'] + self.oppdragsnummer}")
+            print(
+                f"Følg med på lasteloggen (tar noen minutter): {self.urls['gui'] + self.oppdragsnummer}"
+            )
             print(f"Og evt APIen?: {self.urls['api'] + self.oppdragsnummer}")
             self.response_json = response_json
         else:
-            print("Take a closer look at StatbankTransfer.response.text for more info about connection issues.")
+            print(
+                "Take a closer look at StatbankTransfer.response.text for more info about connection issues."
+            )
             raise ConnectionError(response_json)

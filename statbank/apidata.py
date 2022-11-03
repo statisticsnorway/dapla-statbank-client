@@ -116,11 +116,11 @@ def apidata_query_all(id_or_url: str = "") -> dict:
 def apidata_rotate(df, ind="year", val="value"):
     """Rotate the dataframe so that years are used as the index
     Args:
-    df (pandas.dataframe): dataframe (from <get_from_ssb> function
-    ind (str): string of column name denoting time
-    ind (str): string of column name denoting values
+        df (pandas.dataframe): dataframe (from <get_from_ssb> function
+        ind (str): string of column name denoting time
+        val (str): string of column name denoting values
     Returns:
-    dataframe: pivotted dataframe
+        dataframe: pivoted dataframe
     """
     return df.pivot_table(
         index=ind,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import os
-from unittest import mock
+from statbank.transfer import StatbankTransfer
+from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
 import pandas as pd
 import pytest

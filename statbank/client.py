@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
+from .auth import StatbankAuth
+from .uttrekk import StatbankUttrekksBeskrivelse
+from .transfer import StatbankTransfer
+from .apidata import apidata_all, apidata, apidata_rotate
+
 import datetime
 import os
 from datetime import timedelta as td
 
 import ipywidgets as widgets
-import pandas as pd
 
-from .apidata import apidata, apidata_all
-from .auth import StatbankAuth
-from .transfer import StatbankTransfer
-from .uttrekk import StatbankUttrekksBeskrivelse
+import os
+import json
 
 
 class StatbankClient(StatbankAuth):
@@ -78,6 +80,7 @@ class StatbankClient(StatbankAuth):
         First it gets an uttrekksbeskrivelse, validates against this,
         then makes the actual transfer. Validation can be set to False,
         to avoid this checking beforehand.
+
         Make sure you've set the publish-date correctly before sending.
 
     date = date_picker():
@@ -96,7 +99,11 @@ class StatbankClient(StatbankAuth):
         Lets you specify a query, to limit the data in the response.
         Get this query from the bottom of the statbank-webpage (API-spørring).
 
-
+    read_description_json(path.json):
+        Tries to restore a StatbankUttrekksBeskrivelse-object from a stored, serialized json.
+    read_transfer_json(path.json):
+        Tries to restore a StatbankTransfer-object from a stored, serialized json.
+        
     get_description_batch(tableids):
         Send in a list of tableids: ['00000', '00000'].
         Returns a list of StatbankUttrekksBeskrivelse,
@@ -115,26 +122,29 @@ class StatbankClient(StatbankAuth):
         Sets attributes, validates them, builds header, initializes log.
 
     """
+    
+    
+    def __init__(self,
+            loaduser = "",
+            date: datetime.datetime = datetime.datetime.now() + td(days=1),
+            shortuser: str = "",
+            cc: str = "",
+            bcc: str = "",
+            overwrite: bool = True,
+            approve: str = '2',
+            ):
 
-    def __init__(
-        self,
-        loaduser="",
-        date: datetime.datetime = datetime.datetime.now() + td(days=1),  # noqa: B008
-        shortuser: str = "",
-        cc: str = "",
-        bcc: str = "",
-        overwrite: bool = True,
-        approve: str = "2",
-        validation: bool = True,
-    ):
         self.loaduser = loaduser
-        self.date = date
+        if isinstance(date, str):
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        else:
+            self.date = date
+        self._validate_date()
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
         self.approve = approve
-        self.validation = validation
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
@@ -160,22 +170,31 @@ class StatbankClient(StatbankAuth):
 
     # Publishing date handeling
     def date_picker(self) -> None:
-        datepicker = widgets.DatePicker(
-            description="Publish-date", disabled=False, value=self.date
-        )
-        display(datepicker)  # noqa: F821
-        self.log.append(
-            f'Datepicker created at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+
+        """Displays a datapicker-widget.
+        Assign it to a variable, that you after editing the date, pass into set_publish_date()
+        date = client.datepicker()
+        # Edit date
+        client.set_publish_date(date)
+        """
+        datepicker =  widgets.DatePicker(
+            description='Publish-date',
+            disabled=False,
+            value=self.date
         )
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
+        """Set the publishing date on the client.
+        If sending a string, use the format 2000-12-31
+        """
         if isinstance(date, widgets.widget_date.DatePicker):
             self.date = date.value
         elif isinstance(date, str):
-            self.date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M")
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
+        self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(
             f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
@@ -183,6 +202,10 @@ class StatbankClient(StatbankAuth):
 
     # Descriptions
     def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
+        """Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
+        about shape of data to be transferred, and metadata about the table
+        itself in Statbankens system, like ID, name and content of codelists.
+        """
         self._validate_params_action(tableids=[tableid])
         self.log.append(
             f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
@@ -192,6 +215,9 @@ class StatbankClient(StatbankAuth):
         )
 
     def get_description_batch(self, tableids: list) -> dict:
+        """Send in a list of tableids: ['00000', '00000'].
+        Returns a list of StatbankUttrekksBeskrivelse,
+        which you may inspect / use as you wish."""
         self._validate_params_action(tableids=tableids)
         descriptions = {}
         for tableid in tableids:
@@ -202,11 +228,30 @@ class StatbankClient(StatbankAuth):
                 f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
             )
         return descriptions
-
+    
+    @staticmethod
+    def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankUttrekksBeskrivelse-object.
+        """
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
+    
     # Validation
-    def validate(
-        self, dfs: pd.DataFrame, tableid: str = "00000", raise_errors: bool = False
-    ) -> dict:
+    def validate(self, 
+                 dfs: pd.DataFrame, 
+                 tableid: str = "00000",
+                 raise_errors: bool = False) -> dict:
+        """Gets an "uttrekksbeskrivelse" and validates the data against this.
+        All validation happens locally, so dont be afraid of any data
+        being sent to statbanken using this method.
+        Logic is built in Python, and can probably be expanded upon."""
         self._validate_params_action([tableid])
         validator = StatbankUttrekksBeskrivelse(
             tabellid=tableid,
@@ -220,6 +265,8 @@ class StatbankClient(StatbankAuth):
         )
 
     def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
+        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will validate all in the list, until one returns an error."""
         self._validate_params_action(list(data.keys()))
         for tableid, dfs in data.items():
             validator = StatbankUttrekksBeskrivelse(
@@ -233,74 +280,107 @@ class StatbankClient(StatbankAuth):
                 f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
             )
 
-    # Transfers
-    def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:
+    # Transfer
+    def transfer(self,
+                 dfs: pd.DataFrame, 
+                 tableid: str = "00000") -> StatbankTransfer:
+        """Transfers your data to Statbanken.
+        Make sure you've set the publish-date correctly before sending."""
         self._validate_params_action([tableid])
-        self.log.append(
-            f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
-        )
-        return StatbankTransfer(
-            dfs,
-            tabellid=tableid,
-            loaduser=self.loaduser,
-            headers=self.__headers,
-            bruker_trebokstaver=self.shortuser,
-            publisering=self.date,
-            fagansvarlig1=self.cc,
-            fagansvarlig2=self.bcc,
-            auto_overskriv_data=str(int(self.overwrite)),
-            auto_godkjenn_data=self.approve,
-            validation=self.validation,
-        )
+        self.log.append(f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        return StatbankTransfer(dfs,
+                                tabellid=tableid,
+                                loaduser=self.loaduser,
+                                headers=self.__headers,
+                                bruker_trebokstaver=self.shortuser,
+                                publisering=self.date,
+                                fagansvarlig1=self.cc,
+                                fagansvarlig2=self.bcc,
+                                auto_overskriv_data=str(int(self.overwrite)),
+                                auto_godkjenn_data=self.approve
+                               )
+
 
     def transfer_batch(self, data: dict) -> dict:
+        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
+        Will try to transfer all of them, until it reaches an error.
+        Publishing a table to statbanken many times before the publishing date is ok.
+        But if you do it too fast, in succession, you might encounter an error like
+        "ikke unik skranke" or similar."""
         self._validate_params_action(list(data.keys()))
         transfers = {}
         for tableid, dfs in data.items():
-            transfers[tableid] = StatbankTransfer(
-                dfs,
-                tabellid=tableid,
-                loaduser=self.loaduser,
-                headers=self.__headers,
-                bruker_trebokstaver=self.shortuser,
-                publisering=self.date,
-                fagansvarlig1=self.cc,
-                fagansvarlig2=self.bcc,
-                auto_overskriv_data=str(int(self.overwrite)),
-                auto_godkjenn_data=self.approve,
-                validation=self.validation,
-            )
-            self.log.append(
-                f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
-            )
-        return transfers
 
+            transfers[tableid] = StatbankTransfer(dfs,
+                                                  tabellid=tableid,
+                                                  loaduser=self.loaduser,
+                                                  headers=self.__headers,
+                                                  bruker_trebokstaver=self.shortuser,
+                                                  publisering=self.date,
+                                                  fagansvarlig1=self.cc,
+                                                  fagansvarlig2=self.bcc,
+                                                  auto_overskriv_data=str(int(self.overwrite)),
+                                                  auto_godkjenn_data=self.approve)
+            self.log.append(f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        return transfers
+    
+    @staticmethod
+    def read_transfer_json(json_path_or_str: str) -> StatbankTransfer:
+        """Checks if provided string exists on disk, if it does, tries to load it as json.
+        Otherwise expects you to provide a json-string that works for json.loads.
+        Inserts first layer in json as attributes under a blank StatbankTransfer-object.
+        """
+        if os.path.exists(json_path_or_str):
+            with open(json_path_or_str, mode="r") as json_file:
+                json_path_or_str = json_file.read()
+        new = StatbankTransfer.__new__(StatbankTransfer)
+        for k,v in json.loads(json_path_or_str).items():
+            setattr(new, k, v)
+        return new
+    
+    
     # Get apidata
     @staticmethod
-    def apidata(
-        id_or_url: str = "",
-        payload: dict = {  # noqa: B006
-            "query": [],
-            "response": {"format": "json-stat2"},
-        },
-        include_id: bool = False,
-    ) -> pd.DataFrame:
+    def apidata(id_or_url: str = "",
+                payload: dict = {"query": [], "response": {"format": "json-stat2"}},
+                include_id: bool = False) -> pd.DataFrame:
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
         Parameter2: Payload, the query to include with the request.
         Parameter3: If you want to include "codes" in the dataframe, set this to True
         Returns: a pandas dataframe with the table
         """
-        return apidata(id_or_url, payload, include_id)
-
+        return apidata(id_or_url=id_or_url, payload=payload, include_id=include_id)
+    
     @staticmethod
-    def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
+    def apidata_all(id_or_url: str = "",
+                include_id: bool = False) -> pd.DataFrame:
+
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
         Returns: a pandas dataframe with the table
         """
-        return apidata_all(id_or_url, include_id)
-
+        return apidata_all(id_or_url=id_or_url, include_id=include_id)
+    
+    @staticmethod
+    def apidata_rotate(df, ind='year', val='value'):
+        """Rotate the dataframe so that time is used as the index
+        Args:
+            df (pandas.dataframe): dataframe (from <get_from_ssb> function
+            ind (str): string of column name denoting time
+            val (str): string of column name denoting values
+        Returns:
+            dataframe: pivoted dataframe
+        """
+        return apidata_rotate(df, ind, val)
+    
+    def _validate_date(self) -> None:
+        if not (isinstance(self.date, datetime.datetime) or isinstance(self.date, datetime.date)):
+            raise TypeError("Date must be a datetime.datetime or datetime.date")
+        # Date should not be on a weekend
+        if self.date.weekday() in [5, 6]:
+            print("Warning, you are publishing during a weekend, this is not common practice.")
+        
     # Class meta-validation
     def _validate_params_action(self, tableids: list) -> None:
         for tableid in tableids:
@@ -312,6 +392,8 @@ class StatbankClient(StatbankAuth):
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):
             raise TypeError('Please pass in "loaduser" as a string.')
+        if isinstance(self.date, str):
+            self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
             self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if not self.cc:

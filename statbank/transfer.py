@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import math
 import os
 import urllib
 from datetime import datetime as dt
@@ -8,7 +9,6 @@ from datetime import timedelta as td
 
 import pandas as pd
 import requests as r
-import math
 
 from .auth import StatbankAuth
 from .uttrekk import StatbankUttrekksBeskrivelse
@@ -170,7 +170,9 @@ class StatbankTransfer(StatbankAuth):
             self.headers = headers
         try:
             if not self.validation:
-                print("Even with no validation, we still need to get the uttrekksbeskrivelse, to get table-name from table-id.")
+                print(
+                    "Even with no validation, we still need to get the uttrekksbeskrivelse, to get table-name from table-id."
+                )
             self.filbeskrivelse = self._get_filbeskrivelse()
             self.hovedtabell = self.filbeskrivelse.hovedtabell
             # Reset taballid, as sending in "hovedkode" as tabellid is possible up to this point
@@ -216,27 +218,26 @@ class StatbankTransfer(StatbankAuth):
     @property
     def delay(self):
         return self.__delay
-    
+
     def to_json(self, path: str = "") -> dict:
-        """If path is provided, tries to write to it, 
+        """If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
         """
-        print("Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized")
-        json_content = json.dumps(self.__dict__, default=lambda o: '<not serializable>')        
+        print(
+            "Warning, some nested, deeper data-structures like dataframes and other class-objects will not be serialized"
+        )
+        json_content = json.dumps(self.__dict__, default=lambda o: "<not serializable>")
         # If path provided write to it, otherwise return the string-content
         if path:
-            print(f'Writing to {path}')
+            print(f"Writing to {path}")
             with open(path, mode="w") as json_file:
                 json_file.write(json_content)
         else:
             return json.dumps(json_content)
-            
+
     def _validate_original_parameters(self) -> None:
-        # if not self.tabellid.isdigit() or len(self.tabellid) != 5:
-        #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
-        
         # Date should not be on the weekend?
-        
+
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
 
@@ -277,6 +278,13 @@ class StatbankTransfer(StatbankAuth):
             )
         return data_type, data_iter
 
+    @staticmethod
+    def _round_up(n, decimals=0):
+        """Python uses "round to even" as default, wanted behaviour is "round up".
+        So let's implement our own."""
+        multiplier = 10**decimals
+        return math.ceil(n * multiplier) / multiplier
+
     def _body_from_data(self) -> str:
         # If data is single pd.DataFrame, put into iterable, so code under works
         if not self.data_iter:
@@ -290,13 +298,10 @@ class StatbankTransfer(StatbankAuth):
         # We need the filenames in the body, and they must match up with amount of data-elements we have
         deltabeller_filnavn = list(self.filbeskrivelse.deltabelltitler.keys())
         if len(deltabeller_filnavn) != len(self.data):
-            raise ValueError("Length mismatch between data-iterable and number of Uttaksbeskrivelse deltabellers filnavn.")
-        
-        def round_up(n, decimals=0):
-            """Python uses "round to even" as default, wanted behaviour is "round up".
-            So let's implement our own."""
-            multiplier = 10 ** decimals
-            return math.ceil(n * multiplier) / multiplier
+            raise ValueError(
+                "Length mismatch between data-iterable and number of Uttaksbeskrivelse deltabellers filnavn."
+            )
+
         # Shorten all floats to specified decimal-length and convert to strings
         for i, deltabell in enumerate(self.filbeskrivelse.variabler):
             deltabell["deltabell"]
@@ -305,17 +310,22 @@ class StatbankTransfer(StatbankAuth):
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     # Nan-handling?
-                    if "float" in str(self.data[i].dtypes[col_num]).lower():  # If column is passed in as a float, we can handle it
-                        print(f"Converting column {col_num+1} into a string, with {decimal_num} decimals.")
-                        self.data[i].iloc[:,col_num] = (self.data[i].iloc[:,col_num]
-                                                    .astype("Float64")
-                                                    .apply(round_up, decimals=decimal_num)
-                                                    .astype(str)
-                                                    .str.replace("<NA>","")
-                                                    .str.replace(".",",")
-                                                   )
+                    if (
+                        "float" in str(self.data[i].dtypes[col_num]).lower()
+                    ):  # If column is passed in as a float, we can handle it
+                        print(
+                            f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
+                        )
+                        self.data[i].iloc[:, col_num] = (
+                            self.data[i]
+                            .iloc[:, col_num]
+                            .astype("Float64")
+                            .apply(self._round_up, decimals=decimal_num)
+                            .astype(str)
+                            .str.replace("<NA>", "")
+                            .str.replace(".", ",")
+                        )
 
-        
         # Data should be a iterable of pd.DataFrames at this point, reshape to body
         for elem, filename in zip(self.data, deltabeller_filnavn):
             # Replace all nans in data

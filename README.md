@@ -6,8 +6,17 @@ Gets data from public and internal statbank.
 
 
 ### Installing from Pypi with Poetry
-...
 
+```bash
+poetry init
+poetry add dapla-statbank-client
+poetry run python -m ipykernel install --user --name test_statbank
+```
+Lag ett notebook med kernelen vi nettopp laget, prøv denne koden:
+```python
+from statbank import StatbankClient
+client = StatbankClient(loaduser="LAST360")  # Bytt gjerne ut med egen lastebruker, og skriv inn passord
+```
 
 ### Usage Transferring
 
@@ -75,7 +84,7 @@ from statbank.apidata import apidata_all, apidata, apidata_rotate
 
 
 ### Batches
-For the non-apidata-methods, there are "twin" batch-methods. 
+For the non-apidata-methods, there are "twin" batch-methods.
 For .transfer there is .transfer_batch and so on.
 Alternatively you can just run the methods above multiple times...
 

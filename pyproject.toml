@@ -16,6 +16,26 @@ pyjstat = "^2.3.0"
 ipywidgets = "^8.0.2"
 IPython = "^8.5.0"
 
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^2.20.0"
+autoflake = "^1.7.6"
+pep8-naming = "^0.13.2"
+pyupgrade = "^3.1.0"
+isort = "^5.10.1"
+flake8-logging-format = "^0.8.1"
+flake8-eradicate = "^1.4.0"
+flake8-debugger = "^4.1.2"
+flake8-comprehensions = "^3.10.0"
+flake8-builtins = "^2.0.0"
+flake8-bugbear = "^22.9.23"
+flake8 = "^5.0.4"
+bump2version = "^1.0.1"
+pytest-cov = "^4.0.0"
+mypy = "^0.982"
+
+
+
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

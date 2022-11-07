@@ -4,7 +4,13 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
-### Transferring
+
+### Installing from Pypi with Poetry
+...
+
+
+### Usage Transferring
+
 ```python
 from statbank import StatbankClient
 stat_client = StatbankClient(loaduser = "LASTEBRUKER")
@@ -60,6 +66,7 @@ df_folkemengde = stat_client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v
 ```python
 df_folkemengde_rotert = stat_client.rotate(df_folkemengde, 'tidskolonne', "verdikolonne")
 ```
+
 
 To import the apidata-functions outside the client (no need for password) do the imports like this:
 ```python

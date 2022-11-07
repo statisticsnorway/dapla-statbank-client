@@ -6,11 +6,11 @@ from .transfer import StatbankTransfer
 from .apidata import apidata_all, apidata, apidata_rotate
 
 import datetime
-from datetime import timedelta as td
-import pandas as pd
-import ipywidgets as widgets
 import os
 import json
+from datetime import timedelta as td
+import ipywidgets as widgets
+import pandas as pd
 from IPython.display import display
 
 
@@ -145,7 +145,7 @@ class StatbankClient(StatbankAuth):
 
     # Representation
     def __str__(self):
-        return f'''StatbankClient for user {self.loaduser}
+        return f"""StatbankClient for user {self.loaduser}
         Publishing at {self.date}
         Shortuser {self.shortuser}
         Sending mail to {self.cc}
@@ -154,7 +154,9 @@ class StatbankClient(StatbankAuth):
         Approve set to {self.approve}
 
         Log:
-        ''' + "\n\t".join(self.log)
+        """ + "\n\t".join(
+            self.log
+        )
 
     def __repr__(self):
         return f'StatbankClient(loaduser = "{self.loaduser}")'
@@ -173,8 +175,6 @@ class StatbankClient(StatbankAuth):
             disabled=False,
             value=self.date
         )
-        display(datepicker)
-        self.log.append(f'Datepicker created at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
@@ -245,7 +245,9 @@ class StatbankClient(StatbankAuth):
                                                 raise_errors=raise_errors,
                                                 headers=self.__headers)
         validator.validate_dfs(dfs)
-        self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+        self.log.append(
+            f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+        )
 
     def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
@@ -257,7 +259,9 @@ class StatbankClient(StatbankAuth):
                                                     raise_errors=raise_errors,
                                                     headers=self.__headers)
             validator.validate_dfs(dfs)
-            self.log.append(f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}')
+            self.log.append(
+                f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            )
 
     # Transfers
     def transfer(self,
@@ -372,7 +376,7 @@ class StatbankClient(StatbankAuth):
         if isinstance(self.date, str):
             self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
-            self.shortuser = os.environ['JUPYTERHUB_USER'].split("@")[0]
+            self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if not self.cc:
             self.cc = self.shortuser
         if not self.bcc:

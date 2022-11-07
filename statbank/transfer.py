@@ -10,6 +10,9 @@ import pandas as pd
 import requests as r
 import math
 
+from .auth import StatbankAuth
+
+
 class StatbankTransfer(StatbankAuth):
     """
     Class for talking with the "transfer-API", which actually recieves the data from the user.

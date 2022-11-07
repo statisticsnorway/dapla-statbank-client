@@ -11,6 +11,7 @@ import requests as r
 import math
 
 from .auth import StatbankAuth
+from .uttrekk import StatbankUttrekksBeskrivelse
 
 
 class StatbankTransfer(StatbankAuth):

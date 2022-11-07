@@ -6,7 +6,7 @@ Gets data from public and internal statbank.
 
 
 ### Installing from Pypi with Poetry
-
+In the dapla-jupyterlab-terminal
 ```bash
 poetry init
 poetry add dapla-statbank-client

@@ -213,7 +213,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         validation_errors = self._check_prikking(to_validate, validation_errors)
 
         validation_errors = self._check_rounding(to_validate, validation_errors)
-        
+
         if raise_errors and validation_errors:
             raise Exception(list(validation_errors.values()))
         print()
@@ -236,7 +236,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         print(
                             f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
                         )
-                        #self.data[i].iloc[:, col_num] = (
+                        # self.data[i].iloc[:, col_num] = (
                         #    self.data[i]
                         #    .iloc[:, col_num]
                         #    .astype("Float64")
@@ -244,8 +244,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         #    .astype(str)
                         #    .str.replace("<NA>", "")
                         #    .str.replace(".", ",")
-                        #)
-    
+                        # )
+
     def _check_time_formats(self, to_validate, validation_errors: dict) -> dict:
         # Time-columns should follow time format
         for i, deltabell in enumerate(self.variabler):

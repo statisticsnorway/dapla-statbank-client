@@ -172,6 +172,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         # No values outside, warn of missing from codelists on categorical columns
         categorycode_outside = []
         categorycode_missing = []
+
         for navn, kodeliste  in self.kodelister.items():
             kodeliste_id = navn
             for deltabell in self.variabler:

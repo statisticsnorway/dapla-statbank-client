@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-from .auth import StatbankAuth
-from .uttrekk import StatbankUttrekksBeskrivelse
-
 import json
 import os
 import urllib
@@ -12,6 +9,10 @@ from datetime import timedelta as td
 import pandas as pd
 import requests as r
 import math
+
+from .auth import StatbankAuth
+from .uttrekk import StatbankUttrekksBeskrivelse
+
 
 class StatbankTransfer(StatbankAuth):
     """
@@ -235,7 +236,6 @@ class StatbankTransfer(StatbankAuth):
         #    raise ValueError("Tabellid må være tall, som en streng, og 5 tegn lang.")
         
         # Date should not be on the weekend?
-        
         
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")

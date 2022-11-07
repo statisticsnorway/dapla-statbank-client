@@ -4,7 +4,13 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
-### Transferring
+
+### Installing from Pypi with Poetry
+...
+
+
+### Usage Transferring
+
 ```python
 from statbank import StatbankClient
 stat_client = StatbankClient(loaduser = "LASTEBRUKER")
@@ -13,25 +19,28 @@ stat_client.transfer(df_06399, tabellid="06339")
 ```
 The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.
 
+
 ### Building datasets
-You can validate the data using the validate-method, without starting a transfer, like this:
-Validation will happen by default on user-side, in Python, using the "UttrekksBeskrivelse" (filbeskrivelse).
-Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
-
-```python
-stat_client.validate(df_06339, tableid="06339")
-```
-
-You can also look at the "filbeskrivelse" which is returned in its own local class: StatbankUttrekksBeskrivelse
+You can look at the "filbeskrivelse" which is returned from `stat_client.get_description()` in its own local class: StatbankUttrekksBeskrivelse
 ```python
 description_06339 = stat_client.get_description(tableid="06339")
 print(description_06339)
+```
+This should have all the information you are used to reading out from the old "Filbeskrivelse". And describes how you should construct your data.
+```python
 # Interesting attributes
 description_06339.deltabelltitler
 description_06339.variabler
 description_06339.kodelister
 description_06339.prikking
 ```
+After starting to construct your data, you can validate it against the Uttrekksbeskrivelse, using the validate-method, without starting a transfer, like this:
+```python
+stat_client.validate(df_06339, tableid="06339")
+```
+Validation will happen by default on user-side, in Python.
+Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
+
 
 ### Getting apidata
 
@@ -57,6 +66,7 @@ df_folkemengde = stat_client.apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v
 ```python
 df_folkemengde_rotert = stat_client.rotate(df_folkemengde, 'tidskolonne', "verdikolonne")
 ```
+
 
 To import the apidata-functions outside the client (no need for password) do the imports like this:
 ```python
@@ -103,6 +113,7 @@ filbesk_06339_new = stat_client.read_description_json("path.json")
 Some deeper data-structures, like the dataframes in the transfer will not be serialized and stored with the transfer-object in its json.
 
 ---
+
 ### Version history
 
 - 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.

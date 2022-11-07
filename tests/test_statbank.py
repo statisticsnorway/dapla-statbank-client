@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
+import os
+from unittest import mock
+
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
 import pandas as pd
 import pytest
 import requests
-import os
-from unittest import mock
 
 
 def fake_mail():
@@ -155,7 +156,6 @@ def test_transfer_no_auth_residuals(transfer_success):
     # Make sure none of these are in the object for security
     assert 0 == len(search__dict__(transfer_success, fake_pass(), keep={}))
     assert 0 == len(search__dict__(transfer_success, fake_auth(), keep={}))
-
 
 def search__dict__(obj, searchterm: str, path="root", keep={}):  # noqa: B006
     """Recursive search through all nested objects having a __dict__-attribute"""

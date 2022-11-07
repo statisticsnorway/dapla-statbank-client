@@ -212,12 +212,40 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         # Check "prikking"-columns for codes outside the codelist, allow empty values ""
         validation_errors = self._check_prikking(to_validate, validation_errors)
 
+        validation_errors = self._check_rounding(to_validate, validation_errors)
+        
         if raise_errors and validation_errors:
             raise Exception(list(validation_errors.values()))
         print()
 
         return validation_errors
 
+    def _check_rounding(self, to_validate, validation_errors: dict) -> dict:
+        """Checks that all decimal numbers are converted to strings,
+        with specific length after the decimal-seperator "," """
+        for i, deltabell in enumerate(self.variabler):
+            deltabell["deltabell"]
+            for variabel in deltabell["variabler"]:
+                if "Antall_lagrede_desimaler" in variabel.keys():
+                    col_num = int(variabel["kolonnenummer"]) - 1
+                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
+                    # Nan-handling?
+                    if (
+                        "float" in str(self.data[i].dtypes[col_num]).lower()
+                    ):  # If column is passed in as a float, we can handle it
+                        print(
+                            f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
+                        )
+                        #self.data[i].iloc[:, col_num] = (
+                        #    self.data[i]
+                        #    .iloc[:, col_num]
+                        #    .astype("Float64")
+                        #    .apply(self._round_up, decimals=decimal_num)
+                        #    .astype(str)
+                        #    .str.replace("<NA>", "")
+                        #    .str.replace(".", ",")
+                        #)
+    
     def _check_time_formats(self, to_validate, validation_errors: dict) -> dict:
         # Time-columns should follow time format
         for i, deltabell in enumerate(self.variabler):

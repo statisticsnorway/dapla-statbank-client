@@ -10,8 +10,6 @@ import pandas as pd
 import pytest
 import requests
 
-from statbank.client import StatbankTransfer, StatbankUttrekksBeskrivelse
-
 
 def fake_mail():
     return "ssb@ssb.no"
@@ -158,7 +156,6 @@ def test_transfer_no_auth_residuals(transfer_success):
     # Make sure none of these are in the object for security
     assert 0 == len(search__dict__(transfer_success, fake_pass(), keep={}))
     assert 0 == len(search__dict__(transfer_success, fake_auth(), keep={}))
-
 
 def search__dict__(obj, searchterm: str, path="root", keep={}):  # noqa: B006
     """Recursive search through all nested objects having a __dict__-attribute"""

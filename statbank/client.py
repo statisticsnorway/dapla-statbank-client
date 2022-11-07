@@ -5,13 +5,13 @@ from .uttrekk import StatbankUttrekksBeskrivelse
 from .transfer import StatbankTransfer
 from .apidata import apidata_all, apidata, apidata_rotate
 
-import datetime
 import os
 import json
 from datetime import timedelta as td
 import ipywidgets as widgets
 import pandas as pd
 from IPython.display import display
+
 
 
 class StatbankClient(StatbankAuth):
@@ -78,6 +78,10 @@ class StatbankClient(StatbankAuth):
         Logic is built in Python, and can probably be expanded upon.
     transfer(data, tableid):
         Transfers your data to Statbanken.
+        First it gets an uttrekksbeskrivelse, validates against this,
+        then makes the actual transfer. Validation can be set to False,
+        to avoid this checking beforehand.
+
         Make sure you've set the publish-date correctly before sending.
 
     date = date_picker():
@@ -163,6 +167,7 @@ class StatbankClient(StatbankAuth):
 
     # Publishing date handeling
     def date_picker(self) -> None:
+
         """Displays a datapicker-widget.
         Assign it to a variable, that you after editing the date,
         pass into set_publish_date()
@@ -263,7 +268,7 @@ class StatbankClient(StatbankAuth):
                 f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
             )
 
-    # Transfers
+    # Transfer
     def transfer(self,
                  dfs: pd.DataFrame, 
                  tableid: str = "00000") -> StatbankTransfer:
@@ -283,6 +288,7 @@ class StatbankClient(StatbankAuth):
                                 auto_godkjenn_data=self.approve
                                 )
 
+
     def transfer_batch(self, data: dict) -> dict:
         """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
         Will try to transfer all of them, until it reaches an error.
@@ -292,6 +298,7 @@ class StatbankClient(StatbankAuth):
         self._validate_params_action(list(data.keys()))
         transfers = {}
         for tableid, dfs in data.items():
+
             transfers[tableid] = StatbankTransfer(dfs,
                                                   tabellid=tableid,
                                                   loaduser=self.loaduser,
@@ -336,6 +343,7 @@ class StatbankClient(StatbankAuth):
     @staticmethod
     def apidata_all(id_or_url: str = "",
                 include_id: bool = False) -> pd.DataFrame:
+
         """
         Parameter1 - id_or_url: The id of the STATBANK-table to
         get the total query for, or supply the total url, if the table is "internal".

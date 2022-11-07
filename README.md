@@ -4,18 +4,19 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
-
 ### Installing from Pypi with Poetry
-In the dapla-jupyterlab-terminal
+In the dapla-jupyterlab-terminal:
 ```bash
 poetry init
+```
+(If the project-folder doesnt already have a pyproject.toml with poetry-info)
+```bash
 poetry add dapla-statbank-client
 poetry run python -m ipykernel install --user --name test_statbank
 ```
-Lag ett notebook med kernelen vi nettopp laget, prøv denne koden:
+Make a notebook with the kernel you just made, try this code to verify the package is available:
 ```python
 from statbank import StatbankClient
-client = StatbankClient(loaduser="LAST360")  # Bytt gjerne ut med egen lastebruker, og skriv inn passord
 ```
 
 ### Usage Transferring
@@ -23,6 +24,7 @@ client = StatbankClient(loaduser="LAST360")  # Bytt gjerne ut med egen lastebruk
 ```python
 from statbank import StatbankClient
 stat_client = StatbankClient(loaduser = "LASTEBRUKER")
+# Change LASTEBRUKER to your load-statbank-username
 # Fill out password
 stat_client.transfer(df_06399, tabellid="06339")
 ```
@@ -124,5 +126,5 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
-
+- 0.0.2 Starting alpha, fine-tuning release to Pypi on github-release
 - 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.

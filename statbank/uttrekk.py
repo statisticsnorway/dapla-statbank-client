@@ -4,6 +4,7 @@ import json
 
 import pandas as pd
 import requests as r
+import copy
 from requests.exceptions import ConnectionError
 
 from .auth import StatbankAuth
@@ -127,6 +128,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             + f'{self.tabellid}", loaduser="{self.loaduser}")'
         )
 
+    def transferdata_template(self) -> dict:
+        template = {k:f'df{i}' for i,(k,v) in enumerate(self.deltabelltitler.items())}
+        print("{")
+        for k,v in template.items():
+            print(f'"{k}" : {v},')
+        print("}")
+        return template
+    
     def to_json(self, path: str = "") -> dict:
         """If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
@@ -138,34 +147,65 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         else:
             return json.dumps(self.__dict__)
 
-    def validate_dfs(self, data, raise_errors: bool = False) -> dict:
+    def validate(self, data, raise_errors: bool = False) -> dict:
         if not raise_errors:
             raise_errors = self.raise_errors
-
+            
         validation_errors = {}
         print("\nvalidating...")
-        # Number deltabelltitler should match length of data-iterable
-        if len(self.deltabelltitler) > 1:
-            if not isinstance(data, list) or not isinstance(data, tuple):
-                raise TypeError(
-                    f"""Please put multiple pandas Dataframes in a list as your data.
-                These are your 'deltabeller', and the number & order of DataFrames should match this:
-                {self.deltabelltitler}
-                """
-                )
-        elif len(self.deltabelltitler) == 1:
-            if not isinstance(data, pd.DataFrame):
-                raise TypeError("Only one deltabell, expecting one Dataframe as data.")
-            # For the code below to access the data correctly
-            to_validate = [data]
-        else:
-            validation_errors["deltabell_num"] = ValueError(
-                """Deltabeller is shorter than one, weird.
-                Make sure the uttaksbeskrivelse is ok."""
-            )
-        if "deltabell_num" not in validation_errors.keys():
-            print("Correct number of DataFrames passed.")
 
+        self._validate_number_dataframes(data)
+        validation_errors = self._validate_number_columns(data, validation_errors)
+        categorycode_outside, categorycode_missing = self._category_code_usage(
+            data
+        )
+        validation_errors = self._check_for_floats(data, validation_errors)
+        validation_errors = self._check_rounding(data, validation_errors)
+        validation_errors = self._check_time_formats(data, validation_errors)
+        validation_errors = self._check_prikking(data, validation_errors)
+ 
+        if raise_errors and validation_errors:
+            raise Exception(list(validation_errors.values()))
+        return validation_errors
+
+    def round_data(self, data, validation_errors: dict) -> dict:
+        """Checks that all decimal numbers are converted to strings,
+        with specific length after the decimal-seperator "," """
+        data_copy = copy.deepcopy(data)
+        for i, deltabell in enumerate(self.variabler):
+            for variabel in deltabell["variabler"]:
+                if "Antall_lagrede_desimaler" in variabel.keys():
+                    col_num = int(variabel["kolonnenummer"]) - 1
+                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
+                    # Nan-handling?
+                    if (
+                        "float" in str(data_copy[deltabell["deltabell"]][i].dtypes[col_num]).lower()
+                    ):  # If column is passed in as a float, we can handle it
+                        print(
+                            f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
+                        )
+                        data_copy[deltabell["deltabell"]][i].iloc[:, col_num] = (
+                            data_copy[deltabell["deltabell"]][i]
+                            .iloc[:, col_num]
+                            .astype("Float64")
+                            .apply(self._round_up, decimals=decimal_num)
+                            .astype(str)
+                            .str.replace("<NA>", "")
+                            .str.replace(".", ",")
+                        )
+        return data_copy
+
+    def _validate_number_dataframes(self, data: dict):
+        # Number deltabelltitler should match length of data-iterable
+        if len(self.deltabelltitler.values()) != len(data.values()):
+            raise TypeError(f"""Please put one or more pandas Dataframes in a dict as your data.
+                Keys in the dict should be "deltabell-navn": {self.deltabelltitler.keys()}
+                """)
+        for k, df in data.items():
+            if not isinstance(df, pd.DataFrame):
+                raise TypeError(f"{k}'s value is not a dataframe")
+    
+    def _validate_number_columns(self, data, validation_errors: dict) -> dict:
         # Number of columns in data must match beskrivelse
         for deltabell_num, deltabell in enumerate(self.variabler):
             deltabell_navn = deltabell["deltabell"]
@@ -174,7 +214,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             )  # Mangler prikke-kolonner?
             if "null_prikk_missing" in deltabell.keys():
                 col_num += len(deltabell["null_prikk_missing"])
-            if len(to_validate[deltabell_num].columns) != col_num:
+            if len(data[deltabell_navn].columns) != col_num:
                 validation_errors[f"col_count_data_{deltabell_num}"] = ValueError(
                     f"""Expecting {col_num} columns in datapart
                         {deltabell_num}: {deltabell_navn}"""
@@ -184,76 +224,32 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                 break
         else:
             print("Correct number of columns...")
-
-        categorycode_outside, categorycode_missing = self._category_code_usage(
-            to_validate
-        )
-        # No values outside, warn of missing from codelists on categorical columns
-
-        if categorycode_outside:
-            print("Codes in data, outside codelist:")
-            print("\n".join(categorycode_outside))
-            print()
-            validation_errors["categorycode_outside"] = ValueError(categorycode_outside)
-        else:
-            print("No codes in categorical columns outside codelist.")
-        if categorycode_missing:
-            print(
-                """Category codes missing from data (This is ok,
-                just make sure missing data is intentional):"""
-            )
-            print("\n".join(categorycode_missing))
-            print()
-        else:
-            print("No codes missing from categorical columns.")
-
-        validation_errors = self._check_time_formats(to_validate, validation_errors)
-
-        # Check "prikking"-columns for codes outside the codelist, allow empty values ""
-        validation_errors = self._check_prikking(to_validate, validation_errors)
-
-        validation_errors = self._check_rounding(to_validate, validation_errors)
-
-        if raise_errors and validation_errors:
-            raise Exception(list(validation_errors.values()))
-        print()
-
         return validation_errors
-
-    def _check_rounding(self, to_validate, validation_errors: dict) -> dict:
-        """Checks that all decimal numbers are converted to strings,
-        with specific length after the decimal-seperator "," """
-        for i, deltabell in enumerate(self.variabler):
-            deltabell["deltabell"]
-            for variabel in deltabell["variabler"]:
-                if "Antall_lagrede_desimaler" in variabel.keys():
-                    col_num = int(variabel["kolonnenummer"]) - 1
-                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
-                    # Nan-handling?
-                    if (
-                        "float" in str(self.data[i].dtypes[col_num]).lower()
-                    ):  # If column is passed in as a float, we can handle it
-                        print(
-                            f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
-                        )
-                        # self.data[i].iloc[:, col_num] = (
-                        #    self.data[i]
-                        #    .iloc[:, col_num]
-                        #    .astype("Float64")
-                        #    .apply(self._round_up, decimals=decimal_num)
-                        #    .astype(str)
-                        #    .str.replace("<NA>", "")
-                        #    .str.replace(".", ",")
-                        # )
-
-    def _check_time_formats(self, to_validate, validation_errors: dict) -> dict:
+    
+    def _check_for_floats(self, data: dict, validation_errors: dict) -> dict:
+        for name, df in data.items():
+            for col in df.columns:
+                if 'float' in str(df[col].dtype).lower():
+                    error_text = f"""{col} in {name} is a float.
+                    Consider running the dict of dataframes through:
+                    data = uttrekksbeskrivelse.round_data(data), 
+                    this rounds UP like SAS and Excel, not to-even as 
+                    Python does otherwise."""
+                    validation_errors[f"contains_floats_{name}_{col}"] = error_text
+                    print(error_text)
+        return validation_errors
+    
+    def _check_time_formats(self, data, validation_errors: dict) -> dict:
         # Time-columns should follow time format
         for i, deltabell in enumerate(self.variabler):
             for variabel in deltabell["variabler"]:
                 if "Kodeliste_text" in variabel.keys():
                     if "format = " in variabel["Kodeliste_text"]:
                         validation_errors = self._check_time_columns(
-                            i, variabel, to_validate, validation_errors
+                            deltabell["deltabell"], 
+                            variabel, 
+                            data, 
+                            validation_errors
                         )
         for k in validation_errors.keys():
             if "time_non_digit_column" in k:
@@ -272,14 +268,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         return validation_errors
 
     def _check_time_columns(
-        self, i, variabel, to_validate, validation_errors: dict
+        self, deltabell_name, variabel, data, validation_errors: dict
     ) -> dict:
         col_num = int(variabel["kolonnenummer"]) - 1
         timeformat_raw = (
             variabel["Kodeliste_text"].split(" format = ")[1].strip().replace("Å", "å")
         )
         # Check length of coloumn matches length of format
-        if not 1 == len(to_validate[i].iloc[:, col_num].astype(str).str.len().unique()):
+        if not 1 == len(data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()):
             validation_errors[f"time_single_length_format_{col_num}"] = ValueError(
                 f"""Column number {col_num} does not have
                 a single time format
@@ -287,7 +283,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             )
         if (
             not len(timeformat_raw)
-            == to_validate[i].iloc[:, col_num].astype(str).str.len().unique()[0]
+            == data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()[0]
         ):
             validation_errors[f"time_formatlength_{col_num}"] = ValueError(
                 f"""Column number {col_num} does not match
@@ -302,19 +298,19 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
         if timeformat["nums"]:
             for num in timeformat["nums"]:
-                if not all(to_validate[i].iloc[:, col_num].str[num].str.isdigit()):
+                if not all(data[deltabell_name].iloc[:, col_num].str[num].str.isdigit()):
                     validation_errors[f"time_non_digit_column{col_num}"] = ValueError(
                         f"Character number {num} in column {col_num} in DataFrame {i}, does not match format {timeformat_raw}"
                     )
         if timeformat["chars"]:
             for i, char in timeformat["chars"].items():
-                if not all(to_validate[i].iloc[:, col_num].str[i] == char):
+                if not all(data[deltabell_name].iloc[:, col_num].str[i] == char):
                     validation_errors[f"character_match_column{col_num}"] = ValueError(
                         f"Should be capitalized character? Character {char}, character number {num} in column {col_num} in DataFrame {i}, does not match format {timeformat_raw}"
                     )
         if timeformat["specials"]:
             for i, special in timeformat["specials"].items():
-                if not all(to_validate[i].iloc[:, col_num].str[i] == special):
+                if not all(data[deltabell_name].iloc[:, col_num].str[i] == special):
                     validation_errors[
                         f"special_character_match_column{col_num}"
                     ] = ValueError(
@@ -322,7 +318,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     )
         return validation_errors
 
-    def _check_prikking(self, to_validate, validation_errors: dict) -> dict:
+    def _check_prikking(self, data, validation_errors: dict) -> dict:
         if self.prikking:
             prikk_codes = [code["Kode"] for code in self.prikking]
             prikk_codes += [""]
@@ -330,7 +326,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                 if "null_prikk_missing" in deltabell.keys():
                     for prikk_col in deltabell["null_prikk_missing"]:
                         col_num = int(prikk_col["kolonnenummer"]) - 1
-                        if not all(to_validate[i].iloc[:, col_num].isin(prikk_codes)):
+                        if not all(data[i].iloc[:, col_num].isin(prikk_codes)):
                             validation_errors[
                                 f"prikke_character_match_column{col_num}"
                             ] = ValueError(
@@ -344,15 +340,16 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
         return validation_errors
 
-    def _category_code_usage(self, to_validate) -> tuple:
+    def _category_code_usage(self, data) -> tuple:
         categorycode_outside = []
         categorycode_missing = []
 
         for navn, kodeliste in self.kodelister.items():
             kodeliste_id = navn
             for deltabell in self.variabler:
+                deltabell_name = deltabell["deltabell"]
                 for i, deltabell2 in enumerate(self.deltabelltitler):
-                    if deltabell2 == deltabell["deltabell"]:
+                    if deltabell2 == deltabell_name:
                         deltabell_nr = i + 1
                 for variabel in deltabell["variabler"]:
                     if variabel["Kodeliste_id"] == kodeliste_id:
@@ -362,7 +359,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         f"Can't find {kodeliste_id} among deltabell variables."
                     )
             col_unique = (
-                to_validate[deltabell_nr - 1]
+                data[deltabell_name]
                 .iloc[:, int(variabel["kolonnenummer"]) - 1]
                 .unique()
             )
@@ -382,8 +379,53 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         {variabel['kolonnenummer']}, in deltabell number
                         {deltabell_nr}, ({deltabell['deltabell']})"""
                     ]
+        # No values outside, warn of missing from codelists on categorical columns
+        if categorycode_outside:
+            print("Codes in data, outside codelist:")
+            print("\n".join(categorycode_outside))
+            print()
+            validation_errors["categorycode_outside"] = ValueError(categorycode_outside)
+        else:
+            print("No codes in categorical columns outside codelist.")
+        if categorycode_missing:
+            print(
+                """Category codes missing from data (This is ok,
+                just make sure missing data is intentional):"""
+            )
+            print("\n".join(categorycode_missing))
+            print()
+        else:
+            print("No codes missing from categorical columns.")
         return categorycode_outside, categorycode_missing
-
+    
+    def _check_rounding(self, data: dict, validation_errors: dict) -> dict:
+        """If a column should have a set number of decimals,
+        check if its a string, and how many places are used after the 
+        decimal seperator: ","
+        """
+        for i, deltabell in enumerate(self.variabler):
+            deltabell_name = deltabell["deltabell"]
+            for variabel in deltabell["variabler"]:
+                if "Antall_lagrede_desimaler" in variabel.keys():
+                    col_num = int(variabel["kolonnenummer"]) - 1
+                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
+                    if any(decimal_num != (data[deltabell_name]
+                                           .iloc[:,col_num]
+                                           .str.split(",").str[-1]
+                                           .str.len())):
+                        error_text = f'''Check that string column that should be rounded,
+                        has correct number of decimals. And consider converting from a 
+                        non-rounded float to a string with this method:
+                        data = uttrekksbeskrivelse.round_data(data), 
+                    this rounds UP like SAS and Excel, not to-even as 
+                    Python does otherwise.
+                        '''
+                        
+                        validation_errors[f"rounding_error_{deltabell_name}_{col_num}"] = ValueError(error_text)
+                        print(error_text)
+        return validation_errors
+        
+        
     def _get_uttrekksbeskrivelse(self) -> dict:
         filbeskrivelse_url = self.url + "tableId=" + self.tabellid
         try:

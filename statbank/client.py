@@ -257,7 +257,7 @@ class StatbankClient(StatbankAuth):
             raise_errors=raise_errors,
             headers=self.__headers,
         )
-        validator.validate_dfs(dfs)
+        validator.validate(dfs)
         self.log.append(
             f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
@@ -273,7 +273,7 @@ class StatbankClient(StatbankAuth):
                 raise_errors=raise_errors,
                 headers=self.__headers,
             )
-            validator.validate_dfs(dfs)
+            validator.validate(dfs)
             self.log.append(
                 f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
             )

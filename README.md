@@ -19,18 +19,6 @@ Make a notebook with the kernel you just made, try this code to verify the packa
 from statbank import StatbankClient
 ```
 
-### Usage Transferring
-
-```python
-from statbank import StatbankClient
-stat_client = StatbankClient(loaduser = "LASTEBRUKER")
-# Change LASTEBRUKER to your load-statbank-username
-# Fill out password
-stat_client.transfer(df_06399, tabellid="06339")
-```
-The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.
-
-
 ### Building datasets
 You can look at the "filbeskrivelse" which is returned from `stat_client.get_description()` in its own local class: StatbankUttrekksBeskrivelse
 ```python
@@ -51,6 +39,24 @@ stat_client.validate(df_06339, tableid="06339")
 ```
 Validation will happen by default on user-side, in Python.
 Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
+
+Get the "template" for the dictionary that needs to be transferred like this:
+```python
+description_06339.transferdata_template()
+```
+This both returns the dict, and prints it, depending on what you want to do with it. Use it to insert your own DataFrames into, and send it to .transfer()
+
+
+### Usage Transferring
+
+```python
+from statbank import StatbankClient
+stat_client = StatbankClient(loaduser = "LASTEBRUKER")
+# Change LASTEBRUKER to your load-statbank-username
+# Fill out password
+stat_client.transfer({"deltabellfilnavn.dat" : df_06399}, "06339")
+```
+The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.
 
 
 ### Getting apidata

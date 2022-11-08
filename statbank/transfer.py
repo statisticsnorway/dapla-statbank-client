@@ -11,13 +11,12 @@ import pandas as pd
 import requests as r
 
 from .auth import StatbankAuth
-from .uttrekk import StatbankUttrekksBeskrivelse
 
 
 class StatbankTransfer(StatbankAuth):
     """
-    Class for talking with the "transfer-API", which actually recieves the data from the user.
-    Create an instance of a StatbankUttrekksbeskrivelse.
+    Class for talking with the "transfer-API",
+    which actually recieves the data from the user and sends it to Statbank.
     ...
 
     Attributes
@@ -28,9 +27,9 @@ class StatbankTransfer(StatbankAuth):
     loaduser : str
         Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
     tabellid: str
-        The numeric id of the table, matching the one found on the website. Should be a 5-length string.
-    hovedtabell : str
-        The "name" of the table, not known to most, so this is set by the Uttakksbeskrivelse, when we get it
+        The numeric id of the table, matching the one found on the website.
+        Should be a 5-length numeric-string. Alternativley it should be
+        possible to send in the "hovedtabellnavn" instead of the tabellid.
     tbf : str
         The abbrivation of username at ssb. Three letters, like "cfc"
     publisering : str
@@ -59,17 +58,9 @@ class StatbankTransfer(StatbankAuth):
     headers: dict
         Might be deleted without warning.
         Temporarily holds the Authentication for the request.
-    filbeskrivelse: StatbankUttrekksBeskrivelse
-        Transfer creates its own StatbankUttrekksBeskrivelse, to validate its data against.
-        And also guarantee that "tabellid" and "hovedtabell" are set correctly.
     params: dict
         This dict will be built into the url in the post request.
         Keep it in this nice shape for later introspection.
-    data_iter: bool
-        A record of if the data was sent into the class as an iterable or not.
-    data_type: type
-        The datatype of the data sent in, either sent standalone, or in the sent list.
-        Currently the class prefers pd.DataFrame.
     body: str
         The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
     response: requests.response
@@ -87,12 +78,10 @@ class StatbankTransfer(StatbankAuth):
         INHERITED - See description under StatbankAuth
     _build_headers():
         INHERITED - See description under StatbankAuth
-    _get_filbeskrivelse():
-        Initializes a StatbankUttrekksbeskrivelses-object under .filbeskrivelse
     _build_params():
         Builds the params to be attached to the url
-    _identify_data_type():
-        Sets data_iter and data_type dependant on data sent in to "data"
+    _validate_datatype():
+        Validates the data to be a dict of strings and Dataframes.
     _body_from_data():
         Converts data to .body for the transfer request to add to json/data/body.
     _handle_response():
@@ -102,7 +91,7 @@ class StatbankTransfer(StatbankAuth):
 
     def __init__(
         self,
-        data: pd.DataFrame,
+        data: dict,
         tabellid: str = None,
         loaduser: str = "",
         bruker_trebokstaver: str = "",
@@ -121,7 +110,6 @@ class StatbankTransfer(StatbankAuth):
             self.loaduser = loaduser
         else:
             raise ValueError("You must set loaduser as a parameter")
-        self.hovedtabell = None
 
         if bruker_trebokstaver:
             self.tbf = bruker_trebokstaver
@@ -170,12 +158,7 @@ class StatbankTransfer(StatbankAuth):
             self.headers = headers
         try:
             self.params = self._build_params()
-            self.data_type, self.data_iter = self._identify_data_type()
-            if self.data_type != pd.DataFrame:
-                raise ValueError(
-                    f"Data must be loaded into one or more pandas DataFrames. Type looks like {self.data_type}"
-                )
-
+            self._validate_datatype()
             self.body = self._body_from_data()
 
             url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
@@ -249,21 +232,12 @@ class StatbankTransfer(StatbankAuth):
                 "(Strengverdi) Sett godkjenn_data til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)"
             )
 
-    def _identify_data_type(self) -> tuple[type, bool]:
-        if isinstance(self.data, pd.DataFrame):
-            data_type = pd.DataFrame
-            data_iter = False
-        elif isinstance(self.data, list) or isinstance(self.data, tuple):
-            for i, d in enumerate(self.data):
-                if not isinstance(d, pd.DataFrame):
-                    raise TypeError(f"Element {i} in data, is not a DataFrame :(")
-            data_type = pd.DataFrame
-            data_iter = True
-        else:
-            raise TypeError(
-                "Expecting data to be either a single DataFrame, or a list/tuple of DataFrames."
-            )
-        return data_type, data_iter
+    def _validate_datatype(self):
+        for deltabell_name, deltabell_data in self.data.items():
+            if not isinstance(deltabell_name, str):
+                raise TypeError(f"{deltabell_name} is not a string.")
+            if not isinstance(deltabell_data, pd.DataFrame):
+                raise TypeError(f'Data for {deltabell_name}, must be a pandas DataFrame')
 
     @staticmethod
     def _round_up(n, decimals=0):
@@ -273,29 +247,16 @@ class StatbankTransfer(StatbankAuth):
         return math.ceil(n * multiplier) / multiplier
 
     def _body_from_data(self) -> str:
-        # If data is single pd.DataFrame, put into iterable, so code under works
-        if not self.data_iter:
-            self.data = [self.data]
-
-        if not self.data_type == pd.DataFrame:
-            raise TypeError(
-                "Only programmed for Pandas DataFrames as data at this point."
-            )
-
         # Data should be a iterable of pd.DataFrames at this point, reshape to body
-        for elem, filename in zip(self.data, deltabeller_filnavn):
+        for filename, elem in self.data.items():
             # Replace all nans in data
             elem = elem.fillna("")
             body = f"--{self.boundary}"
             body += f"\nContent-Disposition:form-data; filename={filename}"
             body += "\nContent-type:text/plain\n\n"
-            if self.data_type == pd.DataFrame:
-                body += elem.to_csv(sep=";", index=False, header=False)
-            else:
-                raise TypeError("Expecting Dataframe or Table at this point in code")
+            body += elem.to_csv(sep=";", index=False, header=False)
         body += f"\n--{self.boundary}--"
         body = body.replace("\n", "\r\n")  # Statbank likes this?
-
         return body
 
     @staticmethod
@@ -309,7 +270,7 @@ class StatbankTransfer(StatbankAuth):
             self.publisering = self.publisering.strftime("%Y-%m-%d")
         return {
             "initialier": self.tbf,
-            "hovedtabell": self.hovedtabell,
+            "hovedtabell": self.tabellid,
             "publiseringsdato": self.publisering,
             "fagansvarlig1": self.fagansvarlig1,
             "fagansvarlig2": self.fagansvarlig2,
@@ -317,10 +278,6 @@ class StatbankTransfer(StatbankAuth):
             "auto_godkjenn_data": self.godkjenn_data,
         }
 
-    def _get_filbeskrivelse(self) -> StatbankUttrekksBeskrivelse:
-        return StatbankUttrekksBeskrivelse(
-            tabellid=self.tabellid, loaduser=self.loaduser, headers=self.headers
-        )
 
     def _make_transfer_request(
         self,

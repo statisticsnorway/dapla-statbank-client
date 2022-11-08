@@ -135,6 +135,7 @@ class StatbankClient(StatbankAuth):
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
+        print(f'Publishing date set to {self.date}')
 
     # Representation
     def __str__(self):

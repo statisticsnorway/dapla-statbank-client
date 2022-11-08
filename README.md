@@ -5,11 +5,11 @@ Gets data from public and internal statbank.
 
 
 ### Installing from Pypi with Poetry
-In the dapla-jupyterlab-terminal:
+If the project-folder doesnt already have a pyproject.toml with poetry-info, run this in the dapla-jupyterlab-terminal:
 ```bash
 poetry init
 ```
-(If the project-folder doesnt already have a pyproject.toml with poetry-info)
+When poetry is initialized in the project-folder, install the package from Pypi, and create a kernel:
 ```bash
 poetry add dapla-statbank-client
 poetry run python -m ipykernel install --user --name test_statbank
@@ -21,6 +21,7 @@ stat_client = StatbankClient(loaduser = "LASTEBRUKER")
 # Change LASTEBRUKER to your load-statbank-username
 # Fill out password
 # Default publishing-date is TOMORROW
+print(stat_client)
 ```
 
 ### Building datasets

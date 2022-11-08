@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
+import copy
 import json
 
 import pandas as pd
 import requests as r
-import copy
 from requests.exceptions import ConnectionError
 
 from .auth import StatbankAuth
@@ -129,13 +129,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         )
 
     def transferdata_template(self) -> dict:
-        template = {k:f'df{i}' for i,(k,v) in enumerate(self.deltabelltitler.items())}
+        template = {
+            k: f"df{i}" for i, (k, v) in enumerate(self.deltabelltitler.items())
+        }
         print("{")
-        for k,v in template.items():
+        for k, v in template.items():
             print(f'"{k}" : {v},')
         print("}")
         return template
-    
+
     def to_json(self, path: str = "") -> dict:
         """If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
@@ -150,20 +152,22 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def validate(self, data, raise_errors: bool = False) -> dict:
         if not raise_errors:
             raise_errors = self.raise_errors
-            
+
         validation_errors = {}
         print("\nvalidating...")
 
         self._validate_number_dataframes(data)
         validation_errors = self._validate_number_columns(data, validation_errors)
-        categorycode_outside, categorycode_missing = self._category_code_usage(
-            data
-        )
+        (
+            categorycode_outside,
+            categorycode_missing,
+            validation_errors,
+        ) = self._category_code_usage(data, validation_errors)
         validation_errors = self._check_for_floats(data, validation_errors)
         validation_errors = self._check_rounding(data, validation_errors)
         validation_errors = self._check_time_formats(data, validation_errors)
         validation_errors = self._check_prikking(data, validation_errors)
- 
+
         if raise_errors and validation_errors:
             raise Exception(list(validation_errors.values()))
         return validation_errors
@@ -179,7 +183,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     # Nan-handling?
                     if (
-                        "float" in str(data_copy[deltabell["deltabell"]][i].dtypes[col_num]).lower()
+                        "float"
+                        in str(
+                            data_copy[deltabell["deltabell"]][i].dtypes[col_num]
+                        ).lower()
                     ):  # If column is passed in as a float, we can handle it
                         print(
                             f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
@@ -198,13 +205,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def _validate_number_dataframes(self, data: dict):
         # Number deltabelltitler should match length of data-iterable
         if len(self.deltabelltitler.values()) != len(data.values()):
-            raise TypeError(f"""Please put one or more pandas Dataframes in a dict as your data.
+            raise TypeError(
+                f"""Please put one or more pandas Dataframes in a dict as your data.
                 Keys in the dict should be "deltabell-navn": {self.deltabelltitler.keys()}
-                """)
+                """
+            )
         for k, df in data.items():
             if not isinstance(df, pd.DataFrame):
                 raise TypeError(f"{k}'s value is not a dataframe")
-    
+
     def _validate_number_columns(self, data, validation_errors: dict) -> dict:
         # Number of columns in data must match beskrivelse
         for deltabell_num, deltabell in enumerate(self.variabler):
@@ -225,31 +234,28 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         else:
             print("Correct number of columns...")
         return validation_errors
-    
+
     def _check_for_floats(self, data: dict, validation_errors: dict) -> dict:
         for name, df in data.items():
             for col in df.columns:
-                if 'float' in str(df[col].dtype).lower():
+                if "float" in str(df[col].dtype).lower():
                     error_text = f"""{col} in {name} is a float.
                     Consider running the dict of dataframes through:
-                    data = uttrekksbeskrivelse.round_data(data), 
-                    this rounds UP like SAS and Excel, not to-even as 
+                    data = uttrekksbeskrivelse.round_data(data),
+                    this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise."""
                     validation_errors[f"contains_floats_{name}_{col}"] = error_text
                     print(error_text)
         return validation_errors
-    
+
     def _check_time_formats(self, data, validation_errors: dict) -> dict:
         # Time-columns should follow time format
-        for i, deltabell in enumerate(self.variabler):
+        for deltabell in self.variabler:
             for variabel in deltabell["variabler"]:
                 if "Kodeliste_text" in variabel.keys():
                     if "format = " in variabel["Kodeliste_text"]:
                         validation_errors = self._check_time_columns(
-                            deltabell["deltabell"], 
-                            variabel, 
-                            data, 
-                            validation_errors
+                            deltabell["deltabell"], variabel, data, validation_errors
                         )
         for k in validation_errors.keys():
             if "time_non_digit_column" in k:
@@ -275,7 +281,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             variabel["Kodeliste_text"].split(" format = ")[1].strip().replace("Å", "å")
         )
         # Check length of coloumn matches length of format
-        if not 1 == len(data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()):
+        if not 1 == len(
+            data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()
+        ):
             validation_errors[f"time_single_length_format_{col_num}"] = ValueError(
                 f"""Column number {col_num} does not have
                 a single time format
@@ -298,9 +306,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
         if timeformat["nums"]:
             for num in timeformat["nums"]:
-                if not all(data[deltabell_name].iloc[:, col_num].str[num].str.isdigit()):
+                if not all(
+                    data[deltabell_name].iloc[:, col_num].str[num].str.isdigit()
+                ):
                     validation_errors[f"time_non_digit_column{col_num}"] = ValueError(
-                        f"Character number {num} in column {col_num} in DataFrame {i}, does not match format {timeformat_raw}"
+                        f"Character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}"
                     )
         if timeformat["chars"]:
             for i, char in timeformat["chars"].items():
@@ -340,7 +350,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
 
         return validation_errors
 
-    def _category_code_usage(self, data) -> tuple:
+    def _category_code_usage(self, data, validation_errors):
         categorycode_outside = []
         categorycode_missing = []
 
@@ -396,36 +406,43 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             print()
         else:
             print("No codes missing from categorical columns.")
-        return categorycode_outside, categorycode_missing
-    
+        return categorycode_outside, categorycode_missing, validation_errors
+
     def _check_rounding(self, data: dict, validation_errors: dict) -> dict:
         """If a column should have a set number of decimals,
-        check if its a string, and how many places are used after the 
+        check if its a string, and how many places are used after the
         decimal seperator: ","
         """
-        for i, deltabell in enumerate(self.variabler):
+        for deltabell in self.variabler:
             deltabell_name = deltabell["deltabell"]
             for variabel in deltabell["variabler"]:
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
-                    if any(decimal_num != (data[deltabell_name]
-                                           .iloc[:,col_num]
-                                           .str.split(",").str[-1]
-                                           .str.len())):
-                        error_text = f'''Check that string column that should be rounded,
-                        has correct number of decimals. And consider converting from a 
+                    if any(
+                        decimal_num
+                        != (
+                            data[deltabell_name]
+                            .iloc[:, col_num]
+                            .str.split(",")
+                            .str[-1]
+                            .str.len()
+                        )
+                    ):
+                        error_text = """Check that string column that should be rounded,
+                        has correct number of decimals. And consider converting from a
                         non-rounded float to a string with this method:
-                        data = uttrekksbeskrivelse.round_data(data), 
-                    this rounds UP like SAS and Excel, not to-even as 
+                        data = uttrekksbeskrivelse.round_data(data),
+                    this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise.
-                        '''
-                        
-                        validation_errors[f"rounding_error_{deltabell_name}_{col_num}"] = ValueError(error_text)
+                        """
+
+                        validation_errors[
+                            f"rounding_error_{deltabell_name}_{col_num}"
+                        ] = ValueError(error_text)
                         print(error_text)
         return validation_errors
-        
-        
+
     def _get_uttrekksbeskrivelse(self) -> dict:
         filbeskrivelse_url = self.url + "tableId=" + self.tabellid
         try:

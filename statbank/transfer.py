@@ -237,7 +237,9 @@ class StatbankTransfer(StatbankAuth):
             if not isinstance(deltabell_name, str):
                 raise TypeError(f"{deltabell_name} is not a string.")
             if not isinstance(deltabell_data, pd.DataFrame):
-                raise TypeError(f'Data for {deltabell_name}, must be a pandas DataFrame')
+                raise TypeError(
+                    f"Data for {deltabell_name}, must be a pandas DataFrame"
+                )
 
     @staticmethod
     def _round_up(n, decimals=0):
@@ -277,7 +279,6 @@ class StatbankTransfer(StatbankAuth):
             "auto_overskriv_data": self.overskriv_data,
             "auto_godkjenn_data": self.godkjenn_data,
         }
-
 
     def _make_transfer_request(
         self,

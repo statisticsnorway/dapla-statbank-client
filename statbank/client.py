@@ -107,20 +107,6 @@ class StatbankClient(StatbankAuth):
     read_transfer_json(path.json):
         Tries to restore a StatbankTransfer-object from a stored, serialized json.
 
-    get_description_batch(tableids):
-        Send in a list of tableids: ['00000', '00000'].
-        Returns a list of StatbankUttrekksBeskrivelse,
-        which you may inspect / use as you wish.
-    validate_batch({tableids:datas}):
-        Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
-        Will validate all in the list, until one returns an error.
-    transfer_batch({tableids:datas}):
-        Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
-        Will try to transfer all of them, until it reaches an error.
-        Publishing a table to statbanken many times before the publishing date is ok.
-        But if you do it too fast, in succession, you might encounter an error like
-        "ikke unik skranke" or similar.
-
     __init__():
         Sets attributes, validates them, builds header, initializes log.
     """
@@ -213,21 +199,6 @@ class StatbankClient(StatbankAuth):
             tabellid=tableid, loaduser=self.loaduser, headers=self.__headers
         )
 
-    def get_description_batch(self, tableids: list) -> dict:
-        """Send in a list of tableids: ['00000', '00000'].
-        Returns a list of StatbankUttrekksBeskrivelse,
-        which you may inspect / use as you wish."""
-        self._validate_params_action(tableids=tableids)
-        descriptions = {}
-        for tableid in tableids:
-            descriptions[tableid] = StatbankUttrekksBeskrivelse(
-                tabellid=tableid, loaduser=self.loaduser, headers=self.__headers
-            )
-            self.log.append(
-                f'Got description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
-            )
-        return descriptions
-
     @staticmethod
     def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
         """Checks if provided string exists on disk, if it does, tries to load it as json.
@@ -262,22 +233,6 @@ class StatbankClient(StatbankAuth):
             f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
 
-    def validate_batch(self, data: dict, raise_errors: bool = False) -> dict:
-        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
-        Will validate all in the list, until one returns an error."""
-        self._validate_params_action(list(data.keys()))
-        for tableid, dfs in data.items():
-            validator = StatbankUttrekksBeskrivelse(
-                tabellid=tableid,
-                loaduser=self.loaduser,
-                raise_errors=raise_errors,
-                headers=self.__headers,
-            )
-            validator.validate(dfs)
-            self.log.append(
-                f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
-            )
-
     # Transfer
     def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:
         """Transfers your data to Statbanken.
@@ -298,33 +253,6 @@ class StatbankClient(StatbankAuth):
             auto_overskriv_data=str(int(self.overwrite)),
             auto_godkjenn_data=self.approve,
         )
-
-    def transfer_batch(self, data: dict) -> dict:
-        """Send in a dict of tableids as keys, and data as lists/dataframes in the dict values.
-        Will try to transfer all of them, until it reaches an error.
-        Publishing a table to statbanken many times before the publishing date is ok.
-        But if you do it too fast, in succession, you might encounter an error like
-        "ikke unik skranke" or similar."""
-        self._validate_params_action(list(data.keys()))
-        transfers = {}
-        for tableid, dfs in data.items():
-
-            transfers[tableid] = StatbankTransfer(
-                dfs,
-                tabellid=tableid,
-                loaduser=self.loaduser,
-                headers=self.__headers,
-                bruker_trebokstaver=self.shortuser,
-                publisering=self.date,
-                fagansvarlig1=self.cc,
-                fagansvarlig2=self.bcc,
-                auto_overskriv_data=str(int(self.overwrite)),
-                auto_godkjenn_data=self.approve,
-            )
-            self.log.append(
-                f'Transferred tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
-            )
-        return transfers
 
     @staticmethod
     def read_transfer_json(json_path_or_str: str) -> StatbankTransfer:

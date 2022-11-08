@@ -91,32 +91,7 @@ from statbank.apidata import apidata_all, apidata, apidata_rotate
 ```
 
 
-### Batches
-For the non-apidata-methods, there are "twin" batch-methods.
-For .transfer there is .transfer_batch and so on.
-Alternatively you can just run the methods above multiple times...
-
-To transfer many tables at the same time.
-```python
-transfers = stat_client.transfer_batch({"06339": df_06399,
-                                        "05300": df_05300})
-print(transfers["05300"])
-```
-
-To validate many tables at the same time.
-```python
-stat_client.validate_batch({"06339": df_06399,
-                            "05300": df_05300})
-```
-
-To get many descriptions at once send a list of tableids.
-```python
-descriptions = stat_client.validate_batch(["06339","05300"])
-print(descriptions["06339"])
-```
-
 ### Saving and restoring Uttrekksbeskrivelser and Transfers as json
-\*Might still be in development
 
 From `stat_client.transfer()` you will recieve a StatbankTransfer object, from `stat_client.get_description` a StatbankUttrekksBeskrivelse-object. These can be serialized and saved to disk, and later be restored.
 
@@ -132,5 +107,6 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
+- 0.0.3 Removed batches, stripping uttrekk from transfer, rounding function on uttrekk, data required in as a dict of dataframes, with "deltabell-navn". Tableid now works to transfer to instead of only "hovedtabellnavn"
 - 0.0.2 Starting alpha, fine-tuning release to Pypi on github-release
 - 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.

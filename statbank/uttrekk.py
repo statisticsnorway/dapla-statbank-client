@@ -172,7 +172,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             raise Exception(list(validation_errors.values()))
         return validation_errors
 
-    def round_data(self, data, validation_errors: dict) -> dict:
+    def round_data(self, data) -> dict:
         """Checks that all decimal numbers are converted to strings,
         with specific length after the decimal-seperator "," """
         data_copy = copy.deepcopy(data)
@@ -316,7 +316,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             for i, char in timeformat["chars"].items():
                 if not all(data[deltabell_name].iloc[:, col_num].str[i] == char):
                     validation_errors[f"character_match_column{col_num}"] = ValueError(
-                        f"Should be capitalized character? Character {char}, character number {num} in column {col_num} in DataFrame {i}, does not match format {timeformat_raw}"
+                        f"Should be capitalized character? Character {char}, character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}"
                     )
         if timeformat["specials"]:
             for i, special in timeformat["specials"].items():
@@ -324,7 +324,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     validation_errors[
                         f"special_character_match_column{col_num}"
                     ] = ValueError(
-                        f"Should be the special character {special}, character number {num} in column {col_num} in DataFrame {i}, does not match format {timeformat_raw}"
+                        f"Should be the special character {special}, character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}"
                     )
         return validation_errors
 
@@ -332,15 +332,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         if self.prikking:
             prikk_codes = [code["Kode"] for code in self.prikking]
             prikk_codes += [""]
-            for i, deltabell in enumerate(self.variabler):
+            for deltabell in self.variabler:
+                deltabell_name = deltabell["deltabell"]
                 if "null_prikk_missing" in deltabell.keys():
                     for prikk_col in deltabell["null_prikk_missing"]:
                         col_num = int(prikk_col["kolonnenummer"]) - 1
-                        if not all(data[i].iloc[:, col_num].isin(prikk_codes)):
+                        if not all(
+                            data[deltabell_name].iloc[:, col_num].isin(prikk_codes)
+                        ):
                             validation_errors[
                                 f"prikke_character_match_column{col_num}"
                             ] = ValueError(
-                                f"Prikke-code not among allowed prikkecodes: {prikk_codes}, in column {col_num} in DataFrame {i}."
+                                f"Prikke-code not among allowed prikkecodes: {prikk_codes}, in column {col_num} in DataFrame {deltabell_name}."
                             )
         for k in validation_errors.keys():
             if "prikke_character_match_column" in k:

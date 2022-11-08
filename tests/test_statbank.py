@@ -46,13 +46,13 @@ def fake_auth():
 
 # Fake data
 def fake_data():
-    return pd.DataFrame(
+    return {"delfil1.dat" : pd.DataFrame(
         {
             "1": ["999", "01", "02"],
             "2": ["2022", "2022", "2000"],
             "3": ["100", "2000", "30000"],
         }
-    )
+    ),}
 
 
 # Fake responses from APIs

@@ -17,6 +17,10 @@ poetry run python -m ipykernel install --user --name test_statbank
 Make a notebook with the kernel you just made, try this code to verify the package is available:
 ```python
 from statbank import StatbankClient
+stat_client = StatbankClient(loaduser = "LASTEBRUKER")
+# Change LASTEBRUKER to your load-statbank-username
+# Fill out password
+# Default publishing-date is TOMORROW
 ```
 
 ### Building datasets
@@ -50,10 +54,6 @@ This both returns the dict, and prints it, depending on what you want to do with
 ### Usage Transferring
 
 ```python
-from statbank import StatbankClient
-stat_client = StatbankClient(loaduser = "LASTEBRUKER")
-# Change LASTEBRUKER to your load-statbank-username
-# Fill out password
 stat_client.transfer({"deltabellfilnavn.dat" : df_06399}, "06339")
 ```
 The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.

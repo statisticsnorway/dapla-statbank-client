@@ -1,7 +1,17 @@
 ### Poetry venv
+Installing the dev-dependencies in a new environment can be done with the following command:
 ```bash
 poetry install --with dev
 ```
+
+### Pytest coverage
+```bash
+pytest --cov statbank/
+```
+Run this when developing tests. 
+If you achieve a higher testing coverage make sure to increase the threshold in the workflow.
+.github/workflows/tests.yml
+(at the bottom)
 
 
 ### Running the pre-commit hooks locally
@@ -14,7 +24,8 @@ Several of the pre-commit hooks will try to modify the files on a fail. Re-runni
 ### Configuration
 pflake8 has its config in pyproject.toml, not in .flake8
 
-### Set up Github actions
+
+### CI/CD - set up actions
 
 
 ### Publish to Pypi

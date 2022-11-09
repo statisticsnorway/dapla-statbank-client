@@ -163,7 +163,6 @@ class StatbankTransfer(StatbankAuth):
 
             url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
             self.response = self._make_transfer_request(url_load_params)
-            print(self.response)
             if self.response.status_code == 200:
                 del (
                     self.response.request.headers
@@ -250,13 +249,15 @@ class StatbankTransfer(StatbankAuth):
 
     def _body_from_data(self) -> str:
         # Data should be a iterable of pd.DataFrames at this point, reshape to body
+        body = ""
         for filename, elem in self.data.items():
             # Replace all nans in data
-            elem = elem.fillna("")
-            body = f"--{self.boundary}"
+            elem = elem.copy().fillna("")
+            body += f"--{self.boundary}"
             body += f"\nContent-Disposition:form-data; filename={filename}"
             body += "\nContent-type:text/plain\n\n"
-            body += elem.to_csv(sep=";", index=False, header=False)
+            csv_content = elem.to_csv(sep=";", index=False, header=False)
+            body += str(csv_content)
         body += f"\n--{self.boundary}--"
         body = body.replace("\n", "\r\n")  # Statbank likes this?
         return body

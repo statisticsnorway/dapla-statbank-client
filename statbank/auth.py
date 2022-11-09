@@ -43,7 +43,7 @@ class StatbankAuth:
             "Authorization": self._build_auth(),
             "Content-Type": "multipart/form-data; boundary=12345",
             "Connection": "keep-alive",
-            "Accept-Encoding": "gzip, deflate, br",
+            "Accept-Encoding": "gzip, deflate",
             "Accept": r"*/*",
         }
 
@@ -57,7 +57,7 @@ class StatbankAuth:
             )
         finally:
             del response
-        return bytes("Basic ", "UTF-8") + base64.b64encode(username_encryptedpassword)
+        return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
 
     @staticmethod
     def _encrypt_request():

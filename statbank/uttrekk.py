@@ -356,42 +356,36 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def _category_code_usage(self, data, validation_errors):
         categorycode_outside = []
         categorycode_missing = []
+        
+        check_codes = {}
+        for deltabell in self.variabler:
+            deltabell_navn = deltabell["deltabell"]
+            check_codes[deltabell_navn] = {}
+            for variabel in deltabell["variabler"]:
+                if "Kodeliste_id" in variabel.keys():
+                    if variabel['Kodeliste_id'] != '-':
+                        check_codes[deltabell_navn][variabel["kolonnenummer"]] = list(self.kodelister[variabel["Kodeliste_id"]]['koder'].keys())
 
-        for navn, kodeliste in self.kodelister.items():
-            kodeliste_id = navn
-            for deltabell in self.variabler:
-                deltabell_name = deltabell["deltabell"]
-                for i, deltabell2 in enumerate(self.deltabelltitler):
-                    if deltabell2 == deltabell_name:
-                        deltabell_nr = i + 1
-                for variabel in deltabell["variabler"]:
-                    if variabel["Kodeliste_id"] == kodeliste_id:
-                        break
-                else:
-                    raise KeyError(
-                        f"Can't find {kodeliste_id} among deltabell variables."
-                    )
-            col_unique = (
-                data[deltabell_name]
-                .iloc[:, int(variabel["kolonnenummer"]) - 1]
-                .unique()
-            )
-            kod_unique = set(kodeliste["koder"].keys())
-            for kod in col_unique:
-                if kod not in kod_unique:
-                    categorycode_outside += [
-                        f"""Code {kod} in data, but not in uttrekksbeskrivelse,
-                        add to statbank admin? From column number
-                        {variabel['kolonnenummer']}, in deltabell number
-                        {deltabell_nr}, ({deltabell['deltabell']})"""
-                    ]
-            for kod in kod_unique:
-                if kod not in col_unique:
-                    categorycode_missing += [
-                        f"""Code {kod} missing from column number
-                        {variabel['kolonnenummer']}, in deltabell number
-                        {deltabell_nr}, ({deltabell['deltabell']})"""
-                    ]
+        for deltabell_name, variabel in check_codes.items():
+            for col_num, codelist in variabel.items():
+                col_unique = (
+                    data[deltabell_name]
+                    .iloc[:, int(col_num) - 1]
+                    .unique()
+                )
+                for kod in col_unique:
+                    if kod not in codelist:
+                        categorycode_outside += [
+                            f"""Code {kod} in data, but not in uttrekksbeskrivelse,
+                            add to statbank admin? From column number
+                            {col_num}, in deltabell {deltabell_name}"""
+                        ]
+                for kod in codelist:
+                    if kod not in col_unique:
+                        categorycode_missing += [
+                            f"""Code {kod} missing from column number
+                            {col_num}, in deltabell {deltabell_name}"""
+                        ]
         # No values outside, warn of missing from codelists on categorical columns
         if categorycode_outside:
             print("Codes in data, outside codelist:")

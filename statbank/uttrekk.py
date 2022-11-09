@@ -2,6 +2,7 @@
 
 import copy
 import json
+import math
 
 import pandas as pd
 import requests as r
@@ -176,23 +177,22 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         """Checks that all decimal numbers are converted to strings,
         with specific length after the decimal-seperator "," """
         data_copy = copy.deepcopy(data)
-        for i, deltabell in enumerate(self.variabler):
-            for variabel in deltabell["variabler"]:
+        for deltabell in self.variabler:
+            deltabell_name = deltabell["deltabell"]
+            for variabel in deltabell["statistikkvariabler"]:
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     # Nan-handling?
                     if (
                         "float"
-                        in str(
-                            data_copy[deltabell["deltabell"]][i].dtypes[col_num]
-                        ).lower()
+                        in str(data_copy[deltabell_name].dtypes[col_num]).lower()
                     ):  # If column is passed in as a float, we can handle it
                         print(
-                            f"Converting column {col_num+1} into a string, with {decimal_num} decimals."
+                            f"Converting column {col_num} in {deltabell_name} into a string, with {decimal_num} decimals."
                         )
-                        data_copy[deltabell["deltabell"]][i].iloc[:, col_num] = (
-                            data_copy[deltabell["deltabell"]][i]
+                        data_copy[deltabell_name].iloc[:, col_num] = (
+                            data_copy[deltabell_name]
                             .iloc[:, col_num]
                             .astype("Float64")
                             .apply(self._round_up, decimals=decimal_num)
@@ -201,6 +201,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                             .str.replace(".", ",")
                         )
         return data_copy
+
+    @staticmethod
+    def _round_up(n: float, decimals: int = 0) -> str:
+        multiplier = 10**decimals
+        return str(math.ceil(n * multiplier) / multiplier)
 
     def _validate_number_dataframes(self, data: dict):
         # Number deltabelltitler should match length of data-iterable
@@ -356,23 +361,21 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def _category_code_usage(self, data, validation_errors):
         categorycode_outside = []
         categorycode_missing = []
-        
+
         check_codes = {}
         for deltabell in self.variabler:
             deltabell_navn = deltabell["deltabell"]
             check_codes[deltabell_navn] = {}
             for variabel in deltabell["variabler"]:
                 if "Kodeliste_id" in variabel.keys():
-                    if variabel['Kodeliste_id'] != '-':
-                        check_codes[deltabell_navn][variabel["kolonnenummer"]] = list(self.kodelister[variabel["Kodeliste_id"]]['koder'].keys())
+                    if variabel["Kodeliste_id"] != "-":
+                        check_codes[deltabell_navn][variabel["kolonnenummer"]] = list(
+                            self.kodelister[variabel["Kodeliste_id"]]["koder"].keys()
+                        )
 
         for deltabell_name, variabel in check_codes.items():
             for col_num, codelist in variabel.items():
-                col_unique = (
-                    data[deltabell_name]
-                    .iloc[:, int(col_num) - 1]
-                    .unique()
-                )
+                col_unique = data[deltabell_name].iloc[:, int(col_num) - 1].unique()
                 for kod in col_unique:
                     if kod not in codelist:
                         categorycode_outside += [

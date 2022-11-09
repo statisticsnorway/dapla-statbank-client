@@ -135,7 +135,7 @@ class StatbankClient(StatbankAuth):
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
-        print(f'Publishing date set to {self.date}')
+        print(f"Publishing date set to {self.date}")
 
     # Representation
     def __str__(self):
@@ -216,7 +216,7 @@ class StatbankClient(StatbankAuth):
 
     # Validation
     def validate(
-        self, dfs: pd.DataFrame, tableid: str = "00000", raise_errors: bool = False
+        self, dfs: dict, tableid: str = "00000", raise_errors: bool = False
     ) -> dict:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
         All validation happens locally, so dont be afraid of any data
@@ -229,10 +229,11 @@ class StatbankClient(StatbankAuth):
             raise_errors=raise_errors,
             headers=self.__headers,
         )
-        validator.validate(dfs)
+        validation_errors = validator.validate(dfs)
         self.log.append(
             f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
+        return validation_errors
 
     # Transfer
     def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:

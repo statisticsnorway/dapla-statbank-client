@@ -6,6 +6,7 @@ import os
 from datetime import timedelta as td
 
 import ipywidgets as widgets
+from IPython.display import display
 import pandas as pd
 
 from .apidata import apidata, apidata_all, apidata_rotate
@@ -168,6 +169,7 @@ class StatbankClient(StatbankAuth):
         datepicker = widgets.DatePicker(
             description="Publish-date", disabled=False, value=self.date
         )
+        display(datepicker)
         return datepicker
 
     def set_publish_date(self, date: datetime.datetime) -> None:
@@ -197,7 +199,7 @@ class StatbankClient(StatbankAuth):
             f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
         return StatbankUttrekksBeskrivelse(
-            tabellid=tableid, loaduser=self.loaduser, headers=self.__headers
+            tableid=tableid, loaduser=self.loaduser, headers=self.__headers
         )
 
     @staticmethod
@@ -245,15 +247,15 @@ class StatbankClient(StatbankAuth):
         )
         return StatbankTransfer(
             dfs,
-            tabellid=tableid,
+            tableid=tableid,
             loaduser=self.loaduser,
             headers=self.__headers,
-            bruker_trebokstaver=self.shortuser,
-            publisering=self.date,
-            fagansvarlig1=self.cc,
-            fagansvarlig2=self.bcc,
-            auto_overskriv_data=str(int(self.overwrite)),
-            auto_godkjenn_data=self.approve,
+            shortuser=self.shortuser,
+            date=self.date,
+            cc=self.cc,
+            bcc=self.bcc,
+            overwrite=str(int(self.overwrite)),
+            approve=self.approve,
         )
 
     @staticmethod

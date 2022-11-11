@@ -33,10 +33,10 @@ print(description_06339)
 This should have all the information you are used to reading out from the old "Filbeskrivelse". And describes how you should construct your data.
 ```python
 # Interesting attributes
-description_06339.deltabelltitler
-description_06339.variabler
-description_06339.kodelister
-description_06339.prikking
+description_06339.subtables
+description_06339.variables
+description_06339.codelists
+description_06339.suppression
 ```
 After starting to construct your data, you can validate it against the Uttrekksbeskrivelse, using the validate-method, without starting a transfer, like this:
 ```python

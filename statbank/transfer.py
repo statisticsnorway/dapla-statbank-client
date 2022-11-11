@@ -221,9 +221,9 @@ class StatbankTransfer(StatbankAuth):
             if not self._valid_date_form(self.date):
                 raise ValueError("Skriv inn datoformen for publisering som 1900-01-01")
 
-        if self.overwrite not in ["0", "1"]:
+        if not isinstance(self.overwrite, bool):
             raise ValueError(
-                "(Strengverdi) Sett overwrite til enten '0' = ingen overskriving (dubletter gir feil), eller  '1' = automatisk overskriving"
+                "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving"
             )
 
         if self.approve not in ["0", "1", "2"]:
@@ -277,7 +277,7 @@ class StatbankTransfer(StatbankAuth):
             "publiseringsdato": self.date,
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
-            "auto_overskriv_data": self.overwrite,
+            "auto_overskriv_data": str(self.overwrite),
             "auto_godkjenn_data": self.approve,
         }
 

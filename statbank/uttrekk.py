@@ -2,7 +2,7 @@
 
 import copy
 import json
-import math
+from decimal import localcontext, Decimal, ROUND_HALF_UP
 
 import pandas as pd
 import requests as r
@@ -197,15 +197,21 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                             .astype("Float64")
                             .apply(self._round_up, decimals=decimal_num)
                             .astype(str)
-                            .str.replace("<NA>", "")
-                            .str.replace(".", ",")
+                            .str.replace("<NA>", "", regex=False)
+                            .str.replace(".", ",", regex=False)
                         )
         return data_copy
 
     @staticmethod
     def _round_up(n: float, decimals: int = 0) -> str:
-        multiplier = 10**decimals
-        return str(math.ceil(n * multiplier) / multiplier)
+        with localcontext() as ctx:
+            ctx.rounding = ROUND_HALF_UP
+            if decimals:
+                n = round(Decimal(n), decimals)
+            else:
+                n = Decimal(n).to_integral_value()
+        return n
+
 
     def _validate_number_dataframes(self, data: dict):
         # Number subtables should match length of data-iterable

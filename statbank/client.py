@@ -57,10 +57,10 @@ class StatbankClient(StatbankAuth):
     overwrite : bool
         False = no overwrite
         True = overwrite
-    approve : str
-        "0" = manual approval
-        "1" = automatic approval at transfer-time (immediately)
-        "2" = JIT (Just In Time), approval right before publishing time
+    approve : int
+        0 = manual approval
+        1 = automatic approval at transfer-time (immediately)
+        2 = JIT (Just In Time), approval right before publishing time
     log: list
         Each "action" (method used) on the client is appended to the log.
         Nice to use for appending to your own logging after you are done,
@@ -120,7 +120,7 @@ class StatbankClient(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: str = "1",
+        approve: int = 1,
     ):
         self.loaduser = loaduser
         if isinstance(date, str):
@@ -347,7 +347,7 @@ class StatbankClient(StatbankAuth):
             raise ValueError(
                 "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"
             )
-        if self.approve not in ["0", "1", "2"]:
+        if self.approve not in [0, 1, 2]:
             raise ValueError(
-                "(String) Set approve to either '0' = manual, '1' = automatic (immediatly), or '2' = JIT-automatic (just-in-time)"
+                "(Int) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
             )

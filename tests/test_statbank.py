@@ -51,7 +51,8 @@ def fake_data():
             {
                 "1": ["999", "01", "02"],
                 "2": ["2022", "2022", "2000"],
-                "3": ["100", "2000", "30000"],
+                "3": [1.5, 2.5, 3.5],
+                "4": [1.15, 2.25, 3.35],
             }
         ),
     }
@@ -62,7 +63,7 @@ def fake_get_response_uttrekksbeskrivelse_successful():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes(
-        '{"Uttaksbeskrivelse_lagd":"29.09.2022 klokka 18:51" , "base": "DB1T","TabellId":"10000","Huvudtabell":"HovedTabellNavn","DeltabellTitler":[{ "Filnavn": "delfil1.dat" , "Filtext": "10000: Fake table" }] ,"deltabller":[{"deltabell":"delfil1.dat","variabler":[{"kolonnenummer":"1","Klassifikasjonsvariabel":"Kodeliste1","Variabeltext":"kodeliste1","Kodeliste_id":"Kodeliste1","Kodeliste_text":"Kodeliste 1"},{"kolonnenummer":"2","Klassifikasjonsvariabel":"Tid","Variabeltext":"tid","Kodeliste_id":"-","Kodeliste_text":"Tidsperioden for tabelldataene, enhet = år, format = åååå"}],"statistikkvariabler":[{ "kolonnenummer":"3","Text":"Antall","Enhet":"personer","Antall_lagrede_desimaler":"0","Antall_viste_desimaler":"0"}],"eksempel_linje":"01;2022;100"}],"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999","koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},{"kode":"02","text":"Kode2"}]}]}',
+        '{"Uttaksbeskrivelse_lagd":"29.09.2022 klokka 18:51" , "base": "DB1T","TabellId":"10000","Huvudtabell":"HovedTabellNavn","DeltabellTitler":[{ "Filnavn": "delfil1.dat" , "Filtext": "10000: Fake table" }] ,"deltabller":[{"deltabell":"delfil1.dat","variabler":[{"kolonnenummer":"1","Klassifikasjonsvariabel":"Kodeliste1","Variabeltext":"kodeliste1","Kodeliste_id":"Kodeliste1","Kodeliste_text":"Kodeliste 1"},{"kolonnenummer":"2","Klassifikasjonsvariabel":"Tid","Variabeltext":"tid","Kodeliste_id":"-","Kodeliste_text":"Tidsperioden for tabelldataene, enhet = år, format = åååå"}],"statistikkvariabler":[{ "kolonnenummer":"3","Text":"Antall","Enhet":"personer","Antall_lagrede_desimaler":"0","Antall_viste_desimaler":"0"}, { "kolonnenummer":"4","Text":"Antall","Enhet":"personer","Antall_lagrede_desimaler":"1","Antall_viste_desimaler":"1"}],"eksempel_linje":"01;2022;100"}],"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999","koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},{"kode":"02","text":"Kode2"}]}]}',
         "utf8",
     )
     response.request = requests.PreparedRequest()
@@ -129,7 +130,7 @@ def transfer_success(
 
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     # last thing to get filled during __init__ is .kodelister, check that dict has length
-    assert len(uttrekksbeskrivelse_success.kodelister)
+    assert len(uttrekksbeskrivelse_success.codelists)
 
 
 # def test_uttrekksbeskrivelse_validate_data_wrong_deltabell_count():
@@ -141,6 +142,24 @@ def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
 # def test_uttrekksbeskrivelse_validate_data_codes_outside_beskrivelse():
 #    ...
 
+def test_round_data_0decimals(uttrekksbeskrivelse_success):
+    subtable_name = list(fake_data().keys())[0]
+    dict_rounded = fake_data().copy()
+    df_test_rounded = dict_rounded[subtable_name]
+    df_test_rounded["3"] = pd.Series(["2,2", "3,3", "4,4"])
+    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[subtable_name]
+    print(df_test_rounded.compare(df_actual_rounded))
+    assert df_test_rounded["3"].equals(df_actual_rounded["3"])
+    
+def test_round_data_1decimals(uttrekksbeskrivelse_success):
+    subtable_name = list(fake_data().keys())[0]
+    dict_rounded = fake_data().copy()
+    df_test_rounded = dict_rounded[subtable_name]
+    df_test_rounded["4"] = pd.Series(["1,2", "2,3", "3,4"])
+    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[subtable_name]
+    print(df_test_rounded.compare(df_actual_rounded))
+    assert df_test_rounded["4"].equals(df_actual_rounded["4"])
+    
 
 def test_transfer_correct_entry(transfer_success):
     # "Lastenummer" is one of the last things set by __init__ and signifies a correctly loaded data-transfer.

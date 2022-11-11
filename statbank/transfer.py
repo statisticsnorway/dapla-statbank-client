@@ -25,24 +25,24 @@ class StatbankTransfer(StatbankAuth):
         Number of DataFrames needs to match the number of "deltabeller" in the uttakksbeskrivelse.
         Data-shape can be validated before transfer with the Uttakksbeskrivelses-class.
     loaduser : str
-        Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
-    tabellid: str
+        Username for Statbanken, not the same as "shortuser" or "common personal username" in other SSB-systems
+    tableid: str
         The numeric id of the table, matching the one found on the website.
         Should be a 5-length numeric-string. Alternativley it should be
-        possible to send in the "hovedtabellnavn" instead of the tabellid.
-    tbf : str
+        possible to send in the "hovedtabellnavn" instead of the tableid.
+    shortuser : str
         The abbrivation of username at ssb. Three letters, like "cfc"
-    publisering : str
+    date : str
         Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01".
         Statbanken only allows publishing four months into the future?
-    fagansvarlig1 : str
-        First person to be notified by email of transfer. Defaults to the same as "tbf"
-    fagansvarlig2 : str
-        Second person to be notified by email of transfer. Defaults to the same as "tbf"
-    overskriv_data : str
+    cc : str
+        First person to be notified by email of transfer. Defaults to the same as "shortuser"
+    bcc : str
+        Second person to be notified by email of transfer. Defaults to the same as "cc1"
+    overwrite : str
         "0" = no overwrite
         "1" = overwrite
-    godkjenn_data : str
+    approve : str
         "0" = manual approval
         "1" = automatic approval at transfer-time (immediately)
         "2" = JIT (Just In Time), approval right before publishing time
@@ -92,45 +92,45 @@ class StatbankTransfer(StatbankAuth):
     def __init__(
         self,
         data: dict,
-        tabellid: str = None,
+        tableid: str = None,
         loaduser: str = "",
-        bruker_trebokstaver: str = "",
-        publisering: dt = dt.now() + td(days=1),  # noqa: B008
-        fagansvarlig1: str = "",
-        fagansvarlig2: str = "",
-        auto_overskriv_data: str = "1",
-        auto_godkjenn_data: str = "2",
+        shortuser: str = "",
+        date: dt = dt.now() + td(days=1),  # noqa: B008
+        cc: str = "",
+        bcc: str = "",
+        overwrite: bool = True,
+        approve: str = "1",
         validation: bool = True,
         delay: bool = False,
         headers=None,
     ):
         self.data = data
-        self.tabellid = tabellid
+        self.tableid = tableid
         if loaduser:
             self.loaduser = loaduser
         else:
             raise ValueError("You must set loaduser as a parameter")
 
-        if bruker_trebokstaver:
-            self.tbf = bruker_trebokstaver
+        if shortuser:
+            self.shortuser = shortuser
         else:
-            self.tbf = os.environ["JUPYTERHUB_USER"].split("@")[0]
-        if fagansvarlig1:
-            self.fagansvarlig1 = fagansvarlig1
+            self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
+        if cc:
+            self.cc = cc
         else:
-            self.fagansvarlig1 = os.environ["JUPYTERHUB_USER"].split("@")[0]
-        if fagansvarlig2:
-            self.fagansvarlig2 = fagansvarlig2
+            self.cc = self.shortuser
+        if bcc:
+            self.bcc = bcc
         else:
-            self.fagansvarlig2 = os.environ["JUPYTERHUB_USER"].split("@")[0]
+            self.bcc = self.cc
 
-        if isinstance(publisering, str):
-            self.publisering = publisering
+        if isinstance(date, str):
+            self.date = date
         else:
-            self.publisering = publisering.strftime("%Y-%m-%d")
+            self.date = date.strftime("%Y-%m-%d")
 
-        self.overskriv_data = auto_overskriv_data
-        self.godkjenn_data = auto_godkjenn_data
+        self.overwrite = overwrite
+        self.approve = approve
         self.validation = validation
         self.__delay = delay
 
@@ -174,15 +174,15 @@ class StatbankTransfer(StatbankAuth):
 
     def __str__(self):
         if self.delay:
-            return f"Overføring for statbanktabell {self.tabellid}. \nloaduser: {self.loaduser}.\nIkke overført enda."
+            return f"Overføring for statbanktabell {self.tableid}. \nloaduser: {self.loaduser}.\nIkke overført enda."
         else:
-            return f"""Overføring for statbanktabell {self.tabellid}.
+            return f"""Overføring for statbanktabell {self.tableid}.
     loaduser: {self.loaduser}.
-    Publisering: {self.publisering}.
+    Publisering: {self.date}.
     Lastelogg: {self.urls['gui'] + self.oppdragsnummer}"""
 
     def __repr__(self):
-        return f'StatbankTransfer([data], tabellid="{self.tabellid}", loaduser="{self.loaduser}")'
+        return f'StatbankTransfer([data], tableid="{self.tableid}", loaduser="{self.loaduser}")'
 
     @property
     def delay(self):
@@ -210,25 +210,25 @@ class StatbankTransfer(StatbankAuth):
         if not isinstance(self.loaduser, str) or not self.loaduser:
             raise ValueError("Du må sette en loaduser korrekt")
 
-        for _, tbf in enumerate([self.tbf, self.fagansvarlig1, self.fagansvarlig2]):
+        for _, shortuser in enumerate([self.shortuser, self.cc, self.bcc]):
 
-            if len(tbf) != 3 or not isinstance(tbf, str):
+            if len(shortuser) != 3 or not isinstance(shortuser, str):
                 raise ValueError(
-                    f'Brukeren {tbf} - "trebokstavsforkortelse" - må være tre bokstaver...'
+                    f'Brukeren {shortuser} - "trebokstavsforkortelse" - må være tre bokstaver...'
                 )
 
-        if not isinstance(self.publisering, dt):
-            if not self._valid_date_form(self.publisering):
+        if not isinstance(self.date, dt):
+            if not self._valid_date_form(self.date):
                 raise ValueError("Skriv inn datoformen for publisering som 1900-01-01")
 
-        if self.overskriv_data not in ["0", "1"]:
+        if not isinstance(self.overwrite, bool):
             raise ValueError(
-                "(Strengverdi) Sett overskriv_data til enten '0' = ingen overskriving (dubletter gir feil), eller  '1' = automatisk overskriving"
+                "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving"
             )
 
-        if self.godkjenn_data not in ["0", "1", "2"]:
+        if self.approve not in ["0", "1", "2"]:
             raise ValueError(
-                "(Strengverdi) Sett godkjenn_data til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)"
+                "(Strengverdi) Sett approve til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)"
             )
 
     def _validate_datatype(self):
@@ -269,16 +269,16 @@ class StatbankTransfer(StatbankAuth):
         return False
 
     def _build_params(self) -> dict:
-        if isinstance(self.publisering, dt):
-            self.publisering = self.publisering.strftime("%Y-%m-%d")
+        if isinstance(self.date, dt):
+            self.date = self.date.strftime("%Y-%m-%d")
         return {
-            "initialier": self.tbf,
-            "hovedtabell": self.tabellid,
-            "publiseringsdato": self.publisering,
-            "fagansvarlig1": self.fagansvarlig1,
-            "fagansvarlig2": self.fagansvarlig2,
-            "auto_overskriv_data": self.overskriv_data,
-            "auto_godkjenn_data": self.godkjenn_data,
+            "initialier": self.shortuser,
+            "hovedtabell": self.tableid,
+            "publiseringsdato": self.date,
+            "fagansvarlig1": self.cc,
+            "fagansvarlig2": self.bcc,
+            "auto_overskriv_data": str(self.overwrite),
+            "auto_godkjenn_data": self.approve,
         }
 
     def _make_transfer_request(
@@ -302,22 +302,22 @@ class StatbankTransfer(StatbankAuth):
                     f"Lasteoppdragsnummer: {self.oppdragsnummer} er ikke ett rent nummer."
                 )
 
-            publiseringdato = dt.strptime(
+            publish_date = dt.strptime(
                 response_message.split("Publiseringsdato '")[1].split("',")[0],
                 "%d.%m.%Y %H:%M:%S",
             )
-            publiseringstime = int(
+            publish_hour = int(
                 response_message.split("Publiseringstid '")[1].split(":")[0]
             )
-            publiseringsminutt = int(
+            publish_minute = int(
                 response_message.split("Publiseringstid '")[1]
                 .split(":")[1]
                 .split("'")[0]
             )
-            publisering = publiseringdato + td(
-                0, (publiseringstime * 3600 + publiseringsminutt * 60)
+            publish = publish_date + td(
+                0, (publish_hour * 3600 + publish_minute * 60)
             )
-            print(f"Publisering satt til: {publisering.strftime('%Y-%m-%d %H:%M')}")
+            print(f"Publisering satt til: {publish.strftime('%Y-%m-%d %H:%M')}")
             print(
                 f"Følg med på lasteloggen (tar noen minutter): {self.urls['gui'] + self.oppdragsnummer}"
             )

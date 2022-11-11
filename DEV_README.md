@@ -8,7 +8,7 @@ poetry install --with dev
 ```bash
 pytest --cov statbank/
 ```
-Run this when developing tests.
+Run this when developing tests. 
 If you achieve a higher testing coverage make sure to increase the threshold in the workflow.
 .github/workflows/tests.yml
 (at the bottom)
@@ -20,7 +20,7 @@ poetry run pre-commit run --all-files
 ```
 Several of the pre-commit hooks will try to modify the files on a fail. Re-running the command might therefore result in a different result the second time.
 
-### Type-checking Mypy
+### Type-checking with Mypy
 ```bash
 poetry run mypy .
 ```

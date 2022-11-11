@@ -314,9 +314,7 @@ class StatbankTransfer(StatbankAuth):
                 .split(":")[1]
                 .split("'")[0]
             )
-            publish = publish_date + td(
-                0, (publish_hour * 3600 + publish_minute * 60)
-            )
+            publish = publish_date + td(0, (publish_hour * 3600 + publish_minute * 60))
             print(f"Publisering satt til: {publish.strftime('%Y-%m-%d %H:%M')}")
             print(
                 f"Følg med på lasteloggen (tar noen minutter): {self.urls['gui'] + self.oppdragsnummer}"

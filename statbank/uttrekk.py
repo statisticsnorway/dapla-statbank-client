@@ -2,7 +2,7 @@
 
 import copy
 import json
-from decimal import localcontext, Decimal, ROUND_HALF_UP
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 import pandas as pd
 import requests as r
@@ -130,9 +130,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         )
 
     def transferdata_template(self) -> dict:
-        template = {
-            k: f"df{i}" for i, (k, v) in enumerate(self.subtables.items())
-        }
+        template = {k: f"df{i}" for i, (k, v) in enumerate(self.subtables.items())}
         print("{")
         for k, v in template.items():
             print(f'"{k}" : {v},')
@@ -211,7 +209,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             else:
                 n = Decimal(n).to_integral_value()
         return n
-
 
     def _validate_number_dataframes(self, data: dict):
         # Number subtables should match length of data-iterable

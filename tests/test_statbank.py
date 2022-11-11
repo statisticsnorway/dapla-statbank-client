@@ -142,24 +142,30 @@ def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
 # def test_uttrekksbeskrivelse_validate_data_codes_outside_beskrivelse():
 #    ...
 
+
 def test_round_data_0decimals(uttrekksbeskrivelse_success):
     subtable_name = list(fake_data().keys())[0]
     dict_rounded = fake_data().copy()
     df_test_rounded = dict_rounded[subtable_name]
     df_test_rounded["3"] = pd.Series(["2,2", "3,3", "4,4"])
-    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[subtable_name]
+    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[
+        subtable_name
+    ]
     print(df_test_rounded.compare(df_actual_rounded))
     assert df_test_rounded["3"].equals(df_actual_rounded["3"])
-    
+
+
 def test_round_data_1decimals(uttrekksbeskrivelse_success):
     subtable_name = list(fake_data().keys())[0]
     dict_rounded = fake_data().copy()
     df_test_rounded = dict_rounded[subtable_name]
     df_test_rounded["4"] = pd.Series(["1,2", "2,3", "3,4"])
-    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[subtable_name]
+    df_actual_rounded = uttrekksbeskrivelse_success.round_data(dict_rounded)[
+        subtable_name
+    ]
     print(df_test_rounded.compare(df_actual_rounded))
     assert df_test_rounded["4"].equals(df_actual_rounded["4"])
-    
+
 
 def test_transfer_correct_entry(transfer_success):
     # "Lastenummer" is one of the last things set by __init__ and signifies a correctly loaded data-transfer.

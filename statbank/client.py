@@ -6,8 +6,8 @@ import os
 from datetime import timedelta as td
 
 import ipywidgets as widgets
-from IPython.display import display
 import pandas as pd
+from IPython.display import display
 
 from .apidata import apidata, apidata_all, apidata_rotate
 from .auth import StatbankAuth

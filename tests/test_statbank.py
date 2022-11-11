@@ -6,9 +6,11 @@ from unittest import mock
 import pandas as pd
 import pytest
 import requests
+import ipywidgets as widgets
 
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
+from statbank import StatbankClient
 
 
 def fake_mail():
@@ -109,30 +111,71 @@ def uttrekksbeskrivelse_success(test_encrypt, test_make_request):
 
 
 @pytest.fixture
-@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
-@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
 def transfer_success(
     test_transfer_encrypt,
     test_transfer_make_request,
-    test_besk_encrypt,
-    test_besk_make_request,
 ):
-    test_besk_make_request.return_value = (
-        fake_get_response_uttrekksbeskrivelse_successful()
-    )
-    test_besk_encrypt.return_value = fake_post_response_key_service()
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
     return StatbankTransfer(fake_data(), "10000", fake_user())
 
 
+@pytest.fixture
+@mock.patch.object(StatbankClient, "_encrypt_request")
+def client_fake(encrypt_fake):
+    encrypt_fake.return_value = fake_post_response_key_service()
+    return StatbankClient(fake_user())
+
+
+def test_client_print(client_fake):
+    assert len(client_fake.__str__())
+    assert isinstance(client_fake.__str__(), str)
+    
+def test_client_repr(client_fake):
+    assert len(client_fake.__repr__())
+    assert isinstance(client_fake.__repr__(), str)
+    
+def test_client_date_picker_is_widget(client_fake):
+    widg = client_fake.date_picker()
+    assert isinstance(widg, widgets.widget_date.DatePicker)
+
+def test_client_set_date_str(client_fake):
+    client_fake.set_publish_date("2050-11-11")
+    assert "Date set to " in client_fake.log[-1]
+    
+def test_client_set_date_widget(client_fake):
+    widg = client_fake.date_picker()
+    client_fake.set_publish_date(widg)
+    assert "Date set to " in client_fake.log[-1]
+
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+def test_client_get_uttrekk(test_encrypt, test_make_request, client_fake):
+    test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
+    test_encrypt.return_value = fake_post_response_key_service()
+    desc = client_fake.get_description("10000")
+    assert desc.tableid == "10000"
+
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+def test_client_validate_no_errors(test_encrypt, test_make_request, client_fake, uttrekksbeskrivelse_success):
+    test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
+    test_encrypt.return_value = fake_post_response_key_service(),
+    data = uttrekksbeskrivelse_success.round_data(fake_data())
+    errors = client_fake.validate(data, "10000")
+    assert not len(errors)
+
+
+    
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     # last thing to get filled during __init__ is .kodelister, check that dict has length
     assert len(uttrekksbeskrivelse_success.codelists)
 
 
+    
+    
 # def test_uttrekksbeskrivelse_validate_data_wrong_deltabell_count():
 #    ...
 

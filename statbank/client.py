@@ -226,7 +226,7 @@ class StatbankClient(StatbankAuth):
         Logic is built in Python, and can probably be expanded upon."""
         self._validate_params_action([tableid])
         validator = StatbankUttrekksBeskrivelse(
-            tabellid=tableid,
+            tableid=tableid,
             loaduser=self.loaduser,
             raise_errors=raise_errors,
             headers=self.__headers,

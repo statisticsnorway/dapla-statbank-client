@@ -41,6 +41,6 @@ So to publish to Pypi, make sure everything is done, and in the main branch, bum
 ```bash
 poetry run bump2version patch
 ```
-patch: 0.0.1 -> 0.0.2 
-minor: 0.0.1 -> 0.1.0
+1. patch: 0.0.1 -> 0.0.2 \
+minor: 0.0.1 -> 0.1.0 \
 major: 0.0.1 -> 1.0.0

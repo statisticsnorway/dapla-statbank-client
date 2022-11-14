@@ -38,13 +38,14 @@ jobs:
 
       - run: poetry install --no-interaction --no-root
         if: steps.cache-deps.outputs.cache-hit != 'true'
-
-      - name: Run test suite
-        run: |
-          poetry add pytest
-          poetry run pytest
+    
+      # Dont understand why this is run in addition to the coverage command below...
+      #- name: Run test suite
+      #  run: |
+      #    poetry add pytest
+      #    poetry run pytest -v -m "not integration_dapla"
 
       - name: Run coverage
         run: |
           poetry add pytest
-          poetry run pytest --cov statbank/ --cov-fail-under=35
+          poetry run pytest -v -m "not integration_dapla" --cov statbank/ --cov-fail-under=70

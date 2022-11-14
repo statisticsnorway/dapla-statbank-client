@@ -4,9 +4,19 @@ Installing the dev-dependencies in a new environment can be done with the follow
 poetry install --with dev
 ```
 
+### Pytest suites
+```bash
+poetry run pytest --cov -v -m "not integration_dapla"
+```
+The marker "integration_dapla" is for running specific tests locally on a dapla. They are placed in tests/test_integration_dapla.py .\
+Use this flag in the command-line call to avoid running them on other platforms.
+
+
 ### Pytest coverage
 ```bash
-pytest --cov statbank/
+poetry run pytest --cov=statbank --cov-report term-missing
+# or
+poetry run pytest -v -m "not integration_dapla" --cov=statbank --cov-report term-missing
 ```
 Run this when developing tests.
 If you achieve a higher testing coverage make sure to increase the threshold in the workflow.

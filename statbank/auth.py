@@ -16,8 +16,6 @@ class StatbankAuth:
 
     Methods
     -------
-    _decide_dapla_environ() -> str:
-        If in Dapla-staging, should return "TEST", otherwise "PROD".
     _build_headers() -> dict:
         Creates dict of headers needed in request to talk to Statbank-API
     _build_auth() -> str:
@@ -30,13 +28,6 @@ class StatbankAuth:
         is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
 
     """
-
-    @staticmethod
-    def _decide_dapla_environ() -> str:
-        if "staging" in os.environ["CLUSTER_ID"].lower():
-            return "TEST"
-        else:
-            return "PROD"
 
     def _build_headers(self) -> dict:
         return {

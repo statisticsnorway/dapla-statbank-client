@@ -209,7 +209,15 @@ def test_round_data_1decimals(uttrekksbeskrivelse_success):
     print(df_test_rounded.compare(df_actual_rounded))
     assert df_test_rounded["4"].equals(df_actual_rounded["4"])
 
-
+    
+def test_check_round_data_manages_punctum(uttrekksbeskrivelse_success):
+    subtable_name = list(fake_data().keys())[0]
+    datadict = fake_data().copy()
+    datadict[subtable_name]["4"] = pd.Series(["1.2", "2.3", "3.4"])
+    # Fails on validate raising error
+    uttrekksbeskrivelse_success.validate(datadict)
+    
+    
 def test_transfer_correct_entry(transfer_success):
     # "Lastenummer" is one of the last things set by __init__ and signifies a correctly loaded data-transfer.
     # Is also used to build urls to webpages showing the ingestion status

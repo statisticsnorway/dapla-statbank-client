@@ -177,7 +177,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         data_copy = copy.deepcopy(data)
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
-            for variabel in deltabell["statistikkvariabler"]:
+            for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
@@ -423,17 +423,16 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     error = False
+                    column = (data[deltabell_name]
+                              .iloc[:, col_num]
+                              .copy()
+                              .astype(str)
+                              .str.replace(".", ",")
+                             )
                     if decimal_num:
-                        if any(decimal_num != (
-                                data[deltabell_name]
-                                .iloc[:, col_num]
-                                .str.split(",")
-                                .str[-1]
-                                .str.len()
-                            )
-                        ):
+                        if any(decimal_num != column.str.split(",").str[-1].str.len()):
                             error = True
-                    elif not data[deltabell_name].iloc[:, col_num].str.isdigit().all():
+                    elif not column.str.isdigit().all():
                         error = True
 
                     if error:
@@ -446,12 +445,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                     this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise.
                     {data[deltabell_name]}
-                    {data[deltabell_name]
-                            .iloc[:, col_num]
-                            .str.split(",")
-                            .str[-1]
-                            .str.len()}
-                        """
+                    {column.str.split(",").str[-1].str.len()}
+                    """
 
                         validation_errors[
                             f"rounding_error_{deltabell_name}_{col_num}"

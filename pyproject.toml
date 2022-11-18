@@ -39,6 +39,12 @@ pyproject-flake8 = "^5.0.4.post1"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+
+[tool.pytest.ini_options]
+markers = [
+    "integration_dapla",
+]
+
 [tool.flake8]
 extend-ignore = ["E501"]
 max-complexity = 15

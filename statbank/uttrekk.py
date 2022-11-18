@@ -177,7 +177,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         data_copy = copy.deepcopy(data)
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
-            for variabel in deltabell["statistikkvariabler"]:
+            for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
@@ -208,7 +208,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                 n = round(Decimal(n), decimals)
             else:
                 n = Decimal(n).to_integral_value()
-        return n
+        return str(n)
 
     def _validate_number_dataframes(self, data: dict):
         # Number subtables should match length of data-iterable
@@ -418,27 +418,35 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         """
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
-            for variabel in deltabell["variabler"]:
+            for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
-                    if any(
-                        decimal_num
-                        != (
-                            data[deltabell_name]
-                            .iloc[:, col_num]
-                            .str.split(",")
-                            .str[-1]
-                            .str.len()
-                        )
-                    ):
-                        error_text = """Check that string column that should be rounded,
+                    error = False
+                    column = (data[deltabell_name]
+                              .iloc[:, col_num]
+                              .copy()
+                              .astype(str)
+                              .str.replace(".", ",")
+                             )
+                    if decimal_num:
+                        if any(decimal_num != column.str.split(",").str[-1].str.len()):
+                            error = True
+                    elif not column.str.isdigit().all():
+                        error = True
+
+                    if error:
+                        error_text = f"""Check that string column {col_num} in
+                        {deltabell_name} that should be rounded to
+                        {decimal_num} decimal places,
                         has correct number of decimals. And consider converting from a
                         non-rounded float to a string with this method:
                         data = uttrekksbeskrivelse.round_data(data),
                     this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise.
-                        """
+                    {data[deltabell_name]}
+                    {column.str.split(",").str[-1].str.len()}
+                    """
 
                         validation_errors[
                             f"rounding_error_{deltabell_name}_{col_num}"

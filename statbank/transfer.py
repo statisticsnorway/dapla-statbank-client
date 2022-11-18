@@ -39,13 +39,13 @@ class StatbankTransfer(StatbankAuth):
         First person to be notified by email of transfer. Defaults to the same as "shortuser"
     bcc : str
         Second person to be notified by email of transfer. Defaults to the same as "cc1"
-    overwrite : str
-        "0" = no overwrite
-        "1" = overwrite
-    approve : str
-        "0" = manual approval
-        "1" = automatic approval at transfer-time (immediately)
-        "2" = JIT (Just In Time), approval right before publishing time
+    overwrite : bool
+        False = no overwrite
+        True = overwrite
+    approve : int
+        0 = manual approval
+        1 = automatic approval at transfer-time (immediately)
+        2 = JIT (Just In Time), approval right before publishing time
     validation : bool
         Set to True, if you want the python-validation code to run user-side.
         Set to False, if its slow and unnecessary.
@@ -99,7 +99,7 @@ class StatbankTransfer(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: str = "1",
+        approve: int = 1,
         validation: bool = True,
         delay: bool = False,
         headers=None,
@@ -226,9 +226,9 @@ class StatbankTransfer(StatbankAuth):
                 "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving"
             )
 
-        if self.approve not in ["0", "1", "2"]:
+        if self.approve not in [0, 1, 2]:
             raise ValueError(
-                "(Strengverdi) Sett approve til enten '0' = manuell, '1' = automatisk (umiddelbart), eller '2' = JIT-automatisk (just-in-time)"
+                "(Integer) Sett approve til enten 0 = manuell, 1 = automatisk (umiddelbart), eller 2 = JIT-automatisk (just-in-time)"
             )
 
     def _validate_datatype(self):

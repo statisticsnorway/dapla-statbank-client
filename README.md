@@ -108,6 +108,7 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
+- 0.0.4 More test coverage, some bugs fixed in rounding checks and parameter-passing 
 - 0.0.3 Removed batches, stripping uttrekk from transfer, rounding function on uttrekk, data required in as a dict of dataframes, with "deltabell-navn". Tableid now works to transfer to instead of only "hovedtabellnavn"
 - 0.0.2 Starting alpha, fine-tuning release to Pypi on github-release
 - 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.

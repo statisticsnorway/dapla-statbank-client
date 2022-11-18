@@ -277,7 +277,7 @@ class StatbankTransfer(StatbankAuth):
             "publiseringsdato": self.date,
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
-            "auto_overskriv_data": str(self.overwrite),
+            "auto_overskriv_data": str(int(self.overwrite)),
             "auto_godkjenn_data": self.approve,
         }
 

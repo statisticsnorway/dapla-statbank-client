@@ -194,7 +194,7 @@ class StatbankClient(StatbankAuth):
         about shape of data to be transferred, and metadata about the table
         itself in Statbankens system, like ID, name and content of codelists.
         """
-        self._validate_params_action(tableids=[tableid])
+        self._validate_params_action(tableid)
         self.log.append(
             f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
@@ -224,7 +224,7 @@ class StatbankClient(StatbankAuth):
         All validation happens locally, so dont be afraid of any data
         being sent to statbanken using this method.
         Logic is built in Python, and can probably be expanded upon."""
-        self._validate_params_action([tableid])
+        self._validate_params_action(tableid)
         validator = StatbankUttrekksBeskrivelse(
             tableid=tableid,
             loaduser=self.loaduser,
@@ -241,7 +241,7 @@ class StatbankClient(StatbankAuth):
     def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:
         """Transfers your data to Statbanken.
         Make sure you've set the publish-date correctly before sending."""
-        self._validate_params_action([tableid])
+        self._validate_params_action(tableid)
         self.log.append(
             f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )
@@ -254,7 +254,7 @@ class StatbankClient(StatbankAuth):
             date=self.date,
             cc=self.cc,
             bcc=self.bcc,
-            overwrite=str(int(self.overwrite)),
+            overwrite=self.overwrite,
             approve=self.approve,
         )
 
@@ -325,18 +325,15 @@ class StatbankClient(StatbankAuth):
             )
 
     # Class meta-validation
-    def _validate_params_action(self, tableids: list) -> None:
-        for tableid in tableids:
-            if not isinstance(tableid, str):
-                raise TypeError(f"{tableid} is not a string.")
-            if not len(tableid) == 5:
-                raise ValueError(f"{tableid} is not 5 characters long.")
+    def _validate_params_action(self, tableid: str) -> None:
+        if not isinstance(tableid, str):
+            raise TypeError(f"{tableid} is not a string.")
+        if not len(tableid) == 5:
+            raise ValueError(f"{tableid} is not 5 characters long.")
 
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):
             raise TypeError('Please pass in "loaduser" as a string.')
-        if isinstance(self.date, str):
-            self.date = datetime.datetime.strptime(self.date, "%Y-%m-%d")
         if not self.shortuser:
             self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
         if not self.cc:
@@ -347,7 +344,7 @@ class StatbankClient(StatbankAuth):
             raise ValueError(
                 "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"
             )
-        if self.approve not in [0, 1, 2]:
+        if not isinstance(self.approve, int) or self.approve not in [0, 1, 2]:
             raise ValueError(
                 "(Int) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
             )

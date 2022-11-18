@@ -24,13 +24,13 @@ def apidata(
     if len(id_or_url) == 5 and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
     else:
-        try:
-            urllib.parse.urlparse(id_or_url)
-            url = id_or_url
-        except Exception:
+        test_url = urllib.parse.urlparse(id_or_url)
+        if not all([test_url.scheme, test_url.netloc]):
             raise ValueError(
                 "First parameter not recognized as a statbank ID or a direct url"
             )
+        url = id_or_url
+
     repr(url)
     print(url)
     # Spør APIet om å få resultatet med requests-biblioteket
@@ -84,13 +84,12 @@ def apidata_query_all(id_or_url: str = "") -> dict:
     if len(id_or_url) == 5 and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
     else:
-        try:
-            urllib.parse.urlparse(id_or_url)
-            url = id_or_url
-        except Exception:
+        test_url = urllib.parse.urlparse(id_or_url)
+        if not all([test_url.scheme, test_url.netloc]):
             raise ValueError(
                 "First parameter not recognized as a statbank ID or a direct url"
             )
+        url = id_or_url
     res = r.get(url)
     if res.status_code == 200:
         meta = json.loads(res.text)["variables"]

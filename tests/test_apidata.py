@@ -89,6 +89,11 @@ def test_client_apidata(client_fake, query_all_05300):
     assert isinstance(df, pd.DataFrame)
     assert len(df)
 
+def test_client_apidata_no_query(client_fake):
+    df = client_fake.apidata("05300")
+    assert isinstance(df, pd.DataFrame)
+    assert len(df)
+
 @mock.patch('statbank.apidata')
 def test_client_apidata_all(fake_apidata, client_fake, apidata_05300):
     fake_apidata.return_value = apidata_05300

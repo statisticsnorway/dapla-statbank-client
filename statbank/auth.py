@@ -56,12 +56,18 @@ class StatbankAuth:
             db = "TEST"
         else:
             db = "PROD"
-        return r.post(
-            os.environ["STATBANK_ENCRYPT_URL"],
+        if AuthClient.is_ready():
             headers={
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",
-            },
+            }
+        else:
+            headers={
+                "Content-type": "application/json",
+            }
+        return r.post(
+            os.environ["STATBANK_ENCRYPT_URL"],
+            headers=headers,
             json={"message": getpass.getpass(f"Lastepassord ({db}):")},
         )
 

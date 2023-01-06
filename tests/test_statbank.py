@@ -132,7 +132,7 @@ def test_transfer_no_loaduser_raises(
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000")
 
 
@@ -156,7 +156,7 @@ def test_transfer_date_is_invalid_string_raises(
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), date="205000-01-01")
 
 
@@ -184,7 +184,7 @@ def test_transfer_overwrite_wrong_format(
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), overwrite=1)
 
 
@@ -196,7 +196,7 @@ def test_transfer_approve_wrong_format(
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), approve="1")
 
 
@@ -210,7 +210,7 @@ def test_transfer_to_json_return_jsonstring(transfer_success):
 
 
 def test_transfer_cant_transfer_twice_raises(transfer_success):
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         transfer_success.transfer()
 
 
@@ -222,7 +222,7 @@ def test_transfer_shortuser_wrong_raises(
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankTransfer(
             fake_data(), "10000", fake_user(), date="2050-01-01", shortuser="aa"
         )
@@ -238,21 +238,21 @@ def client_fake(encrypt_fake):
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_no_loaduser_set(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankClient(1)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_approve_wrong_datatype(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankClient(fake_user(), approve="1")
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_overwrite_wrong_datatype(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         StatbankClient(fake_user(), overwrite="1")
 
 
@@ -284,7 +284,7 @@ def test_client_set_date_str(client_fake):
 
 
 def test_client_set_date_int_raises(client_fake):
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         client_fake.set_publish_date(1)
 
 
@@ -321,12 +321,12 @@ def test_client_validate_no_errors(
 
 
 def test_client_get_uttrekk_tableid_non_string(client_fake):
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         client_fake.get_description(10000)
 
 
 def test_client_get_uttrekk_tableid_wrong_length(client_fake):
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         client_fake.get_description("1")
 
 

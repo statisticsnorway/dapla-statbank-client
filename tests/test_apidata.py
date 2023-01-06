@@ -70,7 +70,7 @@ def apidata_05300(fake_post, query_all_05300):
 def test_query_all_raises_500(fake_get):
     fake_get.return_value = fake_get_table_meta()
     fake_get.return_value.status_code = 500
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata_query_all("https://data.ssb.no/api/v0/no/table/05300")
 
 
@@ -130,7 +130,7 @@ def test_client_apidata_rotate_05300(fake_apidata, client_fake, apidata_05300):
 def test_apidata_raises_400(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 400
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
@@ -138,7 +138,7 @@ def test_apidata_raises_400(fake_post, query_all_05300):
 def test_apidata_raises_403(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 403
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
@@ -146,17 +146,17 @@ def test_apidata_raises_403(fake_post, query_all_05300):
 def test_apidata_raises_500(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 500
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
 def test_apidata_raises_wrong_id(query_all_05300):
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata("0", query_all_05300, include_id=True)
 
 
 @mock.patch("statbank.apidata")
 def test_apidata_all_raises_wrong_id(fake_apidata, apidata_05300):
     fake_apidata.return_value = apidata_05300
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(Exception) as _:
         apidata_all("0", include_id=True)

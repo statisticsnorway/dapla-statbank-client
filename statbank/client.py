@@ -328,8 +328,9 @@ class StatbankClient(StatbankAuth):
     def _validate_params_action(self, tableid: str) -> None:
         if not isinstance(tableid, str):
             raise TypeError(f"{tableid} is not a string.")
-        if not len(tableid) == 5:
-            raise ValueError(f"{tableid} is not 5 characters long.")
+        if tableid.isdigit():  # Allow for "hovednavn" in addition to tableid
+            if not len(tableid) == 5:
+                raise ValueError(f"{tableid} is numeric, but not 5 characters long.")
 
     def _validate_params_init(self) -> None:
         if not self.loaduser or not isinstance(self.loaduser, str):

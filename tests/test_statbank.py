@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 from datetime import datetime
+import json
 
 import pandas as pd
 import pytest
@@ -123,11 +124,100 @@ def transfer_success(
     return StatbankTransfer(fake_data(), "10000", fake_user())
 
 
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_no_loaduser_raises(
+    test_transfer_encrypt,
+    test_transfer_make_request,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    with pytest.raises(Exception) as e_info:
+        StatbankTransfer(fake_data(), "10000")
+
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_date_is_string(
+    test_transfer_encrypt,
+    test_transfer_make_request,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    trans = StatbankTransfer(fake_data(), "10000", fake_user(), date="2050-01-01")
+    assert trans.oppdragsnummer.isdigit()
+
+
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_date_is_invalid_string_raises(
+    test_transfer_encrypt,
+    test_transfer_make_request,):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    with pytest.raises(Exception) as e_info:
+        StatbankTransfer(fake_data(), "10000", fake_user(), date="205000-01-01")
+
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_str_transfer_on_delay_and_after(
+    test_transfer_encrypt,
+    test_transfer_make_request,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    trans = StatbankTransfer(fake_data(), "10000", fake_user(), date="2050-01-01", delay=True)
+    assert "Ikke overført enda" in trans.__str__()
+    trans.transfer()
+    assert len(trans.__str__()) and "Ikke overført enda" not in trans.__str__()
+
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_overwrite_wrong_format(
+    test_transfer_encrypt,
+    test_transfer_make_request,):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    with pytest.raises(Exception) as e_info:
+        StatbankTransfer(fake_data(), "10000", fake_user(), overwrite=1)
+    
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_approve_wrong_format(
+    test_transfer_encrypt,
+    test_transfer_make_request,):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    with pytest.raises(Exception) as e_info:
+        StatbankTransfer(fake_data(), "10000", fake_user(), approve="1")
+
+def test_repr_transfer(transfer_success):
+    assert "StatbankTransfer" in transfer_success.__repr__()
+    
+def test_transfer_to_json_return_jsonstring(transfer_success):
+    # Will throw error and fail test if json string cant be loaded as json
+    json.loads(transfer_success.to_json())
+
+
+def test_transfer_cant_transfer_twice_raises(transfer_success):
+    with pytest.raises(Exception) as e_info:
+        transfer_success.transfer()
+
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+def test_transfer_shortuser_wrong_raises(    
+    test_transfer_encrypt,
+    test_transfer_make_request,):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    with pytest.raises(Exception) as e_info:
+        StatbankTransfer(fake_data(), "10000", fake_user(), date="2050-01-01", shortuser="aa")
+
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def client_fake(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
     return StatbankClient(fake_user())
+
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_no_loaduser_set(encrypt_fake):
@@ -135,12 +225,15 @@ def test_client_no_loaduser_set(encrypt_fake):
     with pytest.raises(Exception) as e_info:
         StatbankClient(1)
 
+
+
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_approve_wrong_datatype(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
     with pytest.raises(Exception) as e_info:
         StatbankClient(fake_user(), approve="1")
-        
+
+
 @mock.patch.object(StatbankClient, "_encrypt_request")
 def test_client_overwrite_wrong_datatype(encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()

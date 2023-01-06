@@ -5,7 +5,6 @@ import json
 from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 import pandas as pd
-import numpy as np
 import requests as r
 from requests.exceptions import ConnectionError
 
@@ -236,11 +235,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                 col_num += len(deltabell["null_prikk_missing"])
             if len(data[deltabell_navn].columns) != col_num:
                 validation_errors[f"col_count_data_{deltabell_num}"] = ValueError(
-                    f"""Expecting {col_num} columns in datapart
-                        {deltabell_num}: {deltabell_navn}"""
+                    f"""
+                    EXPECTING {col_num} COLUMNS IN DATFRAME NUMBER
+                    {deltabell_num}: {deltabell_navn}
+                    ONLY FOUND {len(data[deltabell_navn].columns)}
+                    """
                 )
         for k in validation_errors.keys():
             if "col_count_data" in k:
+                if printing: print(validation_errors[k])
                 break
         else:
             if printing: print("Correct number of columns...")

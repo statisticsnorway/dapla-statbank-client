@@ -186,7 +186,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         "float"
                         in str(data_copy[deltabell_name].dtypes[col_num]).lower()
                     ):  # If column is passed in as a float, we can handle it
-                        if printing: print(
+                        print(
                             f"Converting column {col_num} in {deltabell_name} into a string, with {decimal_num} decimals."
                         )
                         data_copy[deltabell_name].iloc[:, col_num] = (

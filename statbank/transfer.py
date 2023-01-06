@@ -256,7 +256,7 @@ class StatbankTransfer(StatbankAuth):
             csv_content = elem.to_csv(sep=";", index=False, header=False)
             body += str(csv_content)
         body += f"\n--{self.boundary}--"
-        body = body.replace("\n", "\r\n", regex=False)  # Statbank likes this?
+        body = body.replace("\n", "\r\n")  # Statbank likes this?
         return body
 
     @staticmethod

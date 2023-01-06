@@ -5,7 +5,8 @@ import pytest
 import requests
 
 from statbank import StatbankClient
-from statbank.apidata import apidata, apidata_all, apidata_query_all, apidata_rotate
+from statbank.apidata import (apidata, apidata_all, apidata_query_all,
+                              apidata_rotate)
 
 
 def fake_user():

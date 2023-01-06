@@ -473,11 +473,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         data = uttrekksbeskrivelse.round_data(data),
                     this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise."""
-                        # This really clutters up the place
-                        # {data[deltabell_name]}
-                        # {column.str.split(",").str[-1].str.len()}
-                        # """
-
                         validation_errors[
                             f"rounding_error_{deltabell_name}_{col_num}"
                         ] = ValueError(error_text)

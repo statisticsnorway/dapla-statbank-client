@@ -5,6 +5,7 @@ import json
 from decimal import ROUND_HALF_UP, Decimal, localcontext
 
 import pandas as pd
+import numpy as np
 import requests as r
 from requests.exceptions import ConnectionError
 
@@ -189,7 +190,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         print(
                             f"Converting column {col_num} in {deltabell_name} into a string, with {decimal_num} decimals."
                         )
-                        data_copy[deltabell_name].iloc[:, col_num] = (
+                        data_copy[deltabell_name][data_copy[deltabell_name].columns[col_num]] = (
                             data_copy[deltabell_name]
                             .iloc[:, col_num]
                             .astype("Float64")
@@ -204,9 +205,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
     def _round_up(n: float, decimals: int = 0) -> str:
         with localcontext() as ctx:
             ctx.rounding = ROUND_HALF_UP
-            if decimals:
+            if pd.isnull(n):
+                return ""
+            elif decimals and n:
                 n = round(Decimal(n), decimals)
-            else:
+            elif n:
                 n = Decimal(n).to_integral_value()
         return str(n)
 

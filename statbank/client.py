@@ -218,7 +218,10 @@ class StatbankClient(StatbankAuth):
 
     # Validation
     def validate(
-        self, dfs: dict, tableid: str = "00000", raise_errors: bool = False
+        self, dfs: dict, 
+        tableid: str = "00000",
+        raise_errors: bool = False,
+        printing: bool = True
     ) -> dict:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
         All validation happens locally, so dont be afraid of any data
@@ -231,7 +234,7 @@ class StatbankClient(StatbankAuth):
             raise_errors=raise_errors,
             headers=self.__headers,
         )
-        validation_errors = validator.validate(dfs)
+        validation_errors = validator.validate(dfs, printing=printing)
         self.log.append(
             f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
         )

@@ -106,7 +106,7 @@ class StatbankTransfer(StatbankAuth):
     ):
         self.data = data
         self.tableid = tableid
-        
+
         if isinstance(loaduser, str) and loaduser != "":
             self.loaduser = loaduser
         else:

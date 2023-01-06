@@ -1,4 +1,3 @@
-import os
 from unittest import mock
 
 import pandas as pd
@@ -6,19 +5,23 @@ import pytest
 import requests
 
 from statbank import StatbankClient
-from statbank.apidata import apidata, apidata_all, apidata_rotate, apidata_query_all
+from statbank.apidata import apidata, apidata_all, apidata_query_all, apidata_rotate
+
 
 def fake_user():
     return "SSB-person-456"
 
+
 def fake_auth():
     return "SoCipherVerySecure"
+
 
 def fake_post_response_key_service():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes('{"message":"' + fake_auth() + '"}', "utf8")
     return response
+
 
 def fake_get_table_meta():
     response = requests.Response()
@@ -29,6 +32,7 @@ def fake_get_table_meta():
     )
     response.request = requests.PreparedRequest()
     return response
+
 
 def fake_post_apidata():
     response = requests.Response()
@@ -49,32 +53,36 @@ def client_fake(encrypt_fake):
 
 
 @pytest.fixture
-@mock.patch.object(requests, 'get')
+@mock.patch.object(requests, "get")
 def query_all_05300(fake_get):
     fake_get.return_value = fake_get_table_meta()
     return apidata_query_all("05300")
 
+
 @pytest.fixture
-@mock.patch.object(requests, 'post')
+@mock.patch.object(requests, "post")
 def apidata_05300(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     return apidata("05300", query_all_05300, include_id=True)
 
-@mock.patch.object(requests, 'get')
+
+@mock.patch.object(requests, "get")
 def test_query_all_raises_500(fake_get):
     fake_get.return_value = fake_get_table_meta()
     fake_get.return_value.status_code = 500
     with pytest.raises(Exception) as e_info:
         apidata_query_all("https://data.ssb.no/api/v0/no/table/05300")
 
-@mock.patch('statbank.apidata')
+
+@mock.patch("statbank.apidata")
 def test_apidata_all_05300(fake_apidata, apidata_05300):
     fake_apidata.return_value = apidata_05300
     df_all = apidata_all("05300", include_id=True)
     assert isinstance(df_all, pd.DataFrame)
     assert len(df_all)
 
-@mock.patch('statbank.apidata')
+
+@mock.patch("statbank.apidata")
 def test_apidata_rotate_05300(fake_apidata, apidata_05300):
     fake_apidata.return_value = apidata_05300
     df_all = apidata_all("05300", include_id=True)
@@ -84,59 +92,70 @@ def test_apidata_rotate_05300(fake_apidata, apidata_05300):
         assert len(ind) == 4
         assert ind.isdigit()
 
+
 def test_client_apidata(client_fake, query_all_05300):
     df = client_fake.apidata("05300", query_all_05300)
     assert isinstance(df, pd.DataFrame)
     assert len(df)
+
 
 def test_client_apidata_no_query(client_fake):
     df = client_fake.apidata("05300")
     assert isinstance(df, pd.DataFrame)
     assert len(df)
 
-@mock.patch('statbank.apidata')
+
+@mock.patch("statbank.apidata")
 def test_client_apidata_all(fake_apidata, client_fake, apidata_05300):
     fake_apidata.return_value = apidata_05300
     df = client_fake.apidata_all("https://data.ssb.no/api/v0/no/table/05300")
     assert isinstance(df, pd.DataFrame)
     assert len(df)
-    
-@mock.patch('statbank.apidata')
+
+
+@mock.patch("statbank.apidata")
 def test_client_apidata_rotate_05300(fake_apidata, client_fake, apidata_05300):
     fake_apidata.return_value = apidata_05300
-    df_all = client_fake.apidata_all("https://data.ssb.no/api/v0/no/table/05300/", include_id=True)
+    df_all = client_fake.apidata_all(
+        "https://data.ssb.no/api/v0/no/table/05300/", include_id=True
+    )
     df_rotate = client_fake.apidata_rotate(df_all, ind="år", val="value")
     # After rotating index should be 4-digit years
     for ind in df_rotate.index:
         assert len(ind) == 4
         assert ind.isdigit()
 
-@mock.patch.object(requests, 'post')
+
+@mock.patch.object(requests, "post")
 def test_apidata_raises_400(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 400
     with pytest.raises(Exception) as e_info:
         apidata("05300", query_all_05300, include_id=True)
 
-@mock.patch.object(requests, 'post')
+
+@mock.patch.object(requests, "post")
 def test_apidata_raises_403(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 403
     with pytest.raises(Exception) as e_info:
         apidata("05300", query_all_05300, include_id=True)
-        
-@mock.patch.object(requests, 'post')
+
+
+@mock.patch.object(requests, "post")
 def test_apidata_raises_500(fake_post, query_all_05300):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 500
     with pytest.raises(Exception) as e_info:
         apidata("05300", query_all_05300, include_id=True)
-        
+
+
 def test_apidata_raises_wrong_id(query_all_05300):
     with pytest.raises(Exception) as e_info:
         apidata("0", query_all_05300, include_id=True)
 
-@mock.patch('statbank.apidata')
+
+@mock.patch("statbank.apidata")
 def test_apidata_all_raises_wrong_id(fake_apidata, apidata_05300):
     fake_apidata.return_value = apidata_05300
     with pytest.raises(Exception) as e_info:

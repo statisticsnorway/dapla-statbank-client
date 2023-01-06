@@ -38,7 +38,7 @@ jobs:
 
       - run: poetry install --no-interaction --no-root
         if: steps.cache-deps.outputs.cache-hit != 'true'
-    
+
       # Dont understand why this is run in addition to the coverage command below...
       #- name: Run test suite
       #  run: |

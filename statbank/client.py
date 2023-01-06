@@ -218,10 +218,11 @@ class StatbankClient(StatbankAuth):
 
     # Validation
     def validate(
-        self, dfs: dict, 
+        self,
+        dfs: dict,
         tableid: str = "00000",
         raise_errors: bool = False,
-        printing: bool = True
+        printing: bool = True,
     ) -> dict:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
         All validation happens locally, so dont be afraid of any data
@@ -331,7 +332,9 @@ class StatbankClient(StatbankAuth):
     def _validate_params_action(self, tableid: str) -> None:
         if not isinstance(tableid, str):
             raise TypeError(f"{tableid} is not a string.")
-        if tableid.isdigit() and not len(tableid) == 5:  # Allow for "hovednavn" in addition to tableid
+        if (
+            tableid.isdigit() and not len(tableid) == 5
+        ):  # Allow for "hovednavn" in addition to tableid
             raise ValueError(f"{tableid} is numeric, but not 5 characters long.")
 
     def _validate_params_init(self) -> None:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dapla-statbank-client"
-version = "0.0.8"
+version = "0.0.9"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 authors = ["Statistics Norway", "Carl F. Corneil <cfc@ssb.no>"]
 license = "MIT"
@@ -32,7 +32,7 @@ flake8 = "^5.0.4"
 bump2version = "^1.0.1"
 pytest-cov = "^4.0.0"
 mypy = "^0.982"
-pyproject-flake8 = "^5.0.4.post1"
+black = "^22.12.0"
 
 
 [build-system]

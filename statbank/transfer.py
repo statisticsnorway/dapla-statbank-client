@@ -106,7 +106,8 @@ class StatbankTransfer(StatbankAuth):
     ):
         self.data = data
         self.tableid = tableid
-        if loaduser:
+
+        if isinstance(loaduser, str) and loaduser != "":
             self.loaduser = loaduser
         else:
             raise ValueError("You must set loaduser as a parameter")
@@ -205,10 +206,6 @@ class StatbankTransfer(StatbankAuth):
             return json.dumps(json_content)
 
     def _validate_original_parameters(self) -> None:
-        # Date should not be on the weekend?
-
-        if not isinstance(self.loaduser, str) or not self.loaduser:
-            raise ValueError("Du må sette en loaduser korrekt")
 
         for _, shortuser in enumerate([self.shortuser, self.cc, self.bcc]):
 

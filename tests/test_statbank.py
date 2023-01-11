@@ -67,7 +67,25 @@ def fake_get_response_uttrekksbeskrivelse_successful():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes(
-        '{"Uttaksbeskrivelse_lagd":"29.09.2022 klokka 18:51" , "base": "DB1T","TabellId":"10000","Huvudtabell":"HovedTabellNavn","DeltabellTitler":[{ "Filnavn": "delfil1.dat" , "Filtext": "10000: Fake table" }] ,"deltabller":[{"deltabell":"delfil1.dat","variabler":[{"kolonnenummer":"1","Klassifikasjonsvariabel":"Kodeliste1","Variabeltext":"kodeliste1","Kodeliste_id":"Kodeliste1","Kodeliste_text":"Kodeliste 1"},{"kolonnenummer":"2","Klassifikasjonsvariabel":"Tid","Variabeltext":"tid","Kodeliste_id":"-","Kodeliste_text":"Tidsperioden for tabelldataene, enhet = år, format = åååå"}],"statistikkvariabler":[{ "kolonnenummer":"3","Text":"Antall","Enhet":"personer","Antall_lagrede_desimaler":"0","Antall_viste_desimaler":"0"}, { "kolonnenummer":"4","Text":"Antall","Enhet":"personer","Antall_lagrede_desimaler":"1","Antall_viste_desimaler":"1"}],"eksempel_linje":"01;2022;100"}],"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999","koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},{"kode":"02","text":"Kode2"}]}]}',
+        """{"Uttaksbeskrivelse_lagd":"29.09.2022 klokka 18:51" , "base": "DB1T",
+"TabellId":"10000","Huvudtabell":"HovedTabellNavn",
+"DeltabellTitler":[{ "Filnavn": "delfil1.dat" , "Filtext": "10000: Fake table" }] ,
+"deltabller":[{"deltabell":"delfil1.dat",
+"variabler":[{"kolonnenummer":"1","Klassifikasjonsvariabel":"Kodeliste1",
+"Variabeltext":"kodeliste1","Kodeliste_id":"Kodeliste1",
+"Kodeliste_text":"Kodeliste 1"},
+{"kolonnenummer":"2","Klassifikasjonsvariabel":"Tid","Variabeltext":"tid",Kodeliste_id":"-",
+"Kodeliste_text":"Tidsperioden for tabelldataene, enhet = år, format = åååå"}],
+"statistikkvariabler":[{ "kolonnenummer":"3","Text":"Antall","Enhet":"personer",
+"Antall_lagrede_desimaler":"0","Antall_viste_desimaler":"0"},
+{"kolonnenummer":"4","Text":"Antall","Enhet":"personer",
+"Antall_lagrede_desimaler":"1","Antall_viste_desimaler":"1"}],
+"eksempel_linje":"01;2022;100"}],
+"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999",
+"koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},
+{"kode":"02","text":"Kode2"}]}]}""".replace(
+            "\n", ""
+        ),
         "utf8",
     )
     response.request = requests.PreparedRequest()

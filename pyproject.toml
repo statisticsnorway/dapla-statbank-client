@@ -45,6 +45,11 @@ markers = [
     "integration_dapla",
 ]
 
-[tool.flake8]
-extend-ignore = ["E501"]
-max-complexity = 15
+#[tool.flake8]
+#extend-ignore = ["E501"]
+#max-complexity = 15
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+lines_after_imports = 2

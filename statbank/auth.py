@@ -57,12 +57,12 @@ class StatbankAuth:
         else:
             db = "PROD"
         if AuthClient.is_ready():
-            headers={
+            headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",
             }
         else:
-            headers={
+            headers = {
                 "Content-type": "application/json",
             }
         return r.post(

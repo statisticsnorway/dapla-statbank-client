@@ -5,8 +5,7 @@ import pytest
 import requests
 
 from statbank import StatbankClient
-from statbank.apidata import (apidata, apidata_all, apidata_query_all,
-                              apidata_rotate)
+from statbank.apidata import apidata, apidata_all, apidata_query_all, apidata_rotate
 
 
 def fake_user():
@@ -28,7 +27,23 @@ def fake_get_table_meta():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes(
-        '{"title":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","variables":[{"code":"Avstand1","text":"avstand","values":["01","02","03","04","05","06"],"valueTexts":["Under 1 km","1-4,9 km","5-9,9 km","10-24 km","25-49 km","50 km eller over"]},{"code":"Kulturtilbud","text":"kulturtilbud","values":["01","02","03","04","05","06","07","08"],"valueTexts":["Kino eller lokale med jevnlig spillefilmframvisning","Teater eller lokale med jevnlige teater- eller operaforestillinger","Konsertsal eller lokale med jevnlige musikkarrangement","Galleri eller lokale med jevnlige kunstutstillinger","Museum","Idrettsplass eller idrettshall","Folkebibliotek","Bokhandel"]},{"code":"ContentsCode","text":"statistikkvariabel","values":["Avstand"],"valueTexts":["Avstand til nærmeste lokale/sted"]},{"code":"Tid","text":"år","values":["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"valueTexts":["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"time":true}]}',
+        """{"title":"05300: Avstand til nærmeste lokale/sted (prosent),
+etter avstand, kulturtilbud, statistikkvariabel og år","variables":
+[{"code":"Avstand1","text":"avstand","values":["01","02","03","04","05","06"],
+"valueTexts":["Under 1 km","1-4,9 km","5-9,9 km","10-24 km","25-49 km","50 km eller over"]},
+{"code":"Kulturtilbud","text":"kulturtilbud","values":["01","02","03","04","05","06","07","08"],
+"valueTexts":["Kino eller lokale med jevnlig spillefilmframvisning",
+"Teater eller lokale med jevnlige teater- eller operaforestillinger",
+"Konsertsal eller lokale med jevnlige musikkarrangement",
+"Galleri eller lokale med jevnlige kunstutstillinger","Museum",
+"Idrettsplass eller idrettshall","Folkebibliotek","Bokhandel"]},
+{"code":"ContentsCode","text":"statistikkvariabel","values":["Avstand"],
+"valueTexts":["Avstand til nærmeste lokale/sted"]},
+{"code":"Tid","text":"år","values":
+["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"valueTexts":
+["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"time":true}]}""".replace(
+            "\n", ""
+        ),
         "utf8",
     )
     response.request = requests.PreparedRequest()
@@ -39,7 +54,49 @@ def fake_post_apidata():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes(
-        '{"class":"dataset","label":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","source":"Statistisk sentralbyrå","updated":"2022-05-24T06:00:00Z","id":["Avstand1","Kulturtilbud","ContentsCode","Tid"],"size":[6,8,1,9],"dimension":{"Avstand1":{"label":"avstand","category":{"index":{"01":0,"02":1,"03":2,"04":3,"05":4,"06":5},"label":{"01":"Under 1 km","02":"1-4,9 km","03":"5-9,9 km","04":"10-24 km","05":"25-49 km","06":"50 km eller over"}}},"Kulturtilbud":{"label":"kulturtilbud","category":{"index":{"01":0,"02":1,"03":2,"04":3,"05":4,"06":5,"07":6,"08":7},"label":{"01":"Kino eller lokale med jevnlig spillefilmframvisning","02":"Teater eller lokale med jevnlige teater- eller operaforestillinger","03":"Konsertsal eller lokale med jevnlige musikkarrangement","04":"Galleri eller lokale med jevnlige kunstutstillinger","05":"Museum","06":"Idrettsplass eller idrettshall","07":"Folkebibliotek","08":"Bokhandel"}}},"ContentsCode":{"label":"statistikkvariabel","category":{"index":{"Avstand":0},"label":{"Avstand":"Avstand til nærmeste lokale/sted"},"unit":{"Avstand":{"base":"prosent","decimals":0}}}},"Tid":{"label":"år","category":{"index":{"1991":0,"1994":1,"1997":2,"2000":3,"2004":4,"2008":5,"2012":6,"2016":7,"2021":8},"label":{"1991":"1991","1994":"1994","1997":"1997","2000":"2000","2004":"2004","2008":"2008","2012":"2012","2016":"2016","2021":"2021"}}}},"value":[16,14,12,12,11,12,10,12,12,7,7,6,6,6,7,7,8,7,8,8,8,8,7,10,9,10,8,11,11,9,10,10,12,10,11,8,10,9,9,9,8,10,8,9,8,38,36,33,32,33,38,34,34,27,23,23,20,18,19,20,18,17,15,20,22,20,19,18,21,18,18,null,39,39,38,35,36,36,39,42,null,23,23,23,23,26,28,30,32,null,26,28,24,25,30,31,34,35,null,33,34,30,29,33,33,36,37,null,32,35,33,32,32,33,34,34,null,44,47,49,48,48,44,48,50,null,50,50,50,51,49,48,50,51,null,42,44,43,42,45,44,46,48,null,21,20,20,19,21,21,20,21,null,16,15,15,15,17,19,18,22,null,16,17,16,16,18,20,19,23,null,18,18,17,18,20,19,19,23,null,22,22,20,19,22,20,22,24,null,11,9,11,11,11,9,11,10,null,16,15,17,17,18,17,18,19,null,18,14,16,16,15,14,16,16,null,18,19,21,22,22,21,21,19,16,16,16,21,22,19,22,22,21,16,17,15,21,21,19,22,19,20,15,16,16,20,20,19,20,20,19,16,21,21,24,23,21,23,20,21,18,6,5,6,6,6,6,6,5,5,9,10,10,10,11,12,11,11,10,12,11,14,14,13,14,13,12,null,7,6,7,9,7,7,7,5,6,38,12,13,14,13,11,11,8,10,34,11,12,13,12,9,10,7,10,22,9,10,10,7,8,8,6,10,15,8,9,10,9,8,10,7,11,1,2,1,1,1,1,1,1,2,2,2,2,3,2,2,2,1,4,8,6,5,7,5,4,4,3,null,null,2,2,3,2,3,3,2,3,null,26,23,19,18,13,12,9,15,null,21,19,16,13,9,8,5,10,null,13,14,11,8,7,7,5,11,null,4,6,6,5,6,6,4,10,null,0,0,0,1,1,0,0,1,null,0,1,0,1,1,1,0,2,null,3,2,2,3,3,3,2,null],"status":{"71":".","80":".","89":".","98":".","107":".","116":".","125":".","134":".","143":".","152":".","161":".","170":".","179":".","188":".","197":".","206":".","215":".","287":".","359":".","360":"..","369":"..","378":"..","387":"..","396":"..","405":"..","414":"..","423":"..","431":"."},"role":{"time":["Tid"],"metric":["ContentsCode"]},"version":"2.0","extension":{"px":{"infofile":"None","tableid":"05300","decimals":0}}}',
+        """cass":"dataset","label":"05300: Avstand til nærmeste lokale/sted (prosent),
+        etter avstand, kulturtilbud, statistikkvariabel og år","source":"Statistisk sentralbyrå",
+        "updated":"2022-05-24T06:00:00Z","id":["Avstand1","Kulturtilbud","ContentsCode","Tid"],"size":
+        [6,8,1,9],"dimension":{"Avstand1":{"label":"avstand","category":{"index":
+        {"01":0,"02":1,"03":2,"04":3,"05":4,"06":5},"label":
+        {"01":"Under 1 km","02":"1-4,9 km","03":"5-9,9 km","04":"10-24 km","05":"25-49 km","06":"50 km eller over"}}},
+        "Kulturtilbud":{"label":"kulturtilbud","category":
+        {"index":{"01":0,"02":1,"03":2,"04":3,"05":4,"06":5,"07":6,"08":7},
+        "label":{"01":"Kino eller lokale med jevnlig spillefilmframvisning",
+        "02":"Teater eller lokale med jevnlige teater- eller operaforestillinger",
+        "03":"Konsertsal eller lokale med jevnlige musikkarrangement",
+        "04":"Galleri eller lokale med jevnlige kunstutstillinger",
+        "05":"Museum","06":"Idrettsplass eller idrettshall",
+        "07":"Folkebibliotek","08":"Bokhandel"}}},
+        "ContentsCode":{"label":"statistikkvariabel",
+        "category":{"index":{"Avstand":0},"label":
+        {"Avstand":"Avstand til nærmeste lokale/sted"},
+        "unit":{"Avstand":{"base":"prosent","decimals":0}}}},"Tid":{"label":"år",
+        "category":{"index":{"1991":0,"1994":1,"1997":2,"2000":3,"2004":4,"2008":5,"2012":6,
+        "2016":7,"2021":8},
+        "label":
+        {"1991":"1991","1994":"1994","1997":"1997","2000":"2000","2004":"2004","2008":"2008"
+        ,"2012":"2012","2016":"2016","2021":"2021"}}}},
+        "value":[16,14,12,12,11,12,10,12,12,7,7,6,6,6,7,7,8,7,8,8,8,8,7,10,9,10,8,11,11,9,10,10,12,10,
+    11,8,10,9,9,9,8,10,8,9,8,38,36,33,32,33,38,34,34,27,23,23,20,18,19,20,18,17,15,20,22,20,19
+    ,18,21,18,18,null,39,39,38,35,36,36,39,42,null,23,23,23,23,26,28,30,32,null,26,28,24,25,30,31,34,35
+    ,null,33,34,30,29,33,33,36,37,null,32,35,33,32,32,33,34,34,null,44,47,49,48,48,44,48,50,null,50,50,50
+    ,51,49,48,50,51,null,42,44,43,42,45,44,46,48,null,21,20,20,19,21,21,20,21,null,16,15,15,15,17,19,18,22,null,
+    16,17,16,16,18,20,19,23,null,18,18,17,18,20,19,19,23,null,22,22,20,19,22,20,22,24,null,11,9,11,11,11,9,11,10,
+    null,16,15,17,17,18,17,18,19,null,18,14,16,16,15,14,16,16,null,18,19,21,22,22,21,21,19,16,16,16,21,22,19,22,
+    22,21,16,17,15,21,21,19,22,19,20,15,16,16,20,20,19,20,20,19,16,21,21,24,23,21,23,20,21,18,6,5,6,6,6,6,6,5,5,
+    9,10,10,10,11,12,11,11,10,12,11,14,14,13,14,13,12,null,7,6,7,9,7,7,7,5,6,38,12,13,14,13,11,11,8,10,34,11,12,
+    13,12,9,10,7,10,22,9,10,10,7,8,8,6,10,15,8,9,10,9,8,10,7,11,1,2,1,1,1,1,1,1,2,2,2,2,3,2,2,2,1,4,8,6,5,7,5,4,
+    4,3,null,null,2,2,3,2,3,3,2,3,null,26,23,19,18,13,12,9,15,null,21,19,16,13,9,8,5,10,null,13,14,11,8,7,7,5,11,
+    null,4,6,6,5,6,6,4,10,null,0,0,0,1,1,0,0,1,null,0,1,0,1,1,1,0,2,null,3,2,2,3,3,3,2,null],
+    "status":{"71":".","80":".","89":".","98":".","107":".","116":".","125":".","134":".",
+    "143":".","152":".","161":".","170":".","179":".","188":".","197":".","206":".",
+    "215":".","287":".","359":".","360":"..","369":"..","378":"..","387":"..","396":"..",
+    "405":"..","414":"..","423":"..","431":"."},"role":{"time":["Tid"],
+    "metric":["ContentsCode"]},"version":"2.0",
+    "extension":{"px":{"infofile":"None","tableid":"05300","decimals":0}}}""".replace(
+            "\n", ""
+        ),
         "utf8",
     )
     response.request = requests.PreparedRequest()

@@ -5,16 +5,12 @@ Gets data from public and internal statbank.
 
 
 ### Installing from Pypi with Poetry
-If the project-folder doesnt already have a pyproject.toml with poetry-info, run this in the dapla-jupyterlab-terminal:
-```bash
-poetry init
-```
-When poetry is initialized in the project-folder, install the package from Pypi, and create a kernel:
+If your project has been set up with `ssb-project create`, navigate into the folder with the terminal. `cd project-name`. Then install the package:
 ```bash
 poetry add dapla-statbank-client
-poetry run python -m ipykernel install --user --name test_statbank
+ssb-project build
 ```
-Make a notebook with the kernel you just made, try this code to verify the package is available:
+Make a notebook with the project's kernel, try this code to verify that you can "log in":
 ```python
 from statbank import StatbankClient
 stat_client = StatbankClient(loaduser = "LASTEBRUKER")
@@ -23,6 +19,8 @@ stat_client = StatbankClient(loaduser = "LASTEBRUKER")
 # Default publishing-date is TOMORROW
 print(stat_client)
 ```
+
+Be aware that from the **dapla staging environment** you will be sending to statbank-TEMP-database, your changes will not be published. But if you are in the main dapla-jupyterlab (prod), you WILL publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab.
 
 ### Building datasets
 You can look at the "filbeskrivelse" which is returned from `stat_client.get_description()` in its own local class: StatbankUttrekksBeskrivelse
@@ -38,18 +36,18 @@ description_06339.variables
 description_06339.codelists
 description_06339.suppression
 ```
-After starting to construct your data, you can validate it against the Uttrekksbeskrivelse, using the validate-method, without starting a transfer, like this:
+Your data must be placed in a datastructure, a dict of pandas dataframes. Take a look at how the dict should be with:
+```python
+description_06339.transferdata_template()
+```
+This both returns the dict, and prints it, depending on what you want to do with it. Use it to insert your own DataFrames into, and send it to .transfer()
+
+After starting to construct your data, you can validate it against the Uttrekksbeskrivelse, using the validate-method, *without starting a transfer*, like this:
 ```python
 stat_client.validate(df_06339, tableid="06339")
 ```
 Validation will happen by default on user-side, in Python.
 Validation happens on the number of tables, number of columns, code usage in categorical columns, code usage in "suppression-columns" (prikkekolonner), and on timeformats (both length and characters used).
-
-Get the "template" for the dictionary that needs to be transferred like this:
-```python
-description_06339.transferdata_template()
-```
-This both returns the dict, and prints it, depending on what you want to do with it. Use it to insert your own DataFrames into, and send it to .transfer()
 
 
 ### Usage Transferring
@@ -57,7 +55,7 @@ This both returns the dict, and prints it, depending on what you want to do with
 ```python
 stat_client.transfer({"deltabellfilnavn.dat" : df_06399}, "06339")
 ```
-The simplest form of usage, is directly-transferring using the transfer-method under the client-class. If the statbanktable expects multiple "deltabeller", dataframes must be passed in a list, in the correct order.
+The simplest form of usage, is directly-transferring using the transfer-method under the client-class. The statbanktable expects named "deltabeller" in a dictionary, see `trasferdata_template()` above.
 
 
 ### Getting apidata
@@ -108,6 +106,7 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
+- 0.0.9 After further user-testing and requests
 - 0.0.5 Still some parameter issues
 - 0.0.4 More test coverage, some bugs fixed in rounding checks and parameter-passing
 - 0.0.3 Removed batches, stripping uttrekk from transfer, rounding function on uttrekk, data required in as a dict of dataframes, with "deltabell-navn". Tableid now works to transfer to instead of only "hovedtabellnavn"

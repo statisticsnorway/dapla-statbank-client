@@ -192,7 +192,7 @@ class StatbankTransfer(StatbankAuth):
         if self.delay:
             return f"""Overføring for statbanktabell {self.tableid}.
             loaduser: {self.loaduser}.
-            kke overført enda."""
+            Ikke overført enda."""
         else:
             return f"""Overføring for statbanktabell {self.tableid}.
     loaduser: {self.loaduser}.

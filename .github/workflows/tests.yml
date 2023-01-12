@@ -47,5 +47,4 @@ jobs:
 
       - name: Run coverage
         run: |
-          poetry add pytest
           poetry run pytest -v -m "not integration_dapla" --cov statbank/ --cov-fail-under=70

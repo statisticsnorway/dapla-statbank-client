@@ -106,6 +106,7 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
+- 0.0.10 Statbank people wanted a user-agent-requesst-header to differentiate test from prod
 - 0.0.9 After further user-testing and requests
 - 0.0.5 Still some parameter issues
 - 0.0.4 More test coverage, some bugs fixed in rounding checks and parameter-passing

@@ -30,13 +30,19 @@ class StatbankAuth:
     """
 
     def _build_headers(self) -> dict:
+        if 'test' in os.environ['STATBANK_BASE_URL']:
+            user_agent = "DaplaTest-"
+        else:
+            user_agent = "DaplaProd-" 
+        user_agent += r.utils.default_headers()["User-agent"]
         return {
-            "Authorization": self._build_auth(),
-            "Content-Type": "multipart/form-data; boundary=12345",
-            "Connection": "keep-alive",
-            "Accept-Encoding": "gzip, deflate",
-            "Accept": r"*/*",
-        }
+            'Authorization': self._build_auth(),
+            'Content-Type': 'multipart/form-data; boundary=12345',
+            'Connection': 'keep-alive',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Accept' : r'*/*',
+            'User-Agent': user_agent,
+            }
 
     def _build_auth(self):
         response = self._encrypt_request()

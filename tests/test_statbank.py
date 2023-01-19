@@ -21,6 +21,9 @@ def fake_mail():
 
 os.environ["JUPYTERHUB_USER"] = fake_mail()
 
+if "STATBANK_BASE_URL" not in os.environ.keys():
+    os.environ["STATBANK_BASE_URL"] = "test"
+
 
 @pytest.fixture(autouse=True)
 def mock_settings_env_vars():

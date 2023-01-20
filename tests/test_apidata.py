@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pandas as pd
@@ -14,6 +15,26 @@ def fake_user():
 
 def fake_auth():
     return "SoCipherVerySecure"
+
+
+def fake_mail():
+    return "ssb@ssb.no"
+
+
+@pytest.fixture(autouse=True)
+def mock_settings_env_vars():
+    if "STATBANK_BASE_URL" not in os.environ.keys():
+        with mock.patch.dict(
+            os.environ,
+            {
+                "STATBANK_BASE_URL": "https://test_fake_url/",
+                "STATBANK_ENCRYPT_URL": "https://fake_url2/",
+                "JUPYTERHUB_USER": fake_mail(),
+            },
+        ):
+            yield
+        yield
+    yield
 
 
 def fake_post_response_key_service():

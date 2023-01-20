@@ -33,7 +33,9 @@ def mock_settings_env_vars():
             },
         ):
             pass
-    yield
+        yield
+    else:
+        yield
 
 
 def fake_post_response_key_service():

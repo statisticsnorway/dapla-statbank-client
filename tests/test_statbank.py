@@ -31,7 +31,9 @@ def mock_settings_env_vars():
             },
         ):
             pass
-    yield
+        yield
+    else:
+        yield
 
 
 # Fake Auth

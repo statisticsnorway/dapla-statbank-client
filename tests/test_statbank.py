@@ -19,23 +19,20 @@ def fake_mail():
     return "ssb@ssb.no"
 
 
-os.environ["JUPYTERHUB_USER"] = fake_mail()
-
-if "STATBANK_BASE_URL" not in os.environ.keys():
-    os.environ["STATBANK_BASE_URL"] = "test"
-
-
 @pytest.fixture(autouse=True)
 def mock_settings_env_vars():
-    with mock.patch.dict(
-        os.environ,
-        {
-            "STATBANK_BASE_URL": "https://fake_url/",
-            "STATBANK_ENCRYPT_URL": "https://fake_url2/",
-            "JUPYTERHUB_USER": fake_mail(),
-        },
-    ):
+    if "STATBANK_BASE_URL" not in os.environ.keys():
+        with mock.patch.dict(
+            os.environ,
+            {
+                "STATBANK_BASE_URL": "https://test_fake_url/",
+                "STATBANK_ENCRYPT_URL": "https://fake_url2/",
+                "JUPYTERHUB_USER": fake_mail(),
+            },
+        ):
+            yield
         yield
+    yield
 
 
 # Fake Auth
@@ -103,74 +100,99 @@ def fake_post_response_transfer_successful():
     return response
 
 
+def fake_build_user_agent():
+    return "TestEnvPytestDB" + requests.utils.default_headers()["User-agent"]
+
+
 # Successful fixtures
 
 # Our only get-request is for the "uttrekksbeskrivelse"
 @pytest.fixture
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
-def uttrekksbeskrivelse_success(test_encrypt, test_make_request):
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def uttrekksbeskrivelse_success(
+    test_build_user_agent,
+    test_encrypt,
+    test_make_request,
+):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankUttrekksBeskrivelse("10000", fake_user())
 
 
 @pytest.fixture
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def transfer_success(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankTransfer(fake_data(), "10000", fake_user())
 
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_no_loaduser_raises(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000")
 
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_date_is_string(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     trans = StatbankTransfer(fake_data(), "10000", fake_user(), date="2050-01-01")
     assert trans.oppdragsnummer.isdigit()
 
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_date_is_invalid_string_raises(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), date="205000-01-01")
 
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_str_transfer_on_delay_and_after(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     trans = StatbankTransfer(
         fake_data(), "10000", fake_user(), date="2050-01-01", delay=True
     )
@@ -181,24 +203,30 @@ def test_str_transfer_on_delay_and_after(
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_overwrite_wrong_format(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), overwrite=1)
 
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_approve_wrong_format(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankTransfer(fake_data(), "10000", fake_user(), approve="1")
 
@@ -219,12 +247,15 @@ def test_transfer_cant_transfer_twice_raises(transfer_success):
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_shortuser_wrong_raises(
+    test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankTransfer(
             fake_data(), "10000", fake_user(), date="2050-01-01", shortuser="aa"
@@ -233,28 +264,39 @@ def test_transfer_shortuser_wrong_raises(
 
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def client_fake(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def client_fake(
+    test_build_user_agent,
+    encrypt_fake,
+):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(fake_user())
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def test_client_no_loaduser_set(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_no_loaduser_set(test_build_user_agent, encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankClient(1)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def test_client_approve_wrong_datatype(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_approve_wrong_datatype(test_build_user_agent, encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankClient(fake_user(), approve="1")
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def test_client_overwrite_wrong_datatype(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_overwrite_wrong_datatype(test_build_user_agent, encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
         StatbankClient(fake_user(), overwrite="1")
 
@@ -270,8 +312,10 @@ def test_client_repr(client_fake):
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def test_client_with_str_date(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_with_str_date(test_build_user_agent, encrypt_fake):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient(fake_user(), "2050-01-01")
     assert isinstance(client.date, datetime)
 
@@ -304,20 +348,30 @@ def test_client_set_date_widget(client_fake):
 
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
-def test_client_get_uttrekk(test_encrypt, test_make_request, client_fake):
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def test_client_get_uttrekk(
+    test_build_user_agent, test_encrypt, test_make_request, client_fake
+):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     desc = client_fake.get_description("10000")
     assert desc.tableid == "10000"
 
 
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
 def test_client_validate_no_errors(
-    test_encrypt, test_make_request, client_fake, uttrekksbeskrivelse_success
+    test_build_user_agent,
+    test_encrypt,
+    test_make_request,
+    client_fake,
+    uttrekksbeskrivelse_success,
 ):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = (fake_post_response_key_service(),)
+    test_build_user_agent.return_value = fake_build_user_agent()
     data = uttrekksbeskrivelse_success.round_data(fake_data())
     errors = client_fake.validate(data, "10000")
     assert not len(errors)
@@ -429,9 +483,14 @@ def search__dict__(obj, searchterm: str, path="root", keep={}):  # noqa: B006
 
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_client_transfer(
-    test_transfer_encrypt, test_transfer_make_request, client_fake
+    test_build_user_agent,
+    test_transfer_encrypt,
+    test_transfer_make_request,
+    client_fake,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     client_fake.transfer(fake_data(), "10000")

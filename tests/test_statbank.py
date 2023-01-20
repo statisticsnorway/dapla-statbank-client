@@ -30,8 +30,7 @@ def mock_settings_env_vars():
                 "JUPYTERHUB_USER": fake_mail(),
             },
         ):
-            yield
-        yield
+            pass
     yield
 
 

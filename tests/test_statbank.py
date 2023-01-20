@@ -19,20 +19,16 @@ def fake_mail():
     return "ssb@ssb.no"
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_settings_env_vars():
-    if "STATBANK_BASE_URL" not in os.environ.keys():
-        with mock.patch.dict(
-            os.environ,
-            {
-                "STATBANK_BASE_URL": "https://test_fake_url/",
-                "STATBANK_ENCRYPT_URL": "https://fake_url2/",
-                "JUPYTERHUB_USER": fake_mail(),
-            },
-        ):
-            pass
-        yield
-    else:
+    with mock.patch.dict(
+        os.environ,
+        {
+            "STATBANK_BASE_URL": "https://test_fake_url/",
+            "STATBANK_ENCRYPT_URL": "https://fake_url2/",
+            "JUPYTERHUB_USER": fake_mail(),
+        },
+    ):
         yield
 
 
@@ -113,9 +109,7 @@ def fake_build_user_agent():
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
 def uttrekksbeskrivelse_success(
-    test_build_user_agent,
-    test_encrypt,
-    test_make_request,
+    test_build_user_agent, test_encrypt, test_make_request, mock_settings_env_vars
 ):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
@@ -131,6 +125,7 @@ def transfer_success(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -145,6 +140,7 @@ def test_transfer_no_loaduser_raises(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -160,6 +156,7 @@ def test_transfer_date_is_string(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -175,6 +172,7 @@ def test_transfer_date_is_invalid_string_raises(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -190,6 +188,7 @@ def test_str_transfer_on_delay_and_after(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -209,6 +208,7 @@ def test_transfer_overwrite_wrong_format(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -224,6 +224,7 @@ def test_transfer_approve_wrong_format(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -253,6 +254,7 @@ def test_transfer_shortuser_wrong_raises(
     test_build_user_agent,
     test_transfer_encrypt,
     test_transfer_make_request,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
@@ -266,10 +268,7 @@ def test_transfer_shortuser_wrong_raises(
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
-def client_fake(
-    test_build_user_agent,
-    encrypt_fake,
-):
+def client_fake(test_build_user_agent, encrypt_fake, mock_settings_env_vars):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(fake_user())
@@ -277,7 +276,9 @@ def client_fake(
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
-def test_client_no_loaduser_set(test_build_user_agent, encrypt_fake):
+def test_client_no_loaduser_set(
+    test_build_user_agent, encrypt_fake, mock_settings_env_vars
+):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
@@ -286,7 +287,9 @@ def test_client_no_loaduser_set(test_build_user_agent, encrypt_fake):
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
-def test_client_approve_wrong_datatype(test_build_user_agent, encrypt_fake):
+def test_client_approve_wrong_datatype(
+    test_build_user_agent, encrypt_fake, mock_settings_env_vars
+):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
@@ -295,7 +298,9 @@ def test_client_approve_wrong_datatype(test_build_user_agent, encrypt_fake):
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
-def test_client_overwrite_wrong_datatype(test_build_user_agent, encrypt_fake):
+def test_client_overwrite_wrong_datatype(
+    test_build_user_agent, encrypt_fake, mock_settings_env_vars
+):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
@@ -314,7 +319,9 @@ def test_client_repr(client_fake):
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
-def test_client_with_str_date(test_build_user_agent, encrypt_fake):
+def test_client_with_str_date(
+    test_build_user_agent, encrypt_fake, mock_settings_env_vars
+):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient(fake_user(), "2050-01-01")
@@ -351,7 +358,11 @@ def test_client_set_date_widget(client_fake):
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
 def test_client_get_uttrekk(
-    test_build_user_agent, test_encrypt, test_make_request, client_fake
+    test_build_user_agent,
+    test_encrypt,
+    test_make_request,
+    client_fake,
+    mock_settings_env_vars,
 ):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = fake_post_response_key_service()
@@ -369,6 +380,7 @@ def test_client_validate_no_errors(
     test_make_request,
     client_fake,
     uttrekksbeskrivelse_success,
+    mock_settings_env_vars,
 ):
     test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
     test_encrypt.return_value = (fake_post_response_key_service(),)
@@ -393,7 +405,9 @@ def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     assert len(uttrekksbeskrivelse_success.codelists)
 
 
-def test_uttrekk_json_write_read(uttrekksbeskrivelse_success, client_fake):
+def test_uttrekk_json_write_read(
+    uttrekksbeskrivelse_success, client_fake, mock_settings_env_vars
+):
     json_file_path = "test_uttrekk.json"
     uttrekksbeskrivelse_success.to_json(json_file_path)
     test_uttrekk = client_fake.read_description_json(json_file_path)
@@ -401,7 +415,9 @@ def test_uttrekk_json_write_read(uttrekksbeskrivelse_success, client_fake):
     assert len(test_uttrekk.codelists)
 
 
-def test_transfer_json_write_read(transfer_success, client_fake):
+def test_transfer_json_write_read(
+    transfer_success, client_fake, mock_settings_env_vars
+):
     json_file_path = "test_transfer.json"
     transfer_success.to_json(json_file_path)
     test_transfer = client_fake.read_transfer_json(json_file_path)
@@ -409,7 +425,7 @@ def test_transfer_json_write_read(transfer_success, client_fake):
     assert test_transfer.oppdragsnummer.isdigit()
 
 
-def test_round_data_0decimals(uttrekksbeskrivelse_success):
+def test_round_data_0decimals(uttrekksbeskrivelse_success, mock_settings_env_vars):
     subtable_name = list(fake_data().keys())[0]
     dict_rounded = fake_data().copy()
     df_test_rounded = dict_rounded[subtable_name]
@@ -421,7 +437,7 @@ def test_round_data_0decimals(uttrekksbeskrivelse_success):
     assert df_test_rounded["3"].equals(df_actual_rounded["3"])
 
 
-def test_round_data_1decimals(uttrekksbeskrivelse_success):
+def test_round_data_1decimals(uttrekksbeskrivelse_success, mock_settings_env_vars):
     subtable_name = list(fake_data().keys())[0]
     dict_rounded = fake_data().copy()
     df_test_rounded = dict_rounded[subtable_name]
@@ -433,7 +449,9 @@ def test_round_data_1decimals(uttrekksbeskrivelse_success):
     assert df_test_rounded["4"].equals(df_actual_rounded["4"])
 
 
-def test_check_round_data_manages_punctum(uttrekksbeskrivelse_success):
+def test_check_round_data_manages_punctum(
+    uttrekksbeskrivelse_success, mock_settings_env_vars
+):
     subtable_name = list(fake_data().keys())[0]
     datadict = fake_data().copy()
     datadict[subtable_name]["4"] = pd.Series(["1.2", "2.3", "3.4"])
@@ -441,7 +459,9 @@ def test_check_round_data_manages_punctum(uttrekksbeskrivelse_success):
     uttrekksbeskrivelse_success.validate(datadict)
 
 
-def test_check_round_data_manages_punctum_raises_error(uttrekksbeskrivelse_success):
+def test_check_round_data_manages_punctum_raises_error(
+    uttrekksbeskrivelse_success, mock_settings_env_vars
+):
     subtable_name = list(fake_data().keys())[0]
     datadict = fake_data().copy()
     datadict[subtable_name]["4"] = pd.Series(["1.15", "2.25", "3.35"])
@@ -490,6 +510,7 @@ def test_client_transfer(
     test_transfer_encrypt,
     test_transfer_make_request,
     client_fake,
+    mock_settings_env_vars,
 ):
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()

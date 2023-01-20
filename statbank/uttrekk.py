@@ -181,6 +181,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
             for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
+                print(variabel)
                 if "Antall_lagrede_desimaler" in variabel.keys():
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
@@ -203,6 +204,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                             .str.replace("<NA>", "", regex=False)
                             .str.replace(".", ",", regex=False)
                         )
+                    else:
+                        print(
+                            "not a float",
+                            col_num,
+                            ":",
+                            data_copy[deltabell_name].dtypes[col_num],
+                        )
+                else:
+                    print("Not converting")
         return data_copy
 
     @staticmethod
@@ -316,9 +326,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                 a single time format
                 in the shape: {timeformat_raw}"""
             )
-        if (
-            not len(timeformat_raw)
-            == data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()[0]
+        if not len(timeformat_raw) == (
+            data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()[0]
         ):
             validation_errors[f"time_formatlength_{col_num}"] = ValueError(
                 f"""Column number {col_num} does not match

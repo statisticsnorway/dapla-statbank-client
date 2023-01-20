@@ -1,3 +1,4 @@
+import os
 from unittest import mock
 
 import pandas as pd
@@ -5,8 +6,7 @@ import pytest
 import requests
 
 from statbank import StatbankClient
-from statbank.apidata import (apidata, apidata_all, apidata_query_all,
-                              apidata_rotate)
+from statbank.apidata import apidata, apidata_all, apidata_query_all, apidata_rotate
 
 
 def fake_user():
@@ -15,6 +15,27 @@ def fake_user():
 
 def fake_auth():
     return "SoCipherVerySecure"
+
+
+def fake_mail():
+    return "ssb@ssb.no"
+
+
+@pytest.fixture(autouse=True)
+def mock_settings_env_vars():
+    with mock.patch.dict(
+        os.environ,
+        {
+            "STATBANK_BASE_URL": "https://test_fake_url/",
+            "STATBANK_ENCRYPT_URL": "https://fake_url2/",
+            "JUPYTERHUB_USER": fake_mail(),
+        },
+    ):
+        yield
+
+
+def fake_build_user_agent():
+    return "TestEnvPytestDB" + requests.utils.default_headers()["User-agent"]
 
 
 def fake_post_response_key_service():
@@ -28,7 +49,7 @@ def fake_get_table_meta():
     response = requests.Response()
     response.status_code = 200
     response._content = bytes(
-        '{"title":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","variables":[{"code":"Avstand1","text":"avstand","values":["01","02","03","04","05","06"],"valueTexts":["Under 1 km","1-4,9 km","5-9,9 km","10-24 km","25-49 km","50 km eller over"]},{"code":"Kulturtilbud","text":"kulturtilbud","values":["01","02","03","04","05","06","07","08"],"valueTexts":["Kino eller lokale med jevnlig spillefilmframvisning","Teater eller lokale med jevnlige teater- eller operaforestillinger","Konsertsal eller lokale med jevnlige musikkarrangement","Galleri eller lokale med jevnlige kunstutstillinger","Museum","Idrettsplass eller idrettshall","Folkebibliotek","Bokhandel"]},{"code":"ContentsCode","text":"statistikkvariabel","values":["Avstand"],"valueTexts":["Avstand til nærmeste lokale/sted"]},{"code":"Tid","text":"år","values":["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"valueTexts":["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"time":true}]}',
+        '{"title":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","variables": [{"code":"Avstand1","text":"avstand","values":["01","02","03","04","05","06"], "valueTexts":["Under 1 km","1-4,9 km","5-9,9 km","10-24 km","25-49 km","50 km eller over"]}, {"code":"Kulturtilbud","text":"kulturtilbud","values":["01","02","03","04","05","06","07","08"], "valueTexts":["Kino eller lokale med jevnlig spillefilmframvisning", "Teater eller lokale med jevnlige teater- eller operaforestillinger", "Konsertsal eller lokale med jevnlige musikkarrangement", "Galleri eller lokale med jevnlige kunstutstillinger","Museum", "Idrettsplass eller idrettshall","Folkebibliotek","Bokhandel"]}, {"code":"ContentsCode","text":"statistikkvariabel","values":["Avstand"], "valueTexts":["Avstand til nærmeste lokale/sted"]}, {"code":"Tid","text":"år","values": ["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"valueTexts": ["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"time":true}]}',
         "utf8",
     )
     response.request = requests.PreparedRequest()
@@ -48,27 +69,29 @@ def fake_post_apidata():
 
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
-def client_fake(encrypt_fake):
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def client_fake(test_build_user_agent, encrypt_fake, mock_settings_env_vars):
     encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(fake_user())
 
 
 @pytest.fixture
 @mock.patch.object(requests, "get")
-def query_all_05300(fake_get):
+def query_all_05300(fake_get, mock_settings_env_vars):
     fake_get.return_value = fake_get_table_meta()
     return apidata_query_all("05300")
 
 
 @pytest.fixture
 @mock.patch.object(requests, "post")
-def apidata_05300(fake_post, query_all_05300):
+def apidata_05300(fake_post, query_all_05300, mock_settings_env_vars):
     fake_post.return_value = fake_post_apidata()
     return apidata("05300", query_all_05300, include_id=True)
 
 
 @mock.patch.object(requests, "get")
-def test_query_all_raises_500(fake_get):
+def test_query_all_raises_500(fake_get, mock_settings_env_vars):
     fake_get.return_value = fake_get_table_meta()
     fake_get.return_value.status_code = 500
     with pytest.raises(Exception) as _:
@@ -76,7 +99,7 @@ def test_query_all_raises_500(fake_get):
 
 
 @mock.patch("statbank.apidata")
-def test_apidata_all_05300(fake_apidata, apidata_05300):
+def test_apidata_all_05300(fake_apidata, apidata_05300, mock_settings_env_vars):
     fake_apidata.return_value = apidata_05300
     df_all = apidata_all("05300", include_id=True)
     assert isinstance(df_all, pd.DataFrame)
@@ -84,7 +107,7 @@ def test_apidata_all_05300(fake_apidata, apidata_05300):
 
 
 @mock.patch("statbank.apidata")
-def test_apidata_rotate_05300(fake_apidata, apidata_05300):
+def test_apidata_rotate_05300(fake_apidata, apidata_05300, mock_settings_env_vars):
     fake_apidata.return_value = apidata_05300
     df_all = apidata_all("05300", include_id=True)
     df_rotate = apidata_rotate(df_all, ind="år", val="value")
@@ -94,7 +117,7 @@ def test_apidata_rotate_05300(fake_apidata, apidata_05300):
         assert ind.isdigit()
 
 
-def test_client_apidata(client_fake, query_all_05300):
+def test_client_apidata(client_fake, query_all_05300, mock_settings_env_vars):
     df = client_fake.apidata("05300", query_all_05300)
     assert isinstance(df, pd.DataFrame)
     assert len(df)
@@ -107,7 +130,9 @@ def test_client_apidata_no_query(client_fake):
 
 
 @mock.patch("statbank.apidata")
-def test_client_apidata_all(fake_apidata, client_fake, apidata_05300):
+def test_client_apidata_all(
+    fake_apidata, client_fake, apidata_05300, mock_settings_env_vars
+):
     fake_apidata.return_value = apidata_05300
     df = client_fake.apidata_all("https://data.ssb.no/api/v0/no/table/05300")
     assert isinstance(df, pd.DataFrame)
@@ -115,7 +140,9 @@ def test_client_apidata_all(fake_apidata, client_fake, apidata_05300):
 
 
 @mock.patch("statbank.apidata")
-def test_client_apidata_rotate_05300(fake_apidata, client_fake, apidata_05300):
+def test_client_apidata_rotate_05300(
+    fake_apidata, client_fake, apidata_05300, mock_settings_env_vars
+):
     fake_apidata.return_value = apidata_05300
     df_all = client_fake.apidata_all(
         "https://data.ssb.no/api/v0/no/table/05300/", include_id=True
@@ -128,7 +155,7 @@ def test_client_apidata_rotate_05300(fake_apidata, client_fake, apidata_05300):
 
 
 @mock.patch.object(requests, "post")
-def test_apidata_raises_400(fake_post, query_all_05300):
+def test_apidata_raises_400(fake_post, query_all_05300, mock_settings_env_vars):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 400
     with pytest.raises(Exception) as _:
@@ -136,7 +163,7 @@ def test_apidata_raises_400(fake_post, query_all_05300):
 
 
 @mock.patch.object(requests, "post")
-def test_apidata_raises_403(fake_post, query_all_05300):
+def test_apidata_raises_403(fake_post, query_all_05300, mock_settings_env_vars):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 403
     with pytest.raises(Exception) as _:
@@ -144,20 +171,22 @@ def test_apidata_raises_403(fake_post, query_all_05300):
 
 
 @mock.patch.object(requests, "post")
-def test_apidata_raises_500(fake_post, query_all_05300):
+def test_apidata_raises_500(fake_post, query_all_05300, mock_settings_env_vars):
     fake_post.return_value = fake_post_apidata()
     fake_post.return_value.status_code = 500
     with pytest.raises(Exception) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
-def test_apidata_raises_wrong_id(query_all_05300):
+def test_apidata_raises_wrong_id(query_all_05300, mock_settings_env_vars):
     with pytest.raises(Exception) as _:
         apidata("0", query_all_05300, include_id=True)
 
 
 @mock.patch("statbank.apidata")
-def test_apidata_all_raises_wrong_id(fake_apidata, apidata_05300):
+def test_apidata_all_raises_wrong_id(
+    fake_apidata, apidata_05300, mock_settings_env_vars
+):
     fake_apidata.return_value = apidata_05300
     with pytest.raises(Exception) as _:
         apidata_all("0", include_id=True)

@@ -14,6 +14,7 @@ from .auth import StatbankAuth
 from .transfer import StatbankTransfer
 from .uttrekk import StatbankUttrekksBeskrivelse
 
+
 TOMORROW = datetime.datetime.now() + td(days=1)
 
 

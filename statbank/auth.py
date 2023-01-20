@@ -30,19 +30,37 @@ class StatbankAuth:
     """
 
     def _build_headers(self) -> dict:
-        if 'test' in os.environ['STATBANK_BASE_URL']:
-            user_agent = "DaplaTest-"
-        else:
-            user_agent = "DaplaProd-" 
-        user_agent += r.utils.default_headers()["User-agent"]
         return {
-            'Authorization': self._build_auth(),
-            'Content-Type': 'multipart/form-data; boundary=12345',
-            'Connection': 'keep-alive',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept' : r'*/*',
-            'User-Agent': user_agent,
-            }
+            "Authorization": self._build_auth(),
+            "Content-Type": "multipart/form-data; boundary=12345",
+            "Connection": "keep-alive",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept": r"*/*",
+            "User-Agent": self._build_user_agent(),
+        }
+
+    def _build_user_agent(self):
+        url = os.environ["STATBANK_ENCRYPT_URL"].split("://")[1]
+        if url.startswith("dapla"):
+            user_agent = "Dapla"
+        elif "ssb" in os.listdir("/"):
+            if "stamme01" in os.listdir("/ssb/"):
+                user_agent = "Bakke"
+            else:
+                raise SystemError("Can't determine if Im in dapla or in prodsone")
+        else:
+            raise SystemError("Can't determine if Im in dapla or in prodsone")
+
+        if "test" in os.environ["STATBANK_BASE_URL"]:
+            user_agent += "Test-"
+        elif "i.ssb" in os.environ["STATBANK_BASE_URL"]:
+            user_agent += "Prod-"
+        else:
+            raise SystemError(
+                "Can't determine if Im sending to the test-database or the prod-database"
+            )
+
+        return user_agent + r.utils.default_headers()["User-agent"]
 
     def _build_auth(self):
         response = self._encrypt_request()
@@ -63,12 +81,12 @@ class StatbankAuth:
         else:
             db = "PROD"
         if AuthClient.is_ready():
-            headers={
+            headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",
             }
         else:
-            headers={
+            headers = {
                 "Content-type": "application/json",
             }
         return r.post(

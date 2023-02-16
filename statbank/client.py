@@ -121,7 +121,7 @@ class StatbankClient(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: int = 1,
+        approve: int = 2,  # Changing back to 2, after wish from Rakel Gading
     ):
         self.loaduser = loaduser
         if isinstance(date, str):

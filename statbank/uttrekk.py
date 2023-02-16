@@ -149,12 +149,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         """If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
         """
+        # Need to this because im stupidly adding methods from other class as attributes
+        content = {k: v for k, v in self.__dict__.items() if not callable(v)}
+
         if path:
             print(f"Writing to {path}")
             with open(path, mode="w") as json_file:
-                json_file.write(json.dumps(self.__dict__))
+                json_file.write(json.dumps(content))
         else:
-            return json.dumps(self.__dict__)
+            return json.dumps(content)
 
     def validate(self, data, raise_errors: bool = False, printing: bool = True) -> dict:
         if not raise_errors:

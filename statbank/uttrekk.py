@@ -212,7 +212,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
                         in str(data_copy[deltabell_name].dtypes[col_num]).lower()
                     ):  # If column is passed in as a float, we can handle it
                         print(
-                            f"Rounding column {col_num+1} in {deltabell_name} into a string, with {decimal_num} decimals."
+                            f"Rounding column {col_num + 1} in {deltabell_name} into a string, with {decimal_num} decimals."
                         )
                         data_copy[deltabell_name][
                             data_copy[deltabell_name].columns[col_num]

@@ -159,8 +159,6 @@ class StatbankTransfer(StatbankAuth):
                 self.transfer()
 
     def transfer(self, headers: dict = {}):  # noqa: B006
-        """The headers-parameter is for a future implemention
-        of a possible BatchTransfer, dont use it please."""
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):
             raise ValueError(
@@ -348,7 +346,6 @@ class StatbankTransfer(StatbankAuth):
                 "Følg med på lasteloggen (tar noen minutter): "
                 + f"{self.urls['gui'] + self.oppdragsnummer}"
             )
-            print(f"Og evt APIen?: {self.urls['api'] + self.oppdragsnummer}")
             self.resp_json = resp_json
         else:
             print(

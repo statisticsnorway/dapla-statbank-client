@@ -1,3 +1,5 @@
+*.parquet
+
 # Papermill output
 *_output.ipynb
 

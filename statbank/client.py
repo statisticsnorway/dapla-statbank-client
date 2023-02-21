@@ -194,6 +194,17 @@ class StatbankClient(StatbankAuth):
         """Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
         about shape of data to be transferred, and metadata about the table
         itself in Statbankens system, like ID, name and content of codelists.
+
+        Parameters
+        ----------
+        tableid : str
+            The id-number of the "hovedtabell" to transfer to, this is usually a five digit string
+
+        Returns
+        -------
+        StatbankUttrekksBeskrivelse-object:
+            This is a local class containing the "filbeskrivelse" from its own API.
+            It describes the shape of data transferred with transfer() and can be used to validate data locally.
         """
         self._validate_params_action(tableid)
         self.log.append(
@@ -243,9 +254,25 @@ class StatbankClient(StatbankAuth):
         return validation_errors
 
     # Transfer
-    def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:
+    def transfer(self, dfs: dict, tableid: str = "00000") -> StatbankTransfer:
         """Transfers your data to Statbanken.
-        Make sure you've set the publish-date correctly before sending."""
+        Make sure you've set the publish-date correctly before sending.
+        ...
+
+        Parameters
+        ----------
+        dfs : dict of pandas dataframes
+            The key(s) in the dict should be the names of the "deltabell-dat-files".
+            You can get the look of the dict from statclient.get_description("00000").transferdata_template()
+        tableid : str
+            The id-number of the "hovedtabell" to transfer to, this is usually a five digit string
+
+        Returns
+        -------
+        StatbankTransfer-object:
+            This is a local class containing the result of a successful transfer.
+            It can be printed or stored to json.
+        """
         self._validate_params_action(tableid)
         self.log.append(
             f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'

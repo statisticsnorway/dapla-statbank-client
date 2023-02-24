@@ -22,7 +22,7 @@ print(stat_client)
 # You can change for example date by specifying it: StatbankClient(loaduser = "LASTEBRUKER", date="2023-02-16")
 ```
 
-Be aware that from the **dapla staging environment** you will be sending to statbank-TEMP-database, your changes will not be published. But if you are in the main dapla-jupyterlab (prod), you WILL publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab.
+Be aware that from the **dapla-staging environment** you will be sending to statbank-TEMP-database, your changes will not be published. For this you need the "test-password", which is for the same user (lastebruker), but different from the ordinary password (lastepassord). If you are missing the test-password, have the statbank-team send it to you for you loaduser. If you are in the main dapla-jupyterlab (prod), you **WILL** publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab. And be aware of which password you are entering, based on your environment.
 
 
 ### Usage Transferring

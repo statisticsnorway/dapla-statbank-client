@@ -124,11 +124,6 @@ class StatbankClient(StatbankAuth):
         approve: int = 2,  # Changing back to 2, after wish from Rakel Gading
     ):
         self.loaduser = loaduser
-        if isinstance(date, str):
-            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
-        else:
-            self.date = date
-        self._validate_date()
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
@@ -137,7 +132,13 @@ class StatbankClient(StatbankAuth):
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
-        print(f"Publishing date set to {self.date}")
+        if isinstance(date, str):
+            self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
+        else:
+            self.date = date
+        self.date.replace(hour=8, minute=0, second=0, microsecond=0)
+        self._validate_date()
+        print(f"Publishing date set to {self.date.isoformat('T', 'seconds')}")
 
     # Representation
     def __str__(self):
@@ -183,10 +184,11 @@ class StatbankClient(StatbankAuth):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
+        self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(
-            f'Date set to {self.date} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            f"Date set to {self.date.isoformat('T', 'seconds')} at {datetime.datetime.now().isoformat('T', 'seconds')}"
         )
 
     # Descriptions
@@ -197,7 +199,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f'Getting description for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            f"Getting description for tableid {tableid} at {datetime.datetime.now().isoformat('T', 'seconds')}"
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid, loaduser=self.loaduser, headers=self.__headers
@@ -238,7 +240,7 @@ class StatbankClient(StatbankAuth):
         )
         validation_errors = validator.validate(dfs, printing=printing)
         self.log.append(
-            f'Validated data for tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            f"Validated data for tableid {tableid} at {datetime.datetime.now().isoformat('T', 'seconds')}"
         )
         return validation_errors
 
@@ -248,7 +250,7 @@ class StatbankClient(StatbankAuth):
         Make sure you've set the publish-date correctly before sending."""
         self._validate_params_action(tableid)
         self.log.append(
-            f'Transferring tableid {tableid} at {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}'
+            f"Transferring tableid {tableid} at {datetime.datetime.now().isoformat('T', 'seconds')}"
         )
         return StatbankTransfer(
             dfs,

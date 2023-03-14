@@ -137,6 +137,7 @@ class StatbankTransfer(StatbankAuth):
         else:
             self.bcc = self.cc
 
+        # At this point we want date to be a string?
         if isinstance(date, str):
             self.date = date
         else:
@@ -299,11 +300,13 @@ class StatbankTransfer(StatbankAuth):
 
     def _build_params(self) -> dict:
         if isinstance(self.date, dt):
-            self.date = self.date.strftime("%Y-%m-%d")
+            date = self.date.strftime("%Y-%m-%d")
+        else:
+            date = self.date
         return {
             "initialier": self.shortuser,
             "hovedtabell": self.tableid,
-            "publiseringsdato": self.date,
+            "publiseringsdato": date,
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
             "auto_overskriv_data": str(int(self.overwrite)),
@@ -342,7 +345,7 @@ class StatbankTransfer(StatbankAuth):
             )
             publish_time = publish_hour * 3600 + publish_minute * 60
             publish = publish_date + td(0, publish_time)
-            publish = publish.strftime("%Y-%m-%d %H:%M")
+            publish = publish.isoformat("T", "seconds")
             print(f"Publisering satt til: {publish}")
             print(
                 "Følg med på lasteloggen (tar noen minutter): "

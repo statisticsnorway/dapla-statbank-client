@@ -12,7 +12,7 @@ from .auth import StatbankAuth
 from .uttrekk_validations import StatbankUttrekkValidators
 
 
-class StatbankUttrekksBeskrivelse(StatbankAuth):
+class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     """
     Class for talking with the "uttrekksbeskrivelses-API",
     which describes metadata about shape of data to be transferred.
@@ -92,13 +92,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
             if hasattr(self, "headers"):
                 del self.headers
         self._split_attributes()
-        # Add methods from other placholder class
-        for method in [
-            method
-            for method in dir(StatbankUttrekkValidators)
-            if not method.startswith("__")
-        ]:
-            setattr(self, method, getattr(StatbankUttrekkValidators, method))
 
     def __str__(self):
         variabel_text = ""
@@ -167,29 +160,21 @@ class StatbankUttrekksBeskrivelse(StatbankAuth):
         if printing:
             print("\nvalidating...")
 
-        self._validate_number_dataframes(self, data=data)
+        self._validate_number_dataframes(data=data)
         validation_errors = self._validate_number_columns(
-            self, data, validation_errors, printing
+            data, validation_errors, printing
         )
         (
             categorycode_outside,
             categorycode_missing,
             validation_errors,
-        ) = self._category_code_usage(self, data, validation_errors, printing)
-        validation_errors = self._check_for_floats(
-            self, data, validation_errors, printing
-        )
-        validation_errors = self._check_rounding(
-            self, data, validation_errors, printing
-        )
-        validation_errors = self._check_time_formats(
-            self, data, validation_errors, printing
-        )
-        validation_errors = self._check_suppression(
-            self, data, validation_errors, printing
-        )
+        ) = self._category_code_usage(data, validation_errors, printing)
+        validation_errors = self._check_for_floats(data, validation_errors, printing)
+        validation_errors = self._check_rounding(data, validation_errors, printing)
+        validation_errors = self._check_time_formats(data, validation_errors, printing)
+        validation_errors = self._check_suppression(data, validation_errors, printing)
         validation_errors = self._check_unique_combinations_categories(
-            self, data, validation_errors, printing
+            data, validation_errors, printing
         )
 
         if raise_errors and validation_errors:

@@ -73,7 +73,7 @@ def fake_post_apidata():
 def client_fake(test_build_user_agent, encrypt_fake, mock_settings_env_vars):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    return StatbankClient(fake_user())
+    return StatbankClient(fake_user(), check_username_password=False)
 
 
 @pytest.fixture

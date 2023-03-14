@@ -122,6 +122,7 @@ class StatbankClient(StatbankAuth):
         bcc: str = "",
         overwrite: bool = True,
         approve: int = 2,  # Changing back to 2, after wish from Rakel Gading
+        check_username_password: bool = True,
     ):
         self.loaduser = loaduser
         self.shortuser = shortuser
@@ -138,6 +139,8 @@ class StatbankClient(StatbankAuth):
             self.date = date
         self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
+        if check_username_password:
+            self.get_description("05300")
         print(f"Publishing date set to {self.date.isoformat('T', 'seconds')}")
 
     # Representation

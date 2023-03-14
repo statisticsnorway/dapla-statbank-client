@@ -351,7 +351,6 @@ class StatbankTransfer(StatbankAuth):
                 "Følg med på lasteloggen (tar noen minutter): "
                 + f"{self.urls['gui'] + self.oppdragsnummer}"
             )
-            print(f"Og evt APIen?: {self.urls['api'] + self.oppdragsnummer}")
             self.resp_json = resp_json
         else:
             print(

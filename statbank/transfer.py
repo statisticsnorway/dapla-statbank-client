@@ -160,8 +160,14 @@ class StatbankTransfer(StatbankAuth):
                 self.transfer()
 
     def transfer(self, headers: dict = {}):  # noqa: B006
-        """The headers-parameter is for a future implemention
-        of a possible BatchTransfer, dont use it please."""
+        """Transfers your data to Statbanken.
+        Make sure you've set the publish-date correctly before sending.
+        Will only work if the transfer has not already been sent, meaning it was "delayed".
+
+        Parameters
+        -------
+        headers: mostly for internal use by the package. Needs to be a finished compiled headers for a request including Authorization.
+        """
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):
             raise ValueError(
@@ -211,8 +217,18 @@ class StatbankTransfer(StatbankAuth):
         return self.__delay
 
     def to_json(self, path: str = "") -> dict:
-        """If path is provided, tries to write to it,
+        """Store a copy of the current state of the transfer-object as a json.
+        If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
+
+        Parameters
+        -------
+        path: if provided, will try to write a json to a local path
+
+        Returns
+        -------
+        If path is provided, tries to write a json there and returns nothing.
+        If path is not provided, returns the json-string for you to handle as you wish.
         """
         print(
             "Warning, some nested, deeper data-structures"

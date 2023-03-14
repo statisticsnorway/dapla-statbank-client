@@ -17,10 +17,17 @@ def apidata(
     include_id: bool = False,
 ) -> pd.DataFrame:
     """
-    Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-    Parameter2: Payload, the query to include with the request.
-    Parameter3: If you want to include "codes" in the dataframe, set this to True
-    Returns: a pandas dataframe with the table
+    Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
+
+    Parameters
+    -------
+    id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+    payload: a dict of the query to include with the request, can be copied from the statbank-webpage.
+    include_id: If you want to include "codes" in the dataframe, set this to True
+
+    Returns
+    -------
+    A pandas dataframe with the table-content
     """
     if len(id_or_url) == 5 and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
@@ -71,16 +78,30 @@ def apidata(
 
 def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
     """
-    Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-    Returns: a pandas dataframe with the table
+    Get ALL the contents of a published statbank-table as a pandas Dataframe.
+
+    Parameters
+    -------
+    id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+    include_id: If you want to include "codes" in the dataframe, set this to True
+
+    Returns
+    -------
+    A pandas dataframe with the table-content
     """
     return apidata(id_or_url, apidata_query_all(id_or_url), include_id=include_id)
 
 
 def apidata_query_all(id_or_url: str = "") -> dict:
-    """
-    Parameter1 - id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-    Returns: A dict of the prepared query based on all the codes in the table.
+    """Builds a query for ALL THE DATA in a table based on a request for metadata on the table
+
+    Parameters
+    -------
+    id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+
+    Returns
+    -------
+    A dict of the prepared query based on all the codes in the table.
     """
     if len(id_or_url) == 5 and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
@@ -115,12 +136,16 @@ def apidata_query_all(id_or_url: str = "") -> dict:
 # Credit: https://github.com/sehyoun/SSB_API_helper/blob/master/src/ssb_api_helper.py
 def apidata_rotate(df, ind="year", val="value"):
     """Rotate the dataframe so that years are used as the index
-    Args:
-        df (pandas.dataframe): dataframe (from <get_from_ssb> function
-        ind (str): string of column name denoting time
-        val (str): string of column name denoting values
-    Returns:
-        dataframe: pivoted dataframe
+
+    Parameters
+    -------
+    df (pandas.dataframe): dataframe (from <get_from_ssb> function
+    ind (str): string of column name denoting time
+    val (str): string of column name denoting values
+
+    Returns
+    -------
+    dataframe: pivoted dataframe
     """
     return df.pivot_table(
         index=ind,

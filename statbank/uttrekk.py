@@ -147,7 +147,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         return template
 
     def to_json(self, path: str = "") -> dict:
-        """If path is provided, tries to write to it,
+        """Store a copy of the current state of the uttrekk-object as a json.
+        If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
 
         Parameters

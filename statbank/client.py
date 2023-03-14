@@ -188,7 +188,7 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        date: a datetime, a date-pcik widget or a date-string formatted as 2000-12-31
+        date: datetime, date-picker widget, or a date-string formatted as 2000-12-31
         """
         if isinstance(date, widgets.widget_date.DatePicker):
             self.date = date.value
@@ -211,7 +211,7 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string.
+        tableid: str, The tableid of the "hovedtabell" in statbanken, a 5 digit string.
 
         Returns
         -------
@@ -234,7 +234,7 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        json_path_or_str: Either a path on local storage, or a loaded json-string
+        json_path_or_str: str or path, Either a path on local storage, or a loaded json-string
 
         Returns
         -------
@@ -262,10 +262,10 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        dfs: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-        tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string.
-        raise_errors: True/False based on if you want the method to raise its own errors or not.
-        printing: True/False based on if you want a verbose printing of everything the validation checks.
+        dfs: dict of dataframes, The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+        tableid: str, The tableid of the "hovedtabell" in statbanken, a 5 digit string.
+        raise_errors: bool, True/False based on if you want the method to raise its own errors or not.
+        printing: bool, True/False based on if you want a verbose printing of everything the validation checks.
 
         Returns
         -------
@@ -291,8 +291,8 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        dfs: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-        tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string.
+        dfs: dict of dataframes, The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+        tableid: str, The tableid of the "hovedtabell" in statbanken, a 5 digit string.
 
         Returns
         -------
@@ -323,7 +323,7 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        json_path_or_str: Either a path on local storage, or a loaded json-string
+        json_path_or_str: str or path, Either a path on local storage, or a loaded json-string
 
         Returns
         -------
@@ -349,9 +349,9 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-        payload: a dict of the query to include with the request, can be copied from the statbank-webpage.
-        include_id: If you want to include "codes" in the dataframe, set this to True
+        id_or_url: str, The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        payload: dict, a dict of the query to include with the request, can be copied from the statbank-webpage.
+        include_id: bool, If you want to include "codes" in the dataframe, set this to True
 
         Returns
         -------
@@ -368,8 +368,8 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-        include_id: If you want to include "codes" in the dataframe, set this to True
+        id_or_url: str, The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        include_id: bool, If you want to include "codes" in the dataframe, set this to True
 
         Returns
         -------
@@ -383,9 +383,9 @@ class StatbankClient(StatbankAuth):
 
         Parameters
         -------
-        df: (pandas.dataframe): dataframe (from <get_from_ssb> function
-        ind: (str): string of column name denoting time
-        val: (str): string of column name denoting values
+        df: pandas.dataframe, dataframe (from <get_from_ssb> function
+        ind: str, string of column name denoting time
+        val: str: string of column name denoting values
 
         Returns
         -------

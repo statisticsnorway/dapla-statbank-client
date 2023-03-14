@@ -256,7 +256,6 @@ class StatbankClient(StatbankAuth):
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
         All validation happens locally, so dont be afraid of any data
         being sent to statbanken using this method.
-        Logic is built in Python, and can probably be expanded upon.
 
         Parameters
         -------
@@ -268,7 +267,6 @@ class StatbankClient(StatbankAuth):
         Returns
         -------
         A dictionary of the errors the validation wants to raise.
-
         """
         self._validate_params_action(tableid)
         validator = StatbankUttrekksBeskrivelse(

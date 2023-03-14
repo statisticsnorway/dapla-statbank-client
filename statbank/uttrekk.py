@@ -131,6 +131,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         )
 
     def transferdata_template(self) -> dict:
+        """Get the shape the data should have to name the "deltabeller".
+        If we didnt use a dictionary we would have to rely on the order of a list of "deltabeller".
+        Instead we chose to explicitly name the deltabller in this package.
+
+        Returns
+        -------
+        A dictionary with correct keys, but placeholders for where the dataframes should go.
+        """
         template = {k: f"df{i}" for i, (k, v) in enumerate(self.subtables.items())}
         print("{")
         for k, v in template.items():
@@ -141,6 +149,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     def to_json(self, path: str = "") -> dict:
         """If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
+
+        Parameters
+        -------
+        path: if provided, will try to write a json to a local path
+
+        Returns
+        -------
+        If path is provided, tries to write a json there and returns nothing.
+        If path is not provided, returns the json-string for you to handle as you wish.
         """
         # Need to this because im stupidly adding methods from other class as attributes
         content = {k: v for k, v in self.__dict__.items() if not callable(v)}
@@ -153,6 +170,20 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             return json.dumps(content)
 
     def validate(self, data, raise_errors: bool = False, printing: bool = True) -> dict:
+        """Uses the contents of itself to validate the data against.
+        All validation happens locally, so dont be afraid of any data
+        being sent to statbanken using this method.
+
+        Parameters
+        -------
+        data: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+        raise_errors: True/False based on if you want the method to raise its own errors or not.
+        printing: True/False based on if you want a verbose printing of everything the validation checks.
+
+        Returns
+        -------
+        A dictionary of the errors the validation wants to raise.
+        """
         if not raise_errors:
             raise_errors = self.raise_errors
 
@@ -183,7 +214,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def round_data(self, data) -> dict:
         """Checks that all decimal numbers are converted to strings,
-        with specific length after the decimal-seperator "," """
+        with specific length kept after the decimal-seperator ","
+        IMPORTANT: Rounds "real halves" UP, instead of "to even numbers" like Python does by default.
+        This is maybe the behaviour staticians are used to from Excel, SAS etc.
+
+        Parameters
+        -------
+        data: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+
+        Returns
+        -------
+        A dictionary in the same shape as sent in, but with dataframes altered to correct for rounding.
+        """
         data_copy = copy.deepcopy(data)
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]

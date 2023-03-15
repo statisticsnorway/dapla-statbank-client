@@ -21,10 +21,10 @@ class StatbankTransfer(StatbankAuth):
 
     Attributes
     ----------
-    data : pd.DataFrame or list of pd.DataFrames
+    data : dict of pd.DataFrames as values, name of "deltabell.dat" as keys.
         Number of DataFrames needs to match the number of "deltabeller" in
         the uttakksbeskrivelse.
-        Data-shape can be validated before transfer with the
+        Dict-shape can be retrieved and validated before transfer with the
         Uttakksbeskrivelses-class.
     loaduser : str
         Username for Statbanken, not the same as "shortuser" or
@@ -137,6 +137,7 @@ class StatbankTransfer(StatbankAuth):
         else:
             self.bcc = self.cc
 
+        # At this point we want date to be a string?
         if isinstance(date, str):
             self.date = date
         else:
@@ -159,6 +160,14 @@ class StatbankTransfer(StatbankAuth):
                 self.transfer()
 
     def transfer(self, headers: dict = {}):  # noqa: B006
+        """Transfers your data to Statbanken.
+        Make sure you've set the publish-date correctly before sending.
+        Will only work if the transfer has not already been sent, meaning it was "delayed".
+
+        Parameters
+        -------
+        headers: mostly for internal use by the package. Needs to be a finished compiled headers for a request including Authorization.
+        """
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):
             raise ValueError(
@@ -208,8 +217,18 @@ class StatbankTransfer(StatbankAuth):
         return self.__delay
 
     def to_json(self, path: str = "") -> dict:
-        """If path is provided, tries to write to it,
+        """Store a copy of the current state of the transfer-object as a json.
+        If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
+
+        Parameters
+        -------
+        path: if provided, will try to write a json to a local path
+
+        Returns
+        -------
+        If path is provided, tries to write a json there and returns nothing.
+        If path is not provided, returns the json-string for you to handle as you wish.
         """
         print(
             "Warning, some nested, deeper data-structures"
@@ -297,11 +316,13 @@ class StatbankTransfer(StatbankAuth):
 
     def _build_params(self) -> dict:
         if isinstance(self.date, dt):
-            self.date = self.date.strftime("%Y-%m-%d")
+            date = self.date.strftime("%Y-%m-%d")
+        else:
+            date = self.date
         return {
             "initialier": self.shortuser,
             "hovedtabell": self.tableid,
-            "publiseringsdato": self.date,
+            "publiseringsdato": date,
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
             "auto_overskriv_data": str(int(self.overwrite)),
@@ -340,7 +361,7 @@ class StatbankTransfer(StatbankAuth):
             )
             publish_time = publish_hour * 3600 + publish_minute * 60
             publish = publish_date + td(0, publish_time)
-            publish = publish.strftime("%Y-%m-%d %H:%M")
+            publish = publish.isoformat("T", "seconds")
             print(f"Publisering satt til: {publish}")
             print(
                 "Følg med på lasteloggen (tar noen minutter): "

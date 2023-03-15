@@ -285,7 +285,7 @@ class StatbankClient(StatbankAuth):
         return validation_errors
 
     # Transfer
-    def transfer(self, dfs: pd.DataFrame, tableid: str = "00000") -> StatbankTransfer:
+    def transfer(self, dfs: dict, tableid: str = "00000") -> StatbankTransfer:
         """Transfers your data to Statbanken.
         Make sure you've set the publish-date correctly before sending.
 

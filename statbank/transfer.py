@@ -21,10 +21,10 @@ class StatbankTransfer(StatbankAuth):
 
     Attributes
     ----------
-    data : pd.DataFrame or list of pd.DataFrames
+    data : dict of pd.DataFrames as values, name of "deltabell.dat" as keys.
         Number of DataFrames needs to match the number of "deltabeller" in
         the uttakksbeskrivelse.
-        Data-shape can be validated before transfer with the
+        Dict-shape can be retrieved and validated before transfer with the
         Uttakksbeskrivelses-class.
     loaduser : str
         Username for Statbanken, not the same as "shortuser" or

@@ -71,7 +71,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     """
 
-    def __init__(self, tableid, loaduser, raise_errors=False, headers=None):
+    def __init__(
+        self, tableid, loaduser, raise_errors=False, headers=None, printing=True
+    ):
         self.loaduser = loaduser
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
@@ -87,7 +89,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         else:
             self.headers = self._build_headers()
         try:
-            self._get_uttrekksbeskrivelse()
+            self._get_uttrekksbeskrivelse(printing)
         finally:
             if hasattr(self, "headers"):
                 del self.headers
@@ -276,7 +278,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 n = Decimal(n).to_integral_value()
         return str(n)
 
-    def _get_uttrekksbeskrivelse(self) -> dict:
+    def _get_uttrekksbeskrivelse(self, printing) -> dict:
         filbeskrivelse_url = self.url + "tableId=" + self.tableid
         try:
             filbeskrivelse = self._make_request(filbeskrivelse_url, self.headers)
@@ -288,11 +290,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise ConnectionError(filbeskrivelse, filbeskrivelse.text)
         # Also deletes / overwrites returned Auth-header from get-request
         filbeskrivelse = json.loads(filbeskrivelse.text)
-        print(
-            f"""Hentet uttaksbeskrivelsen for {filbeskrivelse['Huvudtabell']},
-        med tableid: {self.tableid}
-        den {filbeskrivelse['Uttaksbeskrivelse_lagd']}"""
-        )
+        if printing:
+            print(
+                f"""Hentet uttaksbeskrivelsen for {filbeskrivelse['Huvudtabell']},
+            med tableid: {self.tableid}
+            den {filbeskrivelse['Uttaksbeskrivelse_lagd']}"""
+            )
 
         # reset tableid and hovedkode after content of request
         self.filbeskrivelse = filbeskrivelse

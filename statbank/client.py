@@ -137,10 +137,12 @@ class StatbankClient(StatbankAuth):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
-        self.date.replace(hour=8, minute=0, second=0, microsecond=0)
+        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         if check_username_password:
-            self.get_description("05300")
+            self.get_description(
+                "05300", printing=False
+            )  # Random tableid to double check username&password early
         print(f"Publishing date set to {self.date.isoformat('T', 'seconds')}")
 
     # Representation
@@ -196,7 +198,7 @@ class StatbankClient(StatbankAuth):
             self.date = datetime.datetime.strptime(date, "%Y-%m-%d")
         else:
             self.date = date
-        self.date.replace(hour=8, minute=0, second=0, microsecond=0)
+        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         print("Publishing date set to:", self.date)
         self.log.append(
@@ -204,7 +206,9 @@ class StatbankClient(StatbankAuth):
         )
 
     # Descriptions
-    def get_description(self, tableid: str = "00000") -> StatbankUttrekksBeskrivelse:
+    def get_description(
+        self, tableid: str = "00000", printing=True
+    ) -> StatbankUttrekksBeskrivelse:
         """Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
         about shape of data to be transferred, and metadata about the table
         itself in Statbankens system, like ID, name and content of codelists.
@@ -222,7 +226,10 @@ class StatbankClient(StatbankAuth):
             f"Getting description for tableid {tableid} at {datetime.datetime.now().isoformat('T', 'seconds')}"
         )
         return StatbankUttrekksBeskrivelse(
-            tableid=tableid, loaduser=self.loaduser, headers=self.__headers
+            tableid=tableid,
+            loaduser=self.loaduser,
+            headers=self.__headers,
+            printing=printing,
         )
 
     @staticmethod

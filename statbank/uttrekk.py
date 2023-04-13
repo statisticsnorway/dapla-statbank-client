@@ -288,8 +288,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
         if filbeskrivelse.status_code != 200:
             raise ConnectionError(filbeskrivelse, filbeskrivelse.text)
+        # Rakel encountered an error with a tab-character in the json, should we just strip this?
+        filbeskrivelse = filbeskrivelse.text.replace("\t", "")
         # Also deletes / overwrites returned Auth-header from get-request
-        filbeskrivelse = json.loads(filbeskrivelse.text)
+        filbeskrivelse = json.loads(filbeskrivelse)
         if printing:
             print(
                 f"""Hentet uttaksbeskrivelsen for {filbeskrivelse['Huvudtabell']},

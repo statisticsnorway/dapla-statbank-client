@@ -62,7 +62,6 @@ class StatbankUttrekkValidators:
                 if "Kodeliste_text" in variabel.keys():
                     if "format = " in variabel["Kodeliste_text"]:
                         validation_errors = self._check_time_columns(
-                            self,
                             deltabell["deltabell"],
                             variabel,
                             data,

@@ -271,7 +271,7 @@ def test_transfer_shortuser_wrong_raises(
 def client_fake(test_build_user_agent, encrypt_fake, mock_settings_env_vars):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    return StatbankClient(fake_user())
+    return StatbankClient(fake_user(), check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -282,7 +282,7 @@ def test_client_no_loaduser_set(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(1)
+        StatbankClient(1, check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -293,7 +293,7 @@ def test_client_approve_wrong_datatype(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(fake_user(), approve="1")
+        StatbankClient(fake_user(), approve="1", check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -304,7 +304,7 @@ def test_client_overwrite_wrong_datatype(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(fake_user(), overwrite="1")
+        StatbankClient(fake_user(), overwrite="1", check_username_password=False)
 
 
 def test_client_print(client_fake):
@@ -324,7 +324,7 @@ def test_client_with_str_date(
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    client = StatbankClient(fake_user(), "2050-01-01")
+    client = StatbankClient(fake_user(), "2050-01-01", check_username_password=False)
     assert isinstance(client.date, datetime)
 
 

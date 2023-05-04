@@ -315,16 +315,17 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         }
         self.variables = self.filbeskrivelse["deltabller"]
         self.codelists = {}
-        for kodeliste in self.filbeskrivelse["kodelister"]:
-            new_kodeliste = {}
-            for kode in kodeliste["koder"]:
-                new_kodeliste[kode["kode"]] = kode["text"]
-            self.codelists[kodeliste["kodeliste"]] = {"koder": new_kodeliste}
-            remain_keys = list(kodeliste.keys())
-            remain_keys.remove("koder")
-            remain_keys.remove("kodeliste")
-            for k in remain_keys:
-                self.codelists[kodeliste["kodeliste"]][k] = kodeliste[k]
+        if "kodelister" in self.filbeskrivelse.keys():
+            for kodeliste in self.filbeskrivelse["kodelister"]:
+                new_kodeliste = {}
+                for kode in kodeliste["koder"]:
+                    new_kodeliste[kode["kode"]] = kode["text"]
+                self.codelists[kodeliste["kodeliste"]] = {"koder": new_kodeliste}
+                remain_keys = list(kodeliste.keys())
+                remain_keys.remove("koder")
+                remain_keys.remove("kodeliste")
+                for k in remain_keys:
+                    self.codelists[kodeliste["kodeliste"]][k] = kodeliste[k]
 
         if "null_prikk_missing_kodeliste" in self.filbeskrivelse.keys():
             self.suppression = self.filbeskrivelse["null_prikk_missing_kodeliste"]

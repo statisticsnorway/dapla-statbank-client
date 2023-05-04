@@ -400,6 +400,27 @@ def test_client_get_uttrekk_tableid_wrong_length(client_fake):
         client_fake.get_description("1")
 
 
+
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def test_uttrekk_works_no_codelists(
+    test_build_user_agent,
+    test_encrypt,
+    test_make_request,
+    client_fake,
+    mock_settings_env_vars,):
+    uttrekk = fake_get_response_uttrekksbeskrivelse_successful()
+    uttrekk._content = bytes(uttrekk._content.decode().replace(',"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999","koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},{"kode":"02","text":"Kode2"}]}]', ""), "utf8")
+    test_make_request.return_value = uttrekk
+    test_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    desc = client_fake.get_description("10000")
+    assert desc.tableid == "10000"
+    
+    
+        
+        
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     # last thing to get filled during __init__ is .kodelister, check that dict has length
     assert len(uttrekksbeskrivelse_success.codelists)

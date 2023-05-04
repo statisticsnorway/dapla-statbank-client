@@ -8,8 +8,8 @@ import pandas as pd
 import requests as r
 from requests.exceptions import ConnectionError
 
-from .auth import StatbankAuth
-from .uttrekk_validations import StatbankUttrekkValidators
+from statbank.auth import StatbankAuth
+from statbank.uttrekk_validations import StatbankUttrekkValidators
 
 
 class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):

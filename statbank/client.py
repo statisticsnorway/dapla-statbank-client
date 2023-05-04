@@ -9,10 +9,10 @@ import ipywidgets as widgets
 import pandas as pd
 from IPython.display import display
 
-from .apidata import apidata, apidata_all, apidata_rotate
-from .auth import StatbankAuth
-from .transfer import StatbankTransfer
-from .uttrekk import StatbankUttrekksBeskrivelse
+from statbank.apidata import apidata, apidata_all, apidata_rotate
+from statbank.auth import StatbankAuth
+from statbank.transfer import StatbankTransfer
+from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
 
 TOMORROW = datetime.datetime.now() + td(days=1)

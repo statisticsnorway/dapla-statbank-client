@@ -10,7 +10,7 @@ from datetime import timedelta as td
 import pandas as pd
 import requests as r
 
-from .auth import StatbankAuth
+from statbank.auth import StatbankAuth
 
 
 class StatbankTransfer(StatbankAuth):

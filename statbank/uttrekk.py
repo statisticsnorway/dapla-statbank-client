@@ -148,8 +148,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         A dictionary with correct keys, but placeholders for where the dataframes should go if no Dataframes are passed.
         A dict of dataframes as values if a list of Dataframes are sent in, or dataframes as individual parameters.
         """
-        if isinstance(dfs, pd.DataFrame):
-            dfs = [dfs]
+        
+        #if isinstance(dfs, pd.DataFrame):
+        #    dfs = [dfs]
         # If sending in a list, unwrap one layer
         if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
             dfs = dfs[0]

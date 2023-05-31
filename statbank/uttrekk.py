@@ -132,19 +132,44 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             + f'{self.tableid}", loaduser="{self.loaduser}")'
         )
 
-    def transferdata_template(self) -> dict:
+    def transferdata_template(self, *dfs: list[pd.DataFrame] | pd.DataFrame) -> dict:
         """Get the shape the data should have to name the "deltabeller".
         If we didnt use a dictionary we would have to rely on the order of a list of "deltabeller".
-        Instead we chose to explicitly name the deltabller in this package.
+        Instead we chose to explicitly name the deltabller in this package, and make you check this after creation.
 
+        Parameters
+        -------
+        dfs: if provided, will try to use pandas dataframes sent in to populate the dict returned by the method.
+            Send in one dataframe, several, a list of dataframes or similar.
+            ORDER IS IMPORTANT make sure the result is what you expect.
+        
         Returns
         -------
-        A dictionary with correct keys, but placeholders for where the dataframes should go.
+        A dictionary with correct keys, but placeholders for where the dataframes should go if no Dataframes are passed.
+        A dict of dataframes as values if a list of Dataframes are sent in, or dataframes as individual parameters.
         """
-        template = {k: f"df{i}" for i, (k, v) in enumerate(self.subtables.items())}
+        if isinstance(dfs, pd.DataFrame):
+            dfs = [dfs]
+        # If sending in a list, unwrap one layer
+        if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
+            dfs = dfs[0]
+        if dfs:
+            if not all([isinstance(df, pd.DataFrame) for df in dfs]):
+                raise TypeError("All elements sent in to transferdata_template must be pandas dataframes.")
+            if not len(dfs) == len(self.subtables):
+                raise KeyError("Number of dataframes in must match the number of subtables.")
+            
+        if dfs:
+            template = {k: dfs[i] for i, k in enumerate(self.subtables.keys())}
+        else:
+            template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}
+        
         print("{")
         for k, v in template.items():
-            print(f'"{k}" : {v},')
+            if isinstance(v, pd.DataFrame):
+                print(f'"{k}" : Dataframe with column-names: {v.columns}')
+            else:   
+                print(f'"{k}" : {v},')
         print("}")
         return template
 

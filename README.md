@@ -130,7 +130,7 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
-- 1.0.5 Making transferdata_template smarter, were it can take a bunch of dataframes and incorporate them in the returned dict.
+- 1.0.5 Making transferdata_template smarter, were it can take a bunch of dataframes and incorporate them in the returned dict. Trying to support columntype "internasjonal rapportering".
 - 1.0.4 Fixing bug where empty codelists stops description initialization, Updating pyjstat to 2.4.0, changing imports to absolute from package root
 - 1.0.2 Doc-string style cleanup, a check on username and password on client init, changes to time and display of time, demo notebooks cleaned
 - 1.0.0 Finished going through initial issues, less complaining from verify on floats

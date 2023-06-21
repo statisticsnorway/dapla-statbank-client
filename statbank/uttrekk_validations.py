@@ -23,12 +23,14 @@ class StatbankUttrekkValidators:
             )  # Mangler prikke-kolonner?
             if "null_prikk_missing" in deltabell.keys():
                 col_num += len(deltabell["null_prikk_missing"])
+            if "internasjonal_rapportering" in deltabell.keys():
+                col_num += len(deltabell["internasjonal_rapportering"])
             if len(data[deltabell_navn].columns) != col_num:
                 validation_errors[f"col_count_data_{deltabell_num}"] = ValueError(
                     f"""
-                    EXPECTING {col_num} COLUMNS IN DATFRAME NUMBER
-                    {deltabell_num}: {deltabell_navn}
-                    ONLY FOUND {len(data[deltabell_navn].columns)}
+                    EXPECTING {col_num} COLUMNS IN DATAFRAME NUMBER {deltabell_num}:
+                    {deltabell_navn}
+                    BUT FOUND {len(data[deltabell_navn].columns)}
                     """
                 )
         for k in validation_errors.keys():

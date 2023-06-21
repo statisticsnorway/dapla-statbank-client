@@ -212,11 +212,19 @@ class StatbankUttrekkValidators:
                 col_unique = data[deltabell_name].iloc[:, int(col_num) - 1].unique()
                 for kod in col_unique:
                     if kod not in codelist:
-                        categorycode_outside += [
-                            f"""Code {kod} in data, but not in uttrekksbeskrivelse,
-                            add to statbank admin? From column number
-                            {col_num}, in deltabell {deltabell_name}"""
-                        ]
+                        if " " in kod:
+                            categorycode_outside += [
+                                f"""{kod} contains spaces, should it?
+                                The exact code "{kod}" (including spaces) is in the data, but not in uttrekksbeskrivelse,
+                                add to statbank admin? From column number
+                                {col_num}, in deltabell {deltabell_name}"""
+                            ]
+                        else:
+                            categorycode_outside += [
+                                f"""Code {kod} in data, but not in uttrekksbeskrivelse,
+                                add to statbank admin? From column number
+                                {col_num}, in deltabell {deltabell_name}"""
+                            ]
                 for kod in codelist:
                     if kod not in col_unique:
                         categorycode_missing += [

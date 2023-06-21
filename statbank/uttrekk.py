@@ -348,7 +348,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         if "kodelister" in self.filbeskrivelse.keys():
             kodelister = self.filbeskrivelse["kodelister"]
             if "IRkodelister" in self.filbeskrivelse.keys():
-                kodelister = {**kodelister, **self.filbeskrivelse["IRkodelister"]}
+                kodelister = [*kodelister, *self.filbeskrivelse["IRkodelister"]]
             for kodeliste in kodelister:
                 new_kodeliste = {}
                 for kode in kodeliste["koder"]:

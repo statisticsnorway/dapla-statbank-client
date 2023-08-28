@@ -38,16 +38,37 @@ class StatbankAuth:
             "Accept": r"*/*",
             "User-Agent": self._build_user_agent(),
         }
+    
+    @staticmethod
+    def check_env() -> str:
+        """Check if you are on Dapla or in prodsone.
 
+        Returns
+        -------
+        str
+            "DAPLA" if on dapla, "PROD" if you are in prodsone.
+
+        Raises
+        ------
+        OSError
+            If no indications match, dapla/prod may have changed (please report)
+            Or you are using the function outside of dapla/prod on purpose?
+        """
+        jupyter_image_spec = os.environ.get("JUPYTER_IMAGE_SPEC")
+        if (jupyter_image_spec and "dapla-jupyterlab" in jupyter_image_spec):
+            return "DAPLA"
+        elif os.path.isdir("/ssb/bruker"):
+            return "PROD"
+        else:
+            raise OSError("Ikke i prodsonen, eller på Dapla? Må funksjonen skrives om?")
+    
+    
     def _build_user_agent(self):
-        url = os.environ["STATBANK_ENCRYPT_URL"].split("://")[1]
-        if url.startswith("dapla"):
+        
+        if self.check_env() == "DAPLA":
             user_agent = "Dapla"
-        elif "ssb" in os.listdir("/"):
-            if "stamme01" in os.listdir("/ssb/"):
-                user_agent = "Bakke"
-            else:
-                raise SystemError("Can't determine if Im in dapla or in prodsone")
+        elif self.check_env() == "PROD":
+            user_agent = "Bakke"
         else:
             raise SystemError("Can't determine if Im in dapla or in prodsone")
 

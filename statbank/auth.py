@@ -38,7 +38,7 @@ class StatbankAuth:
             "Accept": r"*/*",
             "User-Agent": self._build_user_agent(),
         }
-    
+
     @staticmethod
     def check_env() -> str:
         """Check if you are on Dapla or in prodsone.
@@ -61,10 +61,8 @@ class StatbankAuth:
             return "PROD"
         else:
             raise OSError("Ikke i prodsonen, eller på Dapla? Må funksjonen skrives om?")
-    
-    
+
     def _build_user_agent(self):
-        
         if self.check_env() == "DAPLA":
             user_agent = "Dapla"
         elif self.check_env() == "PROD":

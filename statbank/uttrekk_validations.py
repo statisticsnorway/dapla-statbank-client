@@ -42,7 +42,42 @@ class StatbankUttrekkValidators:
             if printing:
                 print("Correct number of columns...")
         return validation_errors
+    
+    def _check_for_literal_nans_in_strings(self, data: dict, validation_errors: dict, printing) -> dict:
+        for name, df in data.items():
+            string_df = df.select_dtypes(include=["object", "string", "string[pyarrow]"])
+            cat_df = df.select_dtypes(include=["category"])
+            
+            nans = ["nan", "na", "none", "."]
 
+            if len(string_df.columns):
+                for col in string_df.columns:
+                    error_text = f"""{col} in {name} has strings, that look like NAs / empty cells,
+                    (In this list: {nans})
+                    Which have been converted to literal strings. 
+                    Consider handeling your NAs before converting them to strings.
+                    Maybe with a .fillna("") before an .astype(str) """
+                    nan_len = len(string_df[string_df[col].str.lower().isin(nans)])
+                    if nan_len:
+                        validation_errors[f"contains_string_nans_{name}_{col}"] = error_text
+                        if printing:
+                            print(error_text)
+            if len(cat_df.columns):
+                for col in cat_df.columns:
+                    error_text = f"""{col} in {name} is a categorical but has strings,
+                    that look like NAs / empty cells,
+                    (In this list: {nans})
+                    Which have been converted to literal strings?
+                    Consider handeling your NAs before converting them to strings.
+                    Maybe with a .fillna("") before an .astype(str) """
+                    nan_cats = [cat for cat in cat_df[col].cat.categories if cat.lower() in nans]
+                    if nan_cats:
+                        validation_errors[f"contains_string_nans_in_category_{name}_{col}"] = error_text
+                        if printing:
+                            print(error_text)
+        return validation_errors
+    
+    
     def _check_for_floats(self, data: dict, validation_errors: dict, printing) -> dict:
         for name, df in data.items():
             for col in df.columns:

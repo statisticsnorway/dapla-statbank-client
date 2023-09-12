@@ -152,9 +152,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         """
 
         # If sending in a list, unwrap one layer
-        if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
-            dfs = dfs[0]
         if dfs:
+            if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
+                dfs = dfs[0]
             if not all([isinstance(df, pd.DataFrame) for df in dfs]):
                 raise TypeError(
                     "All elements sent in to transferdata_template must be pandas dataframes."
@@ -163,8 +163,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 raise KeyError(
                     "Number of dataframes in must match the number of subtables."
                 )
-
-        if dfs:
             template = {k: dfs[i] for i, k in enumerate(self.subtables.keys())}
         else:
             template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}
@@ -234,6 +232,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             validation_errors,
         ) = self._category_code_usage(data, validation_errors, printing)
         validation_errors = self._check_for_floats(data, validation_errors, printing)
+        validation_errors = self._check_for_literal_nans_in_strings(data, validation_errors, printing)
         validation_errors = self._check_rounding(data, validation_errors, printing)
         validation_errors = self._check_time_formats(data, validation_errors, printing)
         validation_errors = self._check_suppression(data, validation_errors, printing)

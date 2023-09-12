@@ -232,6 +232,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             validation_errors,
         ) = self._category_code_usage(data, validation_errors, printing)
         validation_errors = self._check_for_floats(data, validation_errors, printing)
+        validation_errors = self._check_for_literal_nans_in_strings(data, validation_errors, printing)
         validation_errors = self._check_rounding(data, validation_errors, printing)
         validation_errors = self._check_time_formats(data, validation_errors, printing)
         validation_errors = self._check_suppression(data, validation_errors, printing)

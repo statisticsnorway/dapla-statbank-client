@@ -62,6 +62,19 @@ class StatbankAuth:
         else:
             raise OSError("Ikke i prodsonen, eller på Dapla? Må funksjonen skrives om?")
 
+    @staticmethod    
+    def check_database() -> str:
+        if "test" in os.environ["STATBANK_BASE_URL"]:
+            print("Warning: Descriptions and data in the TEST-database may be outdated!")
+            return "TEST"
+        elif "i.ssb" in os.environ["STATBANK_BASE_URL"]:
+            return "PROD"
+        else:
+            raise SystemError(
+                "Can't determine if Im sending to the test-database or the prod-database"
+            )
+
+
     def _build_user_agent(self):
         if self.check_env() == "DAPLA":
             user_agent = "Dapla"
@@ -70,9 +83,9 @@ class StatbankAuth:
         else:
             raise SystemError("Can't determine if Im in dapla or in prodsone")
 
-        if "test" in os.environ["STATBANK_BASE_URL"]:
+        if self.check_database() == "TEST":
             user_agent += "Test-"
-        elif "i.ssb" in os.environ["STATBANK_BASE_URL"]:
+        elif self.check_database() == "PROD":
             user_agent += "Prod-"
         else:
             raise SystemError(
@@ -93,12 +106,8 @@ class StatbankAuth:
             del response
         return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
 
-    @staticmethod
-    def _encrypt_request():
-        if "test" in os.environ["STATBANK_BASE_URL"].lower():
-            db = "TEST"
-        else:
-            db = "PROD"
+    def _encrypt_request(self):
+        db = self.check_database()
         if AuthClient.is_ready():
             headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",

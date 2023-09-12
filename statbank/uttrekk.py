@@ -152,9 +152,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         """
 
         # If sending in a list, unwrap one layer
-        if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
-            dfs = dfs[0]
         if dfs:
+            if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
+                dfs = dfs[0]
             if not all([isinstance(df, pd.DataFrame) for df in dfs]):
                 raise TypeError(
                     "All elements sent in to transferdata_template must be pandas dataframes."
@@ -163,8 +163,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 raise KeyError(
                     "Number of dataframes in must match the number of subtables."
                 )
-
-        if dfs:
             template = {k: dfs[i] for i, k in enumerate(self.subtables.keys())}
         else:
             template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}

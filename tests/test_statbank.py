@@ -428,6 +428,12 @@ def test_uttrekk_works_no_codelists(
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     # last thing to get filled during __init__ is .kodelister, check that dict has length
     assert len(uttrekksbeskrivelse_success.codelists)
+    
+    
+def test_uttrekksbeskrivelse_can_make_totals(uttrekksbeskrivelse_success):
+    result = uttrekksbeskrivelse_success.get_totalcodes_dict()
+    assert isinstance(result, dict)
+    assert len(result)
 
 
 def test_uttrekk_json_write_read(

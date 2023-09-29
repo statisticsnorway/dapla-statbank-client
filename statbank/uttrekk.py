@@ -244,6 +244,22 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise Exception(list(validation_errors.values()))
         return validation_errors
 
+    def get_totalcodes_dict(self) -> dict[str, str]:
+        """Makes a dict from each codelist where a code for "totals" is included.
+        Keys being the name of the codelist, values being the code to put into categorical columns, that describes totals.
+        This dict can be passed into the parameters "fillna_dict" and "grand_total" in the function "agg_all_combos" in the package ssb-fagfunksjoner.
+
+        Returns
+        -------
+        A dictionary with the codelist as keys, the total-codes as values.
+        """
+        result = {}
+        for name, kodeliste in self.codelists.items():
+            if "SumIALtTotalKode" in list(kodeliste.keys()):
+                result[name] = kodeliste["SumIALtTotalKode"]
+        return result
+
+
     def round_data(self, data) -> dict:
         """Checks that all decimal numbers are converted to strings,
         with specific length kept after the decimal-seperator ","

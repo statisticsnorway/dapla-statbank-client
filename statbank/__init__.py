@@ -1,4 +1,4 @@
-__version__ = "1.0.6"
+__version__ = "1.0.7"
 
 __all__ = ["StatbankClient", "apidata", "apidata_all", "apidata_rotate"]
 

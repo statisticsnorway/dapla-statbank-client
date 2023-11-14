@@ -55,7 +55,7 @@ class StatbankAuth:
             Or you are using the function outside of dapla/prod on purpose?
         """
         jupyter_image_spec = os.environ.get("JUPYTER_IMAGE_SPEC")
-        if (jupyter_image_spec and "dapla-jupyterlab" in jupyter_image_spec):
+        if (jupyter_image_spec and "jupyterlab-dapla" in jupyter_image_spec):
             return "DAPLA"
         elif os.path.isdir("/ssb/bruker"):
             return "PROD"

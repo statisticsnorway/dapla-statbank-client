@@ -211,7 +211,7 @@ class StatbankUttrekkValidators:
             category_col_nums = [
                 int(var["kolonnenummer"]) - 1 for var in deltabell["variabler"]
             ]
-            df_colcheck = data[deltabell["deltabell"]].iloc[category_col_nums, :]
+            df_colcheck = data[deltabell["deltabell"]].iloc[:, category_col_nums]
             if df_colcheck.duplicated().any():
                 validation_errors[
                     f"duplicate_categorical_groups_{deltabell['deltabell']}"

@@ -16,7 +16,7 @@
   "friendly_name": "Dapla Statbank Client",
   "github_organization": "statisticsnorway",
   "license": "MIT",
-  "package_name": "dapla",
+  "package_name": "statbank",
   "project_name": "dapla-statbank-client",
   "version": "1.0.9"
 }

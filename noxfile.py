@@ -21,7 +21,7 @@ except ImportError:
     {sys.executable} -m pip install nox-poetry"""
     raise SystemExit(dedent(message)) from None
 
-package = "dapla"
+package = "statbank"
 python_versions = ["3.10", "3.11", "3.9"]
 nox.needs_version = ">= 2021.6.6"
 nox.options.sessions = (

@@ -5,7 +5,7 @@
   "context": {
     "cookiecutter": {
       "project_name": "dapla-statbank-client",
-      "package_name": "dapla",
+      "package_name": "statbank",
       "friendly_name": "Dapla Statbank Client",
       "copyright_owner": "Statistics Norway",
       "copyright_year": "2023",

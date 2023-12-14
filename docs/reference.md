@@ -7,19 +7,19 @@ from the root directory.
 
 You need to rerun the command when python files are added, deleted or renamed.
 Copy the content from the generated
-dapla.rst file to the {eval-rst} block below and
+statbank.rst file to the {eval-rst} block below and
 delete the .rst file afterwards.
 -->
 
 ```{eval-rst}
-dapla package
+statbank package
 =============================================================================
 
 
-dapla.functions module
+statbank.functions module
 -----------------------------------------------------------------------------
 
-.. automodule:: dapla.functions
+.. automodule:: statbank.functions
    :members:
    :undoc-members:
    :show-inheritance:

@@ -50,7 +50,7 @@ ipykernel = ">=6.0.0"
 pythonpath = ["src"]
 
 [tool.poetry.scripts]
-dapla-statbank-client = "dapla.__main__:main"
+dapla-statbank-client = "statbank.__main__:main"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -58,7 +58,7 @@ tests = ["tests", "*/tests"]
 
 [tool.coverage.run]
 branch = true
-source = ["dapla", "tests"]
+source = ["statbank", "tests"]
 
 [tool.coverage.report]
 show_missing = true

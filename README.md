@@ -1,4 +1,32 @@
-# dapla-statbank-client
+# Dapla Statbank Client
+
+
+[![PyPI](https://img.shields.io/pypi/v/dapla-statbank-client.svg)][pypi status]
+[![Status](https://img.shields.io/pypi/status/dapla-statbank-client.svg)][pypi status]
+[![Python Version](https://img.shields.io/pypi/pyversions/dapla-statbank-client)][pypi status]
+[![License](https://img.shields.io/pypi/l/dapla-statbank-client)][license]
+
+[![Documentation](https://github.com/statisticsnorway/dapla-statbank-client/actions/workflows/docs.yml/badge.svg)][documentation]
+[![Tests](https://github.com/statisticsnorway/dapla-statbank-client/actions/workflows/tests.yml/badge.svg)][tests]
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=statisticsnorway_dapla-statbank-client&metric=coverage)][sonarcov]
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=statisticsnorway_dapla-statbank-client&metric=alert_status)][sonarquality]
+
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)][poetry]
+
+[pypi status]: https://pypi.org/project/dapla-statbank-client/
+[documentation]: https://statisticsnorway.github.io/dapla-statbank-client
+[tests]: https://github.com/statisticsnorway/dapla-statbank-client/actions?workflow=Tests
+
+[sonarcov]: https://sonarcloud.io/summary/overall?id=statisticsnorway_dapla-statbank-client
+[sonarquality]: https://sonarcloud.io/summary/overall?id=statisticsnorway_dapla-statbank-client
+[pre-commit]: https://github.com/pre-commit/pre-commit
+[black]: https://github.com/psf/black
+[poetry]: https://python-poetry.org/
+
+
 Used internally by SSB (Statistics Norway).
 Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
@@ -142,3 +170,30 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 - 0.0.3 Removed batches, stripping uttrekk from transfer, rounding function on uttrekk, data required in as a dict of dataframes, with "deltabell-navn". Tableid now works to transfer to instead of only "hovedtabellnavn"
 - 0.0.2 Starting alpha, fine-tuning release to Pypi on github-release
 - 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.
+
+
+## License
+
+Distributed under the terms of the [MIT license][license],
+_Dapla Statbank Client_ is free and open source software.
+
+## Issues
+
+If you encounter any problems,
+please [file an issue] along with a detailed description.
+
+## Credits
+
+This project was generated from [Statistics Norway]'s [SSB PyPI Template].
+
+[statistics norway]: https://www.ssb.no/en
+[pypi]: https://pypi.org/
+[ssb pypi template]: https://github.com/statisticsnorway/ssb-pypitemplate
+[file an issue]: https://github.com/statisticsnorway/dapla-statbank-client/issues
+[pip]: https://pip.pypa.io/
+
+<!-- github-only -->
+
+[license]: https://github.com/statisticsnorway/dapla-statbank-client/blob/main/LICENSE
+[contributor guide]: https://github.com/statisticsnorway/dapla-statbank-client/blob/main/CONTRIBUTING.md
+[reference guide]: https://statisticsnorway.github.io/dapla-statbank-client/reference.html

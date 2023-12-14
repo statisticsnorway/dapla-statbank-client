@@ -1,0 +1,1 @@
+"""Dapla Statbank Client."""

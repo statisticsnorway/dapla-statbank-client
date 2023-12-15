@@ -85,6 +85,10 @@ ignore = [
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
     "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
     "E501",   # Supress line-too-long warnings: trust black's judgement on this one.
+    "TRY003", # Carl: Ruff wants me to subclass basic exceptions, I dont agree
+    "FBT001", # Carl: Users will not want to create Enums just to run the function
+    "FBT002", # Carl: Users will not want to create Enums just to run the function
+
 ]
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 extend-exclude = [

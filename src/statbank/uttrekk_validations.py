@@ -3,6 +3,10 @@ import pandas as pd
 import statbank.logger
 
 
+class StatbankValidateError(Exception):
+    """Use when raising errors stemming from the validators not running cleanly."""
+
+
 class StatbankUttrekkValidators:
     """Split out from the main Uttrekk-class, this class contains all the validator-methods."""
 

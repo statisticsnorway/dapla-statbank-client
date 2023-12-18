@@ -16,6 +16,7 @@ from statbank.client import StatbankClient
 
 __all__ = ["StatbankClient", "apidata", "apidata_all", "apidata_rotate"]
 
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

@@ -22,7 +22,7 @@ print(stat_client)
 # You can change for example date by specifying it: StatbankClient(loaduser = "LASTEBRUKER", date="2023-02-16")
 ```
 
-Be aware that from the **dapla staging environment** you will be sending to statbank-TEMP-database, your changes will not be published. But if you are in the main dapla-jupyterlab (prod), you WILL publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab.
+Be aware that from the **dapla-staging environment** you will be sending to statbank-TEST-database, your changes will not be published. For this you need the "test-password", which is for the same user (lastebruker), but different from the ordinary password (lastepassord). If you are missing the test-password, have the statbank-team send it to you for you loaduser. If you are in the main dapla-jupyterlab (prod), you **WILL** publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab. And be aware of which password you are entering, based on your environment. [To see data actually published to the test-database, you can use this link if you work at SSB.](https://i.test.ssb.no/pxwebi/pxweb/no/test_24v_intern/)
 
 
 ### Usage Transferring
@@ -130,6 +130,10 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 ---
 
 ### Version history
+- 1.0.6 fixing new functionality on "IRkodelister"
+- 1.0.5 Making transferdata_template smarter, were it can take a bunch of dataframes and incorporate them in the returned dict. Trying to support columntype "internasjonal rapportering".
+- 1.0.4 Fixing bug where empty codelists stops description initialization, Updating pyjstat to 2.4.0, changing imports to absolute from package root
+- 1.0.2 Doc-string style cleanup, a check on username and password on client init, changes to time and display of time, demo notebooks cleaned
 - 1.0.0 Finished going through initial issues, less complaining from verify on floats
 - 0.0.11 Statbank people wanted a user-agent-requesst-header to differentiate test from prod
 - 0.0.9 After further user-testing and requests

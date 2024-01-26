@@ -39,6 +39,42 @@ class StatbankAuth:
             "User-Agent": self._build_user_agent(),
         }
 
+    @staticmethod
+    def check_env() -> str:
+        """Check if you are on Dapla or in prodsone.
+
+        Returns
+        -------
+        str
+            "DAPLA" if on dapla, "PROD" if you are in prodsone.
+
+        Raises
+        ------
+        OSError
+            If no indications match, dapla/prod may have changed (please report)
+            Or you are using the function outside of dapla/prod on purpose?
+        """
+        jupyter_image_spec = os.environ.get("JUPYTER_IMAGE_SPEC")
+        if (jupyter_image_spec and "jupyterlab-dapla" in jupyter_image_spec):
+            return "DAPLA"
+        elif os.path.isdir("/ssb/bruker"):
+            return "PROD"
+        else:
+            raise OSError("Ikke i prodsonen, eller på Dapla? Må funksjonen skrives om?")
+
+    @staticmethod    
+    def check_database() -> str:
+        if "test" in os.environ["STATBANK_BASE_URL"]:
+            print("Warning: Descriptions and data in the TEST-database may be outdated!")
+            return "TEST"
+        elif "i.ssb" in os.environ["STATBANK_BASE_URL"]:
+            return "PROD"
+        else:
+            raise SystemError(
+                "Can't determine if Im sending to the test-database or the prod-database"
+            )
+
+
     def _build_user_agent(self):
         envir = os.environ.get("DAPLA_ENVIRONMENT", "TEST")
         service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
@@ -62,7 +98,6 @@ class StatbankAuth:
 
     @staticmethod
     def _encrypt_request():
-
         
         # This decides which of Statbankens databases to send to
         db = "TEST"

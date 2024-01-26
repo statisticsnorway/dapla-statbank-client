@@ -23,12 +23,14 @@ class StatbankUttrekkValidators:
             )  # Mangler prikke-kolonner?
             if "null_prikk_missing" in deltabell.keys():
                 col_num += len(deltabell["null_prikk_missing"])
+            if "internasjonal_rapportering" in deltabell.keys():
+                col_num += len(deltabell["internasjonal_rapportering"])
             if len(data[deltabell_navn].columns) != col_num:
                 validation_errors[f"col_count_data_{deltabell_num}"] = ValueError(
                     f"""
-                    EXPECTING {col_num} COLUMNS IN DATFRAME NUMBER
-                    {deltabell_num}: {deltabell_navn}
-                    ONLY FOUND {len(data[deltabell_navn].columns)}
+                    EXPECTING {col_num} COLUMNS IN DATAFRAME NUMBER {deltabell_num}:
+                    {deltabell_navn}
+                    BUT FOUND {len(data[deltabell_navn].columns)}
                     """
                 )
         for k in validation_errors.keys():
@@ -40,7 +42,42 @@ class StatbankUttrekkValidators:
             if printing:
                 print("Correct number of columns...")
         return validation_errors
+    
+    def _check_for_literal_nans_in_strings(self, data: dict, validation_errors: dict, printing) -> dict:
+        for name, df in data.items():
+            string_df = df.select_dtypes(include=["object", "string", "string[pyarrow]"])
+            cat_df = df.select_dtypes(include=["category"])
+            
+            nans = ["nan", "na", "none", "."]
 
+            if len(string_df.columns):
+                for col in string_df.columns:
+                    error_text = f"""{col} in {name} has strings, that look like NAs / empty cells,
+                    (In this list: {nans})
+                    Which have been converted to literal strings. 
+                    Consider handeling your NAs before converting them to strings.
+                    Maybe with a .fillna("") before an .astype(str) """
+                    nan_len = len(string_df[string_df[col].str.lower().isin(nans)])
+                    if nan_len:
+                        validation_errors[f"contains_string_nans_{name}_{col}"] = error_text
+                        if printing:
+                            print(error_text)
+            if len(cat_df.columns):
+                for col in cat_df.columns:
+                    error_text = f"""{col} in {name} is a categorical but has strings,
+                    that look like NAs / empty cells,
+                    (In this list: {nans})
+                    Which have been converted to literal strings?
+                    Consider handeling your NAs before converting them to strings.
+                    Maybe with a .fillna("") before an .astype(str) """
+                    nan_cats = [cat for cat in cat_df[col].cat.categories if cat.lower() in nans]
+                    if nan_cats:
+                        validation_errors[f"contains_string_nans_in_category_{name}_{col}"] = error_text
+                        if printing:
+                            print(error_text)
+        return validation_errors
+    
+    
     def _check_for_floats(self, data: dict, validation_errors: dict, printing) -> dict:
         for name, df in data.items():
             for col in df.columns:
@@ -62,7 +99,6 @@ class StatbankUttrekkValidators:
                 if "Kodeliste_text" in variabel.keys():
                     if "format = " in variabel["Kodeliste_text"]:
                         validation_errors = self._check_time_columns(
-                            self,
                             deltabell["deltabell"],
                             variabel,
                             data,
@@ -175,7 +211,7 @@ class StatbankUttrekkValidators:
             category_col_nums = [
                 int(var["kolonnenummer"]) - 1 for var in deltabell["variabler"]
             ]
-            df_colcheck = data[deltabell["deltabell"]].iloc[category_col_nums, :]
+            df_colcheck = data[deltabell["deltabell"]].iloc[:, category_col_nums]
             if df_colcheck.duplicated().any():
                 validation_errors[
                     f"duplicate_categorical_groups_{deltabell['deltabell']}"
@@ -211,11 +247,19 @@ class StatbankUttrekkValidators:
                 col_unique = data[deltabell_name].iloc[:, int(col_num) - 1].unique()
                 for kod in col_unique:
                     if kod not in codelist:
-                        categorycode_outside += [
-                            f"""Code {kod} in data, but not in uttrekksbeskrivelse,
-                            add to statbank admin? From column number
-                            {col_num}, in deltabell {deltabell_name}"""
-                        ]
+                        if " " in kod:
+                            categorycode_outside += [
+                                f"""{kod} contains spaces, should it?
+                                The exact code "{kod}" (including spaces) is in the data, but not in uttrekksbeskrivelse,
+                                add to statbank admin? From column number
+                                {col_num}, in deltabell {deltabell_name}"""
+                            ]
+                        else:
+                            categorycode_outside += [
+                                f"""Code {kod} in data, but not in uttrekksbeskrivelse,
+                                add to statbank admin? From column number
+                                {col_num}, in deltabell {deltabell_name}"""
+                            ]
                 for kod in codelist:
                     if kod not in col_unique:
                         categorycode_missing += [

@@ -271,7 +271,7 @@ def test_transfer_shortuser_wrong_raises(
 def client_fake(test_build_user_agent, encrypt_fake, mock_settings_env_vars):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    return StatbankClient(fake_user())
+    return StatbankClient(fake_user(), check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -282,7 +282,7 @@ def test_client_no_loaduser_set(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(1)
+        StatbankClient(1, check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -293,7 +293,7 @@ def test_client_approve_wrong_datatype(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(fake_user(), approve="1")
+        StatbankClient(fake_user(), approve="1", check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -304,7 +304,7 @@ def test_client_overwrite_wrong_datatype(
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(Exception) as _:
-        StatbankClient(fake_user(), overwrite="1")
+        StatbankClient(fake_user(), overwrite="1", check_username_password=False)
 
 
 def test_client_print(client_fake):
@@ -324,7 +324,7 @@ def test_client_with_str_date(
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    client = StatbankClient(fake_user(), "2050-01-01")
+    client = StatbankClient(fake_user(), "2050-01-01", check_username_password=False)
     assert isinstance(client.date, datetime)
 
 
@@ -400,9 +400,40 @@ def test_client_get_uttrekk_tableid_wrong_length(client_fake):
         client_fake.get_description("1")
 
 
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def test_uttrekk_works_no_codelists(
+    test_build_user_agent,
+    test_encrypt,
+    test_make_request,
+    client_fake,
+    mock_settings_env_vars,
+):
+    uttrekk = fake_get_response_uttrekksbeskrivelse_successful()
+    uttrekk._content = bytes(
+        uttrekk._content.decode().replace(
+            ',"kodelister":[{"kodeliste":"Kodeliste1","SumIALtTotalKode":"999","koder":[{"kode":"999","text":"i alt"},{"kode":"01","text":"Kode1"},{"kode":"02","text":"Kode2"}]}]',
+            "",
+        ),
+        "utf8",
+    )
+    test_make_request.return_value = uttrekk
+    test_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    desc = client_fake.get_description("10000")
+    assert desc.tableid == "10000"
+
+
 def test_uttrekksbeskrivelse_has_kodelister(uttrekksbeskrivelse_success):
     # last thing to get filled during __init__ is .kodelister, check that dict has length
     assert len(uttrekksbeskrivelse_success.codelists)
+    
+    
+def test_uttrekksbeskrivelse_can_make_totals(uttrekksbeskrivelse_success):
+    result = uttrekksbeskrivelse_success.get_totalcodes_dict()
+    assert isinstance(result, dict)
+    assert len(result)
 
 
 def test_uttrekk_json_write_read(

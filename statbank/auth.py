@@ -40,26 +40,12 @@ class StatbankAuth:
         }
 
     def _build_user_agent(self):
-        url = os.environ["STATBANK_ENCRYPT_URL"].split("://")[1]
-        if url.startswith("dapla"):
-            user_agent = "Dapla"
-        elif "ssb" in os.listdir("/"):
-            if "stamme01" in os.listdir("/ssb/"):
-                user_agent = "Bakke"
-            else:
-                raise SystemError("Can't determine if Im in dapla or in prodsone")
-        else:
-            raise SystemError("Can't determine if Im in dapla or in prodsone")
-
-        if "test" in os.environ["STATBANK_BASE_URL"]:
-            user_agent += "Test-"
-        elif "i.ssb" in os.environ["STATBANK_BASE_URL"]:
-            user_agent += "Prod-"
-        else:
-            raise SystemError(
-                "Can't determine if Im sending to the test-database or the prod-database"
-            )
-
+        envir = os.environ.get("DAPLA_ENVIRONMENT", "TEST")
+        service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
+        region = os.environ.get("DAPLA_REGION", "ON_PREM")
+        
+        user_agent = f"{envir}-{region}-{service}-"
+        
         return user_agent + r.utils.default_headers()["User-agent"]
 
     def _build_auth(self):
@@ -76,10 +62,13 @@ class StatbankAuth:
 
     @staticmethod
     def _encrypt_request():
-        if "test" in os.environ["STATBANK_BASE_URL"].lower():
-            db = "TEST"
-        else:
+
+        
+        # This decides which of Statbankens databases to send to
+        db = "TEST"
+        if "PROD" == os.environ.get("DAPLA_ENVIRONMENT", "TEST"):
             db = "PROD"
+            
         if AuthClient.is_ready():
             headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",

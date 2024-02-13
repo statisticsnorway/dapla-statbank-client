@@ -4,12 +4,9 @@ import base64
 import getpass
 import json
 import os
-from pathlib import Path
 
 import requests as r
 from dapla import AuthClient
-
-import statbank.logger
 
 
 class StatbankAuth:
@@ -42,6 +39,8 @@ class StatbankAuth:
     def check_env() -> str:
         """Check if you are on Dapla or in prodsone.
 
+        Simplified terribly by the addition of env vars for this, keeping this method for legacy reasons.
+
         Returns:
         -------
         str
@@ -53,51 +52,22 @@ class StatbankAuth:
             If no indications match, dapla/prod may have changed (please report)
             Or you are using the function outside of dapla/prod on purpose?
         """
-        platform = ""
-        jupyter_image_spec = os.environ.get("JUPYTER_IMAGE_SPEC", "")
-        if jupyter_image_spec and "jupyterlab-dapla" in jupyter_image_spec:
-            platform = "DAPLA"
-        elif Path("/ssb/bruker").is_dir():
-            platform = "PROD"
-        if platform:
-            return platform
-        error_msg = "Ikke i prodsonen, eller på Dapla? Må funksjonen skrives om?"
-        raise OSError(error_msg)
+        return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
 
     @staticmethod
     def check_database() -> str:
-        """Checks if we are in staging/testing environment. And which statbank-database we are sending to."""
-        target_database = ""
-        if "test" in os.environ.get("STATBANK_BASE_URL", ""):
-            statbank.logger.info(
-                "Warning: Descriptions and data in the TEST-database may be outdated!",
-            )
-            target_database = "TEST"
-        elif "i.ssb" in os.environ.get("STATBANK_BASE_URL", ""):
-            target_database = "PROD"
-        if target_database:
-            return target_database
-        error_msg = (
-            "Can't determine if Im sending to the test-database or the prod-database"
-        )
-        raise SystemError(error_msg)
+        """Checks if we are in prod environment. And which statbank-database we are sending to."""
+        db = "TEST"
+        if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
+            db = "PROD"
+        return db
 
     def _build_user_agent(self) -> str:
-        if self.check_env() == "DAPLA":
-            user_agent = "Dapla"
-        elif self.check_env() == "PROD":
-            user_agent = "Bakke"
-        else:
-            error_msg = "Can't determine if Im in dapla or in prodsone"
-            raise SystemError(error_msg)
+        envir = os.environ.get("DAPLA_ENVIRONMENT", "TEST")
+        service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
+        region = os.environ.get("DAPLA_REGION", "ON_PREM")
 
-        if self.check_database() == "TEST":
-            user_agent += "Test-"
-        elif self.check_database() == "PROD":
-            user_agent += "Prod-"
-        else:
-            error_msg = "Can't determine if Im sending to the test-database or the prod-database"
-            raise SystemError(error_msg)
+        user_agent = f"{envir}-{region}-{service}-"
 
         return user_agent + r.utils.default_headers()["User-agent"]
 

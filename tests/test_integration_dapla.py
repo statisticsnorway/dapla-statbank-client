@@ -9,14 +9,26 @@ import pytest
 from statbank import StatbankClient
 
 
+@pytest.fixture(scope="module")
+def monkeymodule():
+    from _pytest.monkeypatch import MonkeyPatch
+
+    mpatch = MonkeyPatch()
+    yield mpatch
+    mpatch.undo()
+
+
 @pytest.mark.integration_dapla()
-@pytest.fixture(scope="session", autouse=True)
-def client(monkeypatch: Callable) -> StatbankClient:
-    monkeypatch.setattr(
-        "builtins.input",
+@pytest.fixture(scope="module", autouse=True)
+def client(monkeymodule: Callable) -> StatbankClient:
+    monkeymodule.setattr(
+        "getpass.getpass",
         lambda _: os.environ.get("STATBANK_TEST_PASSWORD"),
     )
-    return StatbankClient(os.environ.get("STATBANK_TEST_USER"))
+    return StatbankClient(
+        os.environ.get("STATBANK_TEST_USER"),
+        check_username_password=False,
+    )
 
 
 @pytest.mark.integration_dapla()

@@ -23,10 +23,6 @@ def fake_auth() -> str:
     return "SoCipherVerySecure"
 
 
-def fake_mail() -> str:
-    return "ssb@ssb.no"
-
-
 def fake_build_user_agent() -> str:
     return "TestEnvPytestDB" + requests.utils.default_headers()["User-agent"]
 

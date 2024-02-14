@@ -19,10 +19,6 @@ from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
 
-def fake_mail():
-    return "ssb@ssb.no"
-
-
 def fake_user():
     return "SSB-person-456"
 
@@ -450,7 +446,7 @@ def test_uttrekk_json_write_read(
     json_file_path = "test_uttrekk.json"
     uttrekksbeskrivelse_success.to_json(json_file_path)
     test_uttrekk = client_fake.read_description_json(json_file_path)
-    Path.unlink(json_file_path)
+    Path(json_file_path).unlink()
     assert len(test_uttrekk.codelists)
 
 
@@ -461,7 +457,7 @@ def test_transfer_json_write_read(
     json_file_path = "test_transfer.json"
     transfer_success.to_json(json_file_path)
     test_transfer = client_fake.read_transfer_json(json_file_path)
-    Path.unlink(json_file_path)
+    Path(json_file_path).unlink()
     assert test_transfer.oppdragsnummer.isdigit()
 
 

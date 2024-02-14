@@ -284,7 +284,8 @@ class StatbankTransfer(StatbankAuth):
         result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
         if hasattr(result.request, "headers") or result.request.get("headers", ""):
             del result.request.headers  # Auth is stored here also, for some reason
-            del result.response.headers.cookies
+            del result.headers.cookies
+
         result.raise_for_status()
         return result
 

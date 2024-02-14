@@ -10,7 +10,7 @@ from pyjstat import pyjstat
 if TYPE_CHECKING:
     import pandas as pd
 
-import statbank.logger
+from statbank import logger
 
 # Getting data from Statbank
 
@@ -46,7 +46,7 @@ def apidata(
             raise ValueError(error_msg)
         url = id_or_url
 
-    statbank.logger.info(url)
+    logger.info(url)
     # Spør APIet om å få resultatet med requests-biblioteket
     resultat = r.post(url, json=payload, timeout=10)
     resultat.raise_for_status()

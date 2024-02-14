@@ -4,8 +4,8 @@ Used internally by SSB (Statistics Norway).
 """
 from __future__ import annotations
 
+import datetime as dt
 import importlib
-import logging
 
 import toml
 
@@ -13,11 +13,9 @@ from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
 from statbank.client import StatbankClient
+from statbank.logger import logger
 
 __all__ = ["StatbankClient", "apidata", "apidata_all", "apidata_rotate"]
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 # Split into function for testing

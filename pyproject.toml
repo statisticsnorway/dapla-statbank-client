@@ -97,6 +97,7 @@ extend-exclude = [
     ".ipynb_checkpoints",
     "noxfile.py",
     "docs/conf.py",
+     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
 ]
 
 [tool.ruff.isort]

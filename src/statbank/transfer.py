@@ -7,18 +7,15 @@ import os
 import urllib
 from datetime import datetime as dt
 from datetime import timedelta as td
-from datetime import timezone as tz
 from pathlib import Path
 
 import pandas as pd
 import requests as r
 
-import statbank.logger
+from statbank import logger
 from statbank.auth import StatbankAuth
-
-TIMEZONE_OSLO = tz("Europe/Oslo")
-REQUEST_OK = 200
-SSB_TBF_LEN = 3
+from statbank.globals import SSB_TBF_LEN
+from statbank.globals import TIMEZONE_OSLO
 
 
 class StatbankTransfer(StatbankAuth):
@@ -192,14 +189,14 @@ class StatbankTransfer(StatbankAuth):
             None: If path is provided, tries to write a json there and returns nothing.
             str: If path is not provided, returns the json-string for you to handle as you wish.
         """
-        statbank.logger.warning(
+        logger.warning(
             "Warning, some nested, deeper data-structures"
             " like dataframes and other class-objects will not be serialized",
         )
         json_content = json.dumps(self.__dict__, default=lambda: "<not serializable>")
         # If path provided write to it, otherwise return the string-content
         if path:
-            statbank.logger.info("Writing to %s", path)
+            logger.info("Writing to %s", path)
             with Path(path).open(mode="w") as json_file:
                 json_file.write(json_content)
         else:
@@ -313,8 +310,8 @@ class StatbankTransfer(StatbankAuth):
         publish_time = publish_hour * 3600 + publish_minute * 60
         publish = publish_date + td(0, publish_time)
         publish = publish.isoformat("T", "seconds")
-        statbank.logger.info("Publisering satt til: %s", publish)
-        statbank.logger.info(
+        logger.info("Publisering satt til: %s", publish)
+        logger.info(
             "Følg med på lasteloggen (tar noen minutter): %s",
             {self.urls["gui"] + self.oppdragsnummer},
         )

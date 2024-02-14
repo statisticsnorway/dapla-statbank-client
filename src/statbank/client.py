@@ -19,12 +19,12 @@ from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
 from statbank.auth import StatbankAuth
+from statbank.globals import APPROVE_DEFAULT_JIT
+from statbank.globals import OSLO_TIMEZONE
+from statbank.globals import STATBANK_TABLE_ID_LEN
+from statbank.globals import TOMORROW
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
-
-TOMORROW = dt.datetime.now(tz=dt.timezone(dt.timedelta(hours=1))) + dt.timedelta(days=1)
-APPROVE_DEFAULT_JIT = 2
-STATBANK_TABLE_ID_LEN = 5
 
 
 class StatbankClient(StatbankAuth):
@@ -130,9 +130,7 @@ class StatbankClient(StatbankAuth):
         self.__headers = self._build_headers()
         self.log = []
         if isinstance(date, str):
-            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                tz=dt.timezone.utc + dt.timedelta(hours=1),
-            )
+            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
@@ -213,16 +211,14 @@ class StatbankClient(StatbankAuth):
         if isinstance(date, widgets.widget_date.DatePicker):
             self.date = date.value
         elif isinstance(date, str):
-            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                tz=dt.timezone.utc + dt.timedelta(hours=1),
-            )
+            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         logger.info("Publishing date set to: %s", self.date)
         self.log.append(
-            f"Date set to {self.date.isoformat('T', 'seconds')} at {dt.datetime.now().astimezone(dt.timezone.utc + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Date set to {self.date.isoformat('T', 'seconds')} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
 
     # Descriptions
@@ -243,7 +239,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Getting description for tableid {tableid} at {dt.datetime.now().astimezone(dt.timezone.utc + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Getting description for tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE,).isoformat('T', 'seconds')}",
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
@@ -302,7 +298,7 @@ class StatbankClient(StatbankAuth):
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
-            f"Validated data for tableid {tableid} at {dt.datetime.now().astimezone(dt.timezone.utd + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Validated data for tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
         return validation_errors
 
@@ -320,7 +316,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Transferring tableid {tableid} at {dt.datetime.now().astimezone(dt.timezone.utc + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Transferring tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
         return StatbankTransfer(
             dfs,

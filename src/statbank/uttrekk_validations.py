@@ -1,6 +1,6 @@
 import pandas as pd
 
-import statbank.logger
+from statbank import logger
 
 
 class StatbankValidateError(Exception):
@@ -46,10 +46,10 @@ class StatbankUttrekkValidators:
                 )
         for k in validation_errors:
             if "col_count_data" in k:
-                statbank.logger.warning(validation_errors[k])
+                logger.warning(validation_errors[k])
                 break
         else:
-            statbank.logger.warning("Correct number of columns...")
+            logger.warning("Correct number of columns...")
         return validation_errors
 
     def _check_for_literal_nans_in_strings(
@@ -77,7 +77,7 @@ class StatbankUttrekkValidators:
                         validation_errors[
                             f"contains_string_nans_{name}_{col}"
                         ] = error_text
-                        statbank.logger.warning(error_text)
+                        logger.warning(error_text)
             if len(cat_df.columns):
                 for col in cat_df.columns:
                     error_text = f"""{col} in {name} is a categorical but has strings,
@@ -93,7 +93,7 @@ class StatbankUttrekkValidators:
                         validation_errors[
                             f"contains_string_nans_in_category_{name}_{col}"
                         ] = error_text
-                        statbank.logger.warning(error_text)
+                        logger.warning(error_text)
         return validation_errors
 
     def _check_for_floats(
@@ -110,7 +110,7 @@ class StatbankUttrekkValidators:
                     this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise."""
                     validation_errors[f"contains_floats_{name}_{col}"] = error_text
-                    statbank.logger.warning(error_text)
+                    logger.warning(error_text)
         return validation_errors
 
     def _check_time_formats(
@@ -142,7 +142,7 @@ class StatbankUttrekkValidators:
             if [x for x in matches if x in k]:
                 break
         else:
-            statbank.logger.warning("Timeformat validation ok.")
+            logger.warning("Timeformat validation ok.")
 
         return validation_errors
 
@@ -231,7 +231,7 @@ class StatbankUttrekkValidators:
             if "prikke_character_match_column" in k:
                 break
         else:
-            statbank.logger.warning(
+            logger.warning(
                 "suppression-codes validation ok / No prikke-columns in use.",
             )
 
@@ -258,7 +258,7 @@ class StatbankUttrekkValidators:
             if "duplicate_categorical_groups" in k:
                 break
         else:
-            statbank.logger.warning(
+            logger.warning(
                 "Found no duplicate combinations of categorical columns",
             )
 
@@ -314,21 +314,21 @@ class StatbankUttrekkValidators:
                         ]
         # No values outside, warn of missing from codelists on categorical columns
         if categorycode_outside:
-            statbank.logger.warning("Codes in data, outside codelist:")
-            statbank.logger.warning("\n".join(categorycode_outside))
+            logger.warning("Codes in data, outside codelist:")
+            logger.warning("\n".join(categorycode_outside))
             validation_errors["categorycode_outside"] = ValueError(categorycode_outside)
         else:
-            statbank.logger.warning(
+            logger.warning(
                 "No codes in categorical columns outside codelist.",
             )
         if categorycode_missing:
-            statbank.logger.warning(
+            logger.warning(
                 """Category codes missing from data (This is ok,
             just make sure missing data is intentional):""",
             )
-            statbank.logger.warning("\n".join(categorycode_missing))
+            logger.warning("\n".join(categorycode_missing))
         else:
-            statbank.logger.warning("No codes missing from categorical columns.")
+            logger.warning("No codes missing from categorical columns.")
         return categorycode_outside, categorycode_missing, validation_errors
 
     def _check_rounding(
@@ -380,5 +380,5 @@ class StatbankUttrekkValidators:
                         validation_errors[
                             f"rounding_error_{deltabell_name}_{col_num}"
                         ] = ValueError(error_text)
-                        statbank.logger.warning(error_text)
+                        logger.warning(error_text)
         return validation_errors

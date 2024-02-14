@@ -12,10 +12,10 @@ from pathlib import Path
 import pandas as pd
 import requests as r
 
-from statbank import logger
 from statbank.auth import StatbankAuth
+from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
-from statbank.globals import TIMEZONE_OSLO
+from statbank.logger import logger
 
 
 class StatbankTransfer(StatbankAuth):
@@ -106,7 +106,7 @@ class StatbankTransfer(StatbankAuth):
 
         # At this point we want date to be a string?
         if date is None:
-            date = dt.now().astimezone(TIMEZONE_OSLO) + td(days=1)
+            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
         if isinstance(date, str):
             self.date = date
         else:
@@ -193,7 +193,7 @@ class StatbankTransfer(StatbankAuth):
             "Warning, some nested, deeper data-structures"
             " like dataframes and other class-objects will not be serialized",
         )
-        json_content = json.dumps(self.__dict__, default=lambda: "<not serializable>")
+        json_content = json.dumps(self.__dict__, default=lambda _: "<not serializable>")
         # If path provided write to it, otherwise return the string-content
         if path:
             logger.info("Writing to %s", path)
@@ -284,6 +284,7 @@ class StatbankTransfer(StatbankAuth):
         result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
         if hasattr(result.request, "headers") or result.request.get("headers", ""):
             del result.request.headers  # Auth is stored here also, for some reason
+            del result.response.headers.cookies
         result.raise_for_status()
         return result
 
@@ -302,7 +303,7 @@ class StatbankTransfer(StatbankAuth):
         publish_date = dt.strptime(
             response_msg.split("Publiseringsdato '")[1].split("',")[0],
             "%d.%m.%Y %H:%M:%S",
-        ).astimezone(TIMEZONE_OSLO)
+        ).astimezone(OSLO_TIMEZONE)
         publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
         publish_minute = int(
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],

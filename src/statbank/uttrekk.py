@@ -13,8 +13,8 @@ from typing import Any
 import pandas as pd
 import requests as r
 
-import statbank.logger
 from statbank.auth import StatbankAuth
+from statbank.logger import logger
 from statbank.uttrekk_validations import StatbankUttrekkValidators
 from statbank.uttrekk_validations import StatbankValidateError
 
@@ -167,7 +167,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             else:
                 msg += f'"{k}" : {v},\n'
         msg += "}"
-        statbank.logger.info(msg)
+        logger.info(msg)
         return template
 
     def to_json(self, path: str = "") -> None | dict[str, Any]:
@@ -187,7 +187,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         content = {k: v for k, v in self.__dict__.items() if not callable(v)}
 
         if path:
-            statbank.logger.info("Writing to %s", path)
+            logger.info("Writing to %s", path)
             with Path(path).open(mode="w") as json_file:
                 json_file.write(json.dumps(content))
         else:
@@ -215,7 +215,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise_errors = self.raise_errors
 
         validation_errors = {}
-        statbank.logger.info("\nvalidating...")
+        logger.info("\nvalidating...")
 
         self._validate_number_dataframes(data=data)
         validation_errors = self._validate_number_columns(
@@ -283,7 +283,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                         "float"
                         in str(data_copy[deltabell_name].dtypes[col_num]).lower()
                     ):  # If column is passed in as a float, we can handle it
-                        statbank.logger.info(
+                        logger.info(
                             "Rounding column %s in %s into a string, with %s decimals.",
                             (col_num + 1, deltabell_name, decimal_num),
                         )
@@ -299,12 +299,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                             .str.replace(".", ",", regex=False)
                         )
                     else:
-                        statbank.logger.info(
+                        logger.info(
                             "not a float %s: %s",
                             (col_num, str(data_copy[deltabell_name].dtypes[col_num])),
                         )
                 else:
-                    statbank.logger.info(
+                    logger.info(
                         "Not rounding %s",
                         str(variabel["kolonnenummer"]),
                     )
@@ -334,7 +334,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         filbeskrivelse = filbeskrivelse.text.replace("\t", "")
         # Also deletes / overwrites returned Auth-header from get-request
         filbeskrivelse = json.loads(filbeskrivelse)
-        statbank.logger.info(
+        logger.info(
             "Hentet uttaksbeskrivelsen for %s, med tableid: %s den %s",
             (
                 filbeskrivelse["Huvudtabell"],

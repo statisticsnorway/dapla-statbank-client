@@ -191,7 +191,7 @@ def test_apidata_raises_500(
 def test_apidata_raises_wrong_id(
     query_all_05300: pd.DataFrame,
 ) -> None:
-    with pytest.raises(HTTPError) as _:
+    with pytest.raises(ValueError, match="statbank ID") as _:
         apidata("0", query_all_05300, include_id=True)
 
 
@@ -201,5 +201,5 @@ def test_apidata_all_raises_wrong_id(
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_apidata.return_value = apidata_05300
-    with pytest.raises(HTTPError) as _:
+    with pytest.raises(ValueError, match="statbank ID") as _:
         apidata_all("0", include_id=True)

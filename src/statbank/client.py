@@ -14,7 +14,6 @@ from pathlib import Path
 import ipywidgets as widgets
 from IPython.display import display
 
-from statbank import logger
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
@@ -23,6 +22,7 @@ from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
+from statbank.logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
@@ -126,6 +126,7 @@ class StatbankClient(StatbankAuth):
         self.bcc = bcc
         self.overwrite = overwrite
         self.approve = approve
+        self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log = []
@@ -135,7 +136,7 @@ class StatbankClient(StatbankAuth):
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
-        if check_username_password:
+        if self.check_username_password:
             self.get_description(
                 "05300",
             )  # Random tableid to double check username&password early
@@ -261,8 +262,8 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
         """
-        if Path.exists(json_path_or_str):
-            with Path.open(json_path_or_str) as json_file:
+        if Path(json_path_or_str).exists():
+            with Path(json_path_or_str).open("r") as json_file:
                 json_path_or_str = json_file.read()
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
         for k, v in json.loads(json_path_or_str).items():
@@ -344,8 +345,8 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankTransfer: An instance of the class StatbankTransfer, missing the data transferred and some other bits probably.
         """
-        if Path.exists(json_path_or_str):
-            with Path.open(json_path_or_str) as json_file:
+        if Path(json_path_or_str).exists():
+            with Path(json_path_or_str).open("r") as json_file:
                 json_path_or_str = json_file.read()
         new = StatbankTransfer.__new__(StatbankTransfer)
         for k, v in json.loads(json_path_or_str).items():

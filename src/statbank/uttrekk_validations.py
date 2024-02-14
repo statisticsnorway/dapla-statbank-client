@@ -1,6 +1,6 @@
 import pandas as pd
 
-from statbank import logger
+from statbank.logger import logger
 
 
 class StatbankValidateError(Exception):

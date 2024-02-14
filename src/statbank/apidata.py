@@ -10,7 +10,7 @@ from pyjstat import pyjstat
 if TYPE_CHECKING:
     import pandas as pd
 
-from statbank import logger
+from statbank.logger import logger
 
 # Getting data from Statbank
 

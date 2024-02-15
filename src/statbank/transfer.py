@@ -8,6 +8,7 @@ import urllib
 from datetime import datetime as dt
 from datetime import timedelta as td
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 import requests as r
@@ -16,6 +17,9 @@ from statbank.auth import StatbankAuth
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
 from statbank.logger import logger
+
+if TYPE_CHECKING:
+    from statbank.api_types import TransferResultType
 
 
 class StatbankTransfer(StatbankAuth):
@@ -139,7 +143,7 @@ class StatbankTransfer(StatbankAuth):
                 Needs to be a finished compiled headers for a request including Authorization.
         """
         # In case transfer has already happened, dont transfer again
-        if hasattr(self, "oppdragsnummer"):
+        if self.oppdragsnummer:
             error_msg = f"Already transferred? {self.urls['gui'] + self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
             raise ValueError(error_msg)
         if headers is None:
@@ -290,7 +294,7 @@ class StatbankTransfer(StatbankAuth):
         return result
 
     def _handle_response(self) -> None:
-        resp_json = json.loads(self.response.text)
+        resp_json: TransferResultType = self.response.json()
         response_msg = resp_json["TotalResult"]["Message"]
         self.oppdragsnummer = response_msg.split("lasteoppdragsnummer:")[1].split(" =")[
             0

@@ -178,9 +178,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             return template
         non_df_template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}
         logger.info(
-            f"""Your template should look like this:
-                    {non_df_template}
-                    You can also send in a list of dataframes to this function, and get a dict back, but check the order!""",
+            """Your template should look like this: %s
+            You can also send in a list of dataframes to this function, and get a dict back, but check the order!""",
+            non_df_template,
         )
         return non_df_template
 
@@ -302,7 +302,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                     ):  # If column is passed in as a float, we can handle it
                         logger.info(
                             "Rounding column %s in %s into a string, with %s decimals.",
-                            (col_num + 1, deltabell_name, decimal_num),
+                            col_num + 1,
+                            deltabell_name,
+                            decimal_num,
                         )
                         data_copy[deltabell_name][
                             data_copy[deltabell_name].columns[col_num]
@@ -318,7 +320,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                     else:
                         logger.info(
                             "not a float %s: %s",
-                            (col_num, str(data_copy[deltabell_name].dtypes[col_num])),
+                            col_num,
+                            str(data_copy[deltabell_name].dtypes[col_num]),
                         )
         return data_copy
 

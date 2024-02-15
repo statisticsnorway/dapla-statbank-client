@@ -25,6 +25,13 @@ class StatbankAuth:
             is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
     """
 
+    def __init__(self) -> None:
+        """This init will never be used directly, as this class is always inherited from.
+
+        This is for typing with Mypy.
+        """
+        self.loaduser: str
+
     def _build_headers(self) -> dict[str, str]:
         return {
             "Authorization": self._build_auth(),

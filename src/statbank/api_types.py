@@ -7,6 +7,12 @@ from typing_extensions import NotRequired
 ####################
 
 
+class TransferResultType(TypedDict):
+    """The types of the main result-json from a transfer."""
+
+    TotalResult: dict[str, str]
+
+
 #######################
 # UTTREKKSBESKRIVELSE #
 #######################

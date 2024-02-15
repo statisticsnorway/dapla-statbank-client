@@ -13,7 +13,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
     from statbank.api_types import FilBeskrivelseType
-    from statbank.api_types import KodelisteType
+    from statbank.api_types import KodelisteTypeParsed
+    from statbank.api_types import KolonneInternasjonalRapporteringType
+    from statbank.api_types import KolonneStatistikkvariabelType
+    from statbank.api_types import KolonneVariabelType
+    from statbank.api_types import SuppressionCodeListType
+    from statbank.api_types import SuppressionDeltabellCodeListType
 
 import pandas as pd
 import requests as r
@@ -75,8 +80,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.tablename = ""
         self.subtables: dict[str, str] = {}
         self.variables: list[DelTabellType] = []
-        self.codelists: list[KodelisteType] = []
-        self.suppression: None | dict[str, str] = None
+        self.codelists: dict[str, KodelisteTypeParsed] = {}
+        self.suppression: None | list[SuppressionCodeListType] = None
         if headers:
             self.headers = headers
         else:
@@ -95,22 +100,25 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             variabel_text += f"""\nDeltabell (DataFrame) nummer {i+1}:
                 {deltabell["deltabell"]}
                 """
-            variables = [*deltabell["variabler"], *deltabell["statistikkvariabler"]]
+            variables: list[
+                KolonneVariabelType
+                | KolonneStatistikkvariabelType
+                | KolonneInternasjonalRapporteringType
+                | SuppressionDeltabellCodeListType
+            ] = [*deltabell["variabler"], *deltabell["statistikkvariabler"]]
             if "null_prikk_missing" in deltabell:
                 variables += deltabell["null_prikk_missing"]
             if "internasjonal_rapportering" in deltabell:
                 variables += deltabell["internasjonal_rapportering"]
+
             variabel_text += f"Antall kolonner: {len(variables)}"
             for j, variabel in enumerate(variables):
                 variabel_text += f"\n\tKolonne {j+1}: "
-                if "Kodeliste_text" in variabel:
-                    variabel_text += variabel["Kodeliste_text"]
-                elif "Text" in variabel:
-                    variabel_text += variabel["Text"]
-                elif "gjelder_for_text" in variabel:
-                    variabel_text += f"""Suppression for column
-                    {variabel["gjelder_for__kolonner_nummer"]}:
-                    {variabel["gjelder_for_text"]}"""
+                variabel_text += str(variabel.get("Kodeliste_text", ""))
+                variabel_text += str(variabel.get("Text", ""))
+                supp = variabel.get("gjelder_for_text", "")
+                if supp:
+                    variabel_text += f"Suppressionfo column {variabel.get('gjelder_for__kolonner_nummer')}: {supp}"
             variabel_text += f'\nEksempellinje: {deltabell["eksempel_linje"]}'
 
         mult_codelists = math.prod([len(x["koder"]) for x in self.codelists.values()])
@@ -131,8 +139,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def transferdata_template(
         self,
-        *dfs: list[pd.DataFrame] | pd.DataFrame,
-    ) -> dict[str, str | pd.DataFrame]:
+        dfs: list[pd.DataFrame] | None = None,
+    ) -> dict[str, str] | dict[str, pd.DataFrame]:
         """Get the shape the data should have to name the "deltabeller".
 
         If we didnt use a dictionary we would have to rely on the order of a list of "deltabeller".
@@ -150,9 +158,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         A dict of dataframes as values if a list of Dataframes are sent in, or dataframes as individual parameters.
         """
         # If sending in a list, unwrap one layer
-        if dfs:
-            if not isinstance(dfs[0], pd.DataFrame) and len(dfs) == 1:
-                dfs = dfs[0]
+        if dfs is not None:
+            if isinstance(dfs, pd.DataFrame):  # type: ignore[unreachable]
+                dfs = [dfs]  # type: ignore[unreachable]
             if not all(isinstance(df, pd.DataFrame) for df in dfs):
                 error_msg = "All elements sent in to transferdata_template must be pandas dataframes."
                 raise TypeError(error_msg)
@@ -162,18 +170,19 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 )
                 raise KeyError(error_msg)
             template = {k: dfs[i] for i, k in enumerate(self.subtables.keys())}
-        else:
-            template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}
-
-        msg = "{\n"
-        for k, v in template.items():
-            if isinstance(v, pd.DataFrame):
+            msg = "{\n"
+            for k, v in template.items():
                 msg += f'"{k}" : Dataframe with column-names: {v.columns}\n'
-            else:
-                msg += f'"{k}" : {v},\n'
-        msg += "}"
-        logger.info(msg)
-        return template
+            msg += "}"
+            logger.info(msg)
+            return template
+        non_df_template = {k: f"df{i}" for i, k in enumerate(self.subtables.keys())}
+        logger.info(
+            f"""Your template should look like this:
+                    {non_df_template}
+                    You can also send in a list of dataframes to this function, and get a dict back, but check the order!""",
+        )
+        return non_df_template
 
     def to_json(self, path: str = "") -> None | str:
         """Store a copy of the current state of the uttrekk-object as a json.
@@ -203,7 +212,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self,
         data: dict[str, pd.DataFrame],
         raise_errors: bool = False,
-    ) -> dict[str, Exception]:
+    ) -> dict[str, ValueError]:
         """Uses the contents of itself to validate the data against.
 
         All validation happens locally, so dont be afraid of any data
@@ -219,7 +228,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         if not raise_errors:
             raise_errors = self.raise_errors
 
-        validation_errors = {}
+        validation_errors: dict[str, ValueError] = {}
         logger.info("validating...")
 
         self._validate_number_dataframes(data=data)
@@ -259,11 +268,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         This dict can be passed into the parameters "fillna_dict" and "grand_total" in the function "agg_all_combos" in the package ssb-fagfunksjoner.
 
         Returns:
-            dict[str, str]: A dictionary with the codelist as keys, the total-codes as values.
+            dict[str, str]: A dictionary with the codelist-names as keys, the total-codes as values.
         """
-        result = {}
+        result: dict[str, str] = {}
         for name, kodeliste in self.codelists.items():
-            if "SumIALtTotalKode" in list(kodeliste.keys()):
+            if "SumIALtTotalKode" in kodeliste:
                 result[name] = kodeliste["SumIALtTotalKode"]
         return result
 
@@ -282,7 +291,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         data_copy = copy.deepcopy(data)
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
-            for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
+            for variabel in deltabell["statistikkvariabler"]:
                 if "Antall_lagrede_desimaler" in variabel:
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
@@ -311,11 +320,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                             "not a float %s: %s",
                             (col_num, str(data_copy[deltabell_name].dtypes[col_num])),
                         )
-                else:
-                    logger.info(
-                        "Not rounding %s",
-                        str(variabel["kolonnenummer"]),
-                    )
         return data_copy
 
     @staticmethod
@@ -323,12 +327,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         with localcontext() as ctx:
             ctx.rounding = ROUND_HALF_UP
             if pd.isna(n):
-                n = ""
+                result: str = ""
             elif decimals and n:
-                n = round(Decimal(n), decimals)
+                result = str(round(Decimal(n), decimals))
             elif n:
-                n = Decimal(n).to_integral_value()
-        return str(n)
+                result = str(Decimal(n).to_integral_value())
+            else:
+                result = str(n)
+        return result
 
     def _get_uttrekksbeskrivelse(self) -> None:
         filbeskrivelse_url = self.url + "tableId=" + self.tableid
@@ -376,11 +382,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 for kode in kodeliste["koder"]:
                     new_kodeliste[kode["kode"]] = kode["text"]
                 self.codelists[kodeliste["kodeliste"]] = {"koder": new_kodeliste}
-                remain_keys = list(kodeliste.keys())
-                remain_keys.remove("koder")
-                remain_keys.remove("kodeliste")
-                for k in remain_keys:
-                    self.codelists[kodeliste["kodeliste"]][k] = kodeliste[k]
+                if "SumIALtTotalKode" in kodeliste:
+                    self.codelists[kodeliste["kodeliste"]][
+                        "SumIALtTotalKode"
+                    ] = kodeliste["SumIALtTotalKode"]
 
         if "null_prikk_missing_kodeliste" in self.filbeskrivelse:
             self.suppression = self.filbeskrivelse["null_prikk_missing_kodeliste"]

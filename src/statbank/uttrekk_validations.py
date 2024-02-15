@@ -4,8 +4,9 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
-    from statbank.api_types import KodelisteType
+    from statbank.api_types import KodelisteTypeParsed
     from statbank.api_types import KolonneVariabelType
+    from statbank.api_types import SuppressionCodeListType
 
 import pandas as pd
 
@@ -26,8 +27,8 @@ class StatbankUttrekkValidators:
         """
         self.subtables: dict[str, str] = {}
         self.variables: list[DelTabellType] = []
-        self.codelists: list[KodelisteType] = []
-        self.suppression: None | dict[str, str] = None
+        self.codelists: dict[str, KodelisteTypeParsed] = {}
+        self.suppression: None | list[SuppressionCodeListType] = None
 
     def _validate_number_dataframes(self, data: dict[str, pd.DataFrame]) -> None:
         # Number subtables should match length of data-iterable
@@ -204,28 +205,23 @@ class StatbankUttrekkValidators:
         specials: dict[int, str] = {
             i: c for i, c in enumerate(timeformat_raw) if not c.isalnum()
         }
-        timeformat = {
-            "nums": nums,
-            "chars": chars,
-            "specials": specials,
-        }
 
-        if timeformat["nums"]:
-            for num in timeformat["nums"]:
+        if nums:
+            for num in nums:
                 if not all(
                     data[deltabell_name].iloc[:, col_num].str[num].str.isdigit(),
                 ):
                     validation_errors[f"time_non_digit_column{col_num}"] = ValueError(
                         f"Character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}",
                     )
-        if timeformat["chars"]:
-            for i, char in timeformat["chars"].items():
+        if chars:
+            for i, char in chars.items():
                 if not all(data[deltabell_name].iloc[:, col_num].str[i] == char):
                     validation_errors[f"character_match_column{col_num}"] = ValueError(
                         f"Should be capitalized character? Character {char}, character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}",
                     )
-        if timeformat["specials"]:
-            for i, special in timeformat["specials"].items():
+        if specials:
+            for i, special in specials.items():
                 if not all(data[deltabell_name].iloc[:, col_num].str[i] == special):
                     validation_errors[
                         f"special_character_match_column{col_num}"
@@ -384,10 +380,8 @@ class StatbankUttrekkValidators:
                 if not len(column):
                     break
                 if decimal_num:
-                    if any(
-                        decimal_num
-                        != column.str.split(",").str[-1].str.len().to_list(),
-                    ):
+                    col_decimals = column.str.split(",").str[-1].str.len()
+                    if (col_decimals != decimal_num).any():
                         error = True
                 elif not (
                     column.str.replace("-", "", regex=False)

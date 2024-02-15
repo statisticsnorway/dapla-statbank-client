@@ -12,6 +12,22 @@ from typing_extensions import NotRequired
 #######################
 
 
+class SuppressionCodeListType(TypedDict):
+    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse."""
+
+    Kode: str
+    Vises_som: str
+    Beskrivelse: str
+
+
+class SuppressionDeltabellCodeListType(TypedDict):
+    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse."""
+
+    kolonnenummer: str
+    gjelder_for_text: str
+    gjelder_for__kolonner_nummer: str
+
+
 class KodeType(TypedDict):
     """The code -> labels for the list in the Codelists."""
 
@@ -23,7 +39,15 @@ class KodelisteType(TypedDict):
     """The codelists have their own name, which links from the column-metadata, and a list of code -> labels."""
 
     kodeliste: str
+    SumIALtTotalKode: NotRequired[str]
     koder: list[KodeType]
+
+
+class KodelisteTypeParsed(TypedDict):
+    """Reorganizing the kodelists to this is done under init of Uttrekk."""
+
+    SumIALtTotalKode: NotRequired[str]
+    koder: dict[str, str]
 
 
 class KolonneInternasjonalRapporteringType(TypedDict):
@@ -69,7 +93,7 @@ class DelTabellType(TypedDict):
     variabler: list[KolonneVariabelType]
     statistikkvariabler: list[KolonneStatistikkvariabelType]
     internasjonal_rapportering: NotRequired[list[KolonneInternasjonalRapporteringType]]
-    null_prikk_missing: NotRequired[list[dict[str, str]]]
+    null_prikk_missing: NotRequired[list[SuppressionDeltabellCodeListType]]
     eksempel_linje: str
 
 
@@ -85,6 +109,6 @@ class FilBeskrivelseType(TypedDict):
     Huvudtabell: str
     DeltabellTitler: list[dict[str, str]]
     deltabller: list[DelTabellType]
-    null_prikk_missing_kodeliste: NotRequired[list[dict[str, str]]]
+    null_prikk_missing_kodeliste: NotRequired[list[SuppressionCodeListType]]
     kodelister: list[KodelisteType]
     IRkodelister: NotRequired[list[KodelisteType]]

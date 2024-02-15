@@ -9,10 +9,11 @@ from decimal import Decimal
 from decimal import localcontext
 from pathlib import Path
 from typing import TYPE_CHECKING
-from typing import Any
 
 if TYPE_CHECKING:
+    from statbank.api_types import DelTabellType
     from statbank.api_types import FilBeskrivelseType
+    from statbank.api_types import KodelisteType
 
 import pandas as pd
 import requests as r
@@ -72,9 +73,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.tableid = tableid
         self.raise_errors = raise_errors
         self.tablename = ""
-        self.subtables: dict[str, str | dict[str, Any]] = {}
-        self.variables: dict[str, str | dict[str, Any]] = {}
-        self.codelists: dict[str, str | dict[str, Any]] = {}
+        self.subtables: dict[str, str] = {}
+        self.variables: list[DelTabellType] = []
+        self.codelists: list[KodelisteType] = []
         self.suppression: None | dict[str, str] = None
         if headers:
             self.headers = headers
@@ -219,7 +220,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise_errors = self.raise_errors
 
         validation_errors = {}
-        logger.debug("validating...")
+        logger.info("validating...")
 
         self._validate_number_dataframes(data=data)
         validation_errors = self._validate_number_columns(
@@ -246,6 +247,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
         if raise_errors and validation_errors:
             raise StatbankValidateError(list(validation_errors.values()))
+        logger.info(
+            "validation finished (if nothing is logged over debug level, everything should be fine.)",
+        )
         return validation_errors
 
     def get_totalcodes_dict(self) -> dict[str, str]:

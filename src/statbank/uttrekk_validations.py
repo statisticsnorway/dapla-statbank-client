@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from statbank.api_types import DelTabellType
+    from statbank.api_types import KodelisteType
+    from statbank.api_types import KolonneVariabelType
 
 import pandas as pd
 
@@ -19,10 +24,10 @@ class StatbankUttrekkValidators:
 
         So, these attribute-settings are for type-checking with mypy.
         """
-        self.subtables: dict[str, str | dict[str, Any]] = {}
-        self.variables: list[dict] = []
+        self.subtables: dict[str, str] = {}
+        self.variables: list[DelTabellType] = []
+        self.codelists: list[KodelisteType] = []
         self.suppression: None | dict[str, str] = None
-        self.codelists: dict = {}
 
     def _validate_number_dataframes(self, data: dict[str, pd.DataFrame]) -> None:
         # Number subtables should match length of data-iterable
@@ -31,14 +36,14 @@ class StatbankUttrekkValidators:
             raise TypeError(error_msg)
         for k, df in data.items():
             if not isinstance(df, pd.DataFrame):
-                error_msg = f"{k}'s value is not a dataframe"
+                error_msg = f"{k}'s value is not a dataframe"  # type: ignore[unreachable]
                 raise TypeError(error_msg)
 
     def _validate_number_columns(
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         # Number of columns in data must match beskrivelse
         for deltabell_num, deltabell in enumerate(self.variables):
             deltabell_navn = deltabell["deltabell"]
@@ -70,7 +75,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         for name, df in data.items():
             string_df = df.select_dtypes(
                 include=["object", "string", "string[pyarrow]"],
@@ -90,7 +95,7 @@ class StatbankUttrekkValidators:
                     if nan_len:
                         validation_errors[
                             f"contains_string_nans_{name}_{col}"
-                        ] = error_text
+                        ] = ValueError(error_text)
                         logger.warning(error_text)
             if len(cat_df.columns):
                 for col in cat_df.columns:
@@ -106,7 +111,7 @@ class StatbankUttrekkValidators:
                     if nan_cats:
                         validation_errors[
                             f"contains_string_nans_in_category_{name}_{col}"
-                        ] = error_text
+                        ] = ValueError(error_text)
                         logger.warning(error_text)
         return validation_errors
 
@@ -114,7 +119,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         for name, df in data.items():
             for col in df.columns:
                 if "float" in str(df[col].dtype).lower():
@@ -123,7 +128,9 @@ class StatbankUttrekkValidators:
                     data = uttrekksbeskrivelse.round_data(data),
                     this rounds UP like SAS and Excel, not to-even as
                     Python does otherwise."""
-                    validation_errors[f"contains_floats_{name}_{col}"] = error_text
+                    validation_errors[f"contains_floats_{name}_{col}"] = ValueError(
+                        error_text,
+                    )
                     logger.warning(error_text)
         return validation_errors
 
@@ -131,7 +138,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         # Time-columns should follow time format
         for deltabell in self.variables:
             for variabel in deltabell["variabler"]:
@@ -163,10 +170,10 @@ class StatbankUttrekkValidators:
     def _check_time_columns(
         self,
         deltabell_name: str,
-        variabel: dict[str, str],
+        variabel: KolonneVariabelType,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         col_num = int(variabel["kolonnenummer"]) - 1
         timeformat_raw = (
             variabel["Kodeliste_text"].split(" format = ")[1].strip().replace("Å", "å")
@@ -190,10 +197,17 @@ class StatbankUttrekkValidators:
                 time format in the shape: {timeformat_raw}""",
             )
 
+        nums: list[int] = [i for i, c in enumerate(timeformat_raw) if c.islower()]
+        chars: dict[int, str] = {
+            i: c for i, c in enumerate(timeformat_raw) if c.isupper()
+        }
+        specials: dict[int, str] = {
+            i: c for i, c in enumerate(timeformat_raw) if not c.isalnum()
+        }
         timeformat = {
-            "nums": [i for i, c in enumerate(timeformat_raw) if c.islower()],
-            "chars": {i: c for i, c in enumerate(timeformat_raw) if c.isupper()},
-            "specials": {i: c for i, c in enumerate(timeformat_raw) if not c.isalnum()},
+            "nums": nums,
+            "chars": chars,
+            "specials": specials,
         }
 
         if timeformat["nums"]:
@@ -224,7 +238,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         if self.suppression:
             prikk_codes = [code["Kode"] for code in self.suppression]
             prikk_codes += [""]
@@ -255,7 +269,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         # Get column-numbers containing categorical values per deltabell
         for deltabell in self.variables:
             category_col_nums = [
@@ -279,7 +293,7 @@ class StatbankUttrekkValidators:
         return validation_errors
 
     def _get_check_codes(self) -> dict[str, dict[str, list[str]]]:
-        check_codes = {}
+        check_codes: dict[str, dict[str, list[str]]] = {}
         for deltabell in self.variables:
             deltabell_navn = deltabell["deltabell"]
             check_codes[deltabell_navn] = {}
@@ -349,50 +363,52 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> dict:
+    ) -> dict[str, ValueError]:
         """If a column should have a set number of decimals, check if its a string, and how many places are used after the decimal seperator: ","."""
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
-            for variabel in deltabell["variabler"] + deltabell["statistikkvariabler"]:
-                if "Antall_lagrede_desimaler" in variabel:
-                    col_num = int(variabel["kolonnenummer"]) - 1
-                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
-                    error = False
-                    column = (
-                        data[deltabell_name]
-                        .iloc[:, col_num]
-                        .copy()
-                        .astype(str)
-                        .str.replace(".", ",", regex=False)
-                    )
-                    # Compensate for na / empty cells
-                    column = column[column != ""]
-                    # If there are no rows left after removing empty, skip checking more
-                    if not len(column):
-                        break
-                    if decimal_num:
-                        if any(decimal_num != column.str.split(",").str[-1].str.len()):
-                            error = True
-                    elif not (
-                        column.str.replace("-", "", regex=False)
-                        .str.replace(",", "", regex=False)
-                        .str.replace(".", "", regex=False)
-                        .str.isdigit()
-                        .all()
+            for variabel in deltabell["statistikkvariabler"]:
+                col_num = int(variabel["kolonnenummer"]) - 1
+                decimal_num = int(variabel["Antall_lagrede_desimaler"])
+                error = False
+                column: pd.Series[str] = (
+                    data[deltabell_name]
+                    .iloc[:, col_num]
+                    .copy()
+                    .astype(str)
+                    .str.replace(".", ",", regex=False)
+                )
+                # Compensate for na / empty cells
+                column = column[column != ""]
+                # If there are no rows left after removing empty, skip checking more
+                if not len(column):
+                    break
+                if decimal_num:
+                    if any(
+                        decimal_num
+                        != column.str.split(",").str[-1].str.len().to_list(),
                     ):
                         error = True
+                elif not (
+                    column.str.replace("-", "", regex=False)
+                    .str.replace(",", "", regex=False)
+                    .str.replace(".", "", regex=False)
+                    .str.isdigit()
+                    .all()
+                ):
+                    error = True
 
-                    if error:
-                        error_text = f"""Check that string column {col_num} in
-                        {deltabell_name} that should be rounded to
-                        {decimal_num} decimal places,
-                        has correct number of decimals. And consider converting from a
-                        non-rounded float to a string with this method:
-                        data = uttrekksbeskrivelse.round_data(data),
-                    this rounds UP like SAS and Excel, not to-even as
-                    Python does otherwise."""
-                        validation_errors[
-                            f"rounding_error_{deltabell_name}_{col_num}"
-                        ] = ValueError(error_text)
-                        logger.warning(error_text)
+                if error:
+                    error_text = f"""Check that string column {col_num} in
+                    {deltabell_name} that should be rounded to
+                    {decimal_num} decimal places,
+                    has correct number of decimals. And consider converting from a
+                    non-rounded float to a string with this method:
+                    data = uttrekksbeskrivelse.round_data(data),
+                this rounds UP like SAS and Excel, not to-even as
+                Python does otherwise."""
+                    validation_errors[
+                        f"rounding_error_{deltabell_name}_{col_num}"
+                    ] = ValueError(error_text)
+                    logger.warning(error_text)
         return validation_errors

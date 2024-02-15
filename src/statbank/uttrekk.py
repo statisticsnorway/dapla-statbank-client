@@ -8,7 +8,11 @@ from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
+
+if TYPE_CHECKING:
+    from statbank.api_types import FilBeskrivelseType
 
 import pandas as pd
 import requests as r
@@ -71,7 +75,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.subtables: dict[str, str | dict[str, Any]] = {}
         self.variables: dict[str, str | dict[str, Any]] = {}
         self.codelists: dict[str, str | dict[str, Any]] = {}
-        self.suppression = None
+        self.suppression: None | dict[str, str] = None
         if headers:
             self.headers = headers
         else:
@@ -215,7 +219,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise_errors = self.raise_errors
 
         validation_errors = {}
-        logger.info("\nvalidating...")
+        logger.debug("validating...")
 
         self._validate_number_dataframes(data=data)
         validation_errors = self._validate_number_columns(
@@ -333,7 +337,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         # Rakel encountered an error with a tab-character in the json, should we just strip this?
         filbeskrivelse_json = filbeskrivelse_response.text.replace("\t", "")
         # Also deletes / overwrites returned Auth-header from get-request
-        filbeskrivelse = json.loads(filbeskrivelse_json)
+        filbeskrivelse: FilBeskrivelseType = json.loads(filbeskrivelse_json)
         logger.info(
             "Hentet uttaksbeskrivelsen for %s, med tableid: %s den %s",
             filbeskrivelse["Huvudtabell"],

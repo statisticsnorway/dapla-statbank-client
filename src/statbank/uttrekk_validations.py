@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import pandas as pd
 
 from statbank.logger import logger
@@ -9,6 +13,16 @@ class StatbankValidateError(Exception):
 
 class StatbankUttrekkValidators:
     """Split out from the main Uttrekk-class, this class contains all the validator-methods."""
+
+    def __init__(self) -> None:
+        """This init will never be used directly, as this class is always inherited from.
+
+        So, these attribute-settings are for type-checking with mypy.
+        """
+        self.subtables: dict[str, str | dict[str, Any]] = {}
+        self.variables: list[dict] = []
+        self.suppression: None | dict[str, str] = None
+        self.codelists: dict = {}
 
     def _validate_number_dataframes(self, data: dict[str, pd.DataFrame]) -> None:
         # Number subtables should match length of data-iterable
@@ -49,7 +63,7 @@ class StatbankUttrekkValidators:
                 logger.warning(validation_errors[k])
                 break
         else:
-            logger.warning("Correct number of columns...")
+            logger.debug("Correct number of columns...")
         return validation_errors
 
     def _check_for_literal_nans_in_strings(
@@ -142,7 +156,7 @@ class StatbankUttrekkValidators:
             if [x for x in matches if x in k]:
                 break
         else:
-            logger.warning("Timeformat validation ok.")
+            logger.debug("Timeformat validation ok.")
 
         return validation_errors
 
@@ -231,7 +245,7 @@ class StatbankUttrekkValidators:
             if "prikke_character_match_column" in k:
                 break
         else:
-            logger.warning(
+            logger.debug(
                 "suppression-codes validation ok / No prikke-columns in use.",
             )
 
@@ -258,7 +272,7 @@ class StatbankUttrekkValidators:
             if "duplicate_categorical_groups" in k:
                 break
         else:
-            logger.warning(
+            logger.debug(
                 "Found no duplicate combinations of categorical columns",
             )
 
@@ -318,17 +332,17 @@ class StatbankUttrekkValidators:
             logger.warning("\n".join(categorycode_outside))
             validation_errors["categorycode_outside"] = ValueError(categorycode_outside)
         else:
-            logger.warning(
+            logger.debug(
                 "No codes in categorical columns outside codelist.",
             )
         if categorycode_missing:
-            logger.warning(
+            logger.info(
                 """Category codes missing from data (This is ok,
             just make sure missing data is intentional):""",
             )
-            logger.warning("\n".join(categorycode_missing))
+            logger.info("\n".join(categorycode_missing))
         else:
-            logger.warning("No codes missing from categorical columns.")
+            logger.debug("No codes missing from categorical columns.")
         return categorycode_outside, categorycode_missing, validation_errors
 
     def _check_rounding(

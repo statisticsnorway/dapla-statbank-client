@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import TypedDict
 
 from typing_extensions import NotRequired
@@ -7,10 +9,21 @@ from typing_extensions import NotRequired
 ####################
 
 
+class TransferPartType(TypedDict):
+    """There are multiple copies of this for every json."""
+
+    GeneratedId: None | str
+    Status: str
+    Message: str
+    Exception: None | str
+    ValidationInfoItems: None | str
+
+
 class TransferResultType(TypedDict):
     """The types of the main result-json from a transfer."""
 
-    TotalResult: dict[str, str]
+    TotalResult: TransferPartType
+    ItemResults: list[TransferPartType]
 
 
 #######################

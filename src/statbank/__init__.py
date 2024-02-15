@@ -28,7 +28,7 @@ def _try_getting_pyproject_toml(e: Exception | None = None) -> str:
         try:
             version: str = toml.load("../pyproject.toml")["tool"]["poetry"]["version"]
         except FileNotFoundError:
-            version: str = toml.load("./pyproject.toml")["tool"]["poetry"]["version"]
+            version = toml.load("./pyproject.toml")["tool"]["poetry"]["version"]
     except toml.TomlDecodeError as e:
         version = "0.0.0"
         logger.exception(

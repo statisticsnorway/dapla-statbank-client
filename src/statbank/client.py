@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -131,7 +132,9 @@ class StatbankClient(StatbankAuth):
         self.__headers = self._build_headers()
         self.log = []
         if isinstance(date, str):
-            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
+            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
+                OSLO_TIMEZONE,
+            )
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
@@ -276,7 +279,7 @@ class StatbankClient(StatbankAuth):
         dfs: dict[str, pd.DataFrame],
         tableid: str = "00000",
         raise_errors: bool = False,
-    ) -> dict:
+    ) -> dict[str, str]:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
 
         All validation happens locally, so dont be afraid of any data
@@ -303,7 +306,11 @@ class StatbankClient(StatbankAuth):
         )
         return validation_errors
 
-    def transfer(self, dfs: dict, tableid: str = "00000") -> StatbankTransfer:
+    def transfer(
+        self,
+        dfs: dict[str, pd.DataFrame],
+        tableid: str = "00000",
+    ) -> StatbankTransfer:
         """Transfers your data to Statbanken.
 
         Make sure you've set the publish-date correctly before sending.
@@ -356,7 +363,7 @@ class StatbankClient(StatbankAuth):
     @staticmethod
     def apidata(
         id_or_url: str = "",
-        payload: dict | None = None,
+        payload: dict[str, str | dict[str, Any]] | None = None,
         include_id: bool = False,
     ) -> pd.DataFrame:
         """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.

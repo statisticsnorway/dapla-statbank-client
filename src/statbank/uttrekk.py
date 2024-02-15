@@ -68,9 +68,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.tableid = tableid
         self.raise_errors = raise_errors
         self.tablename = ""
-        self.subtables = {}
-        self.variables = {}
-        self.codelists = {}
+        self.subtables: dict[str, str | dict[str, Any]] = {}
+        self.variables: dict[str, str | dict[str, Any]] = {}
+        self.codelists: dict[str, str | dict[str, Any]] = {}
         self.suppression = None
         if headers:
             self.headers = headers
@@ -170,7 +170,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         logger.info(msg)
         return template
 
-    def to_json(self, path: str = "") -> None | dict[str, Any]:
+    def to_json(self, path: str = "") -> None | str:
         """Store a copy of the current state of the uttrekk-object as a json.
 
         If path is provided, tries to write to it,
@@ -180,7 +180,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             path (str): if provided, will try to write a json to a local path
 
         Returns:
-            None | dict[str, Any]: If path is provided, tries to write a json to a file and returns nothing.
+            None | str: If path is provided, tries to write a json to a file and returns nothing.
                 If path is not provided, returns the json-string for you to handle as you wish.
         """
         # Need to this because im stupidly adding methods from other class as attributes
@@ -322,25 +322,23 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 n = Decimal(n).to_integral_value()
         return str(n)
 
-    def _get_uttrekksbeskrivelse(self) -> dict:
+    def _get_uttrekksbeskrivelse(self) -> None:
         filbeskrivelse_url = self.url + "tableId=" + self.tableid
         try:
-            filbeskrivelse = self._make_request(filbeskrivelse_url, self.headers)
+            filbeskrivelse_response = self._make_request(filbeskrivelse_url)
         finally:
             if hasattr(self, "headers"):
                 del self.headers
 
         # Rakel encountered an error with a tab-character in the json, should we just strip this?
-        filbeskrivelse = filbeskrivelse.text.replace("\t", "")
+        filbeskrivelse_json = filbeskrivelse_response.text.replace("\t", "")
         # Also deletes / overwrites returned Auth-header from get-request
-        filbeskrivelse = json.loads(filbeskrivelse)
+        filbeskrivelse = json.loads(filbeskrivelse_json)
         logger.info(
             "Hentet uttaksbeskrivelsen for %s, med tableid: %s den %s",
-            (
-                filbeskrivelse["Huvudtabell"],
-                self.tableid,
-                str(filbeskrivelse["Uttaksbeskrivelse_lagd"]),
-            ),
+            filbeskrivelse["Huvudtabell"],
+            self.tableid,
+            str(filbeskrivelse["Uttaksbeskrivelse_lagd"]),
         )
 
         # reset tableid and hovedkode after content of request

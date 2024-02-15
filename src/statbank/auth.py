@@ -25,7 +25,7 @@ class StatbankAuth:
             is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
     """
 
-    def _build_headers(self) -> dict:
+    def _build_headers(self) -> dict[str, str]:
         return {
             "Authorization": self._build_auth(),
             "Content-Type": "multipart/form-data; boundary=12345",
@@ -102,7 +102,7 @@ class StatbankAuth:
         )
 
     @staticmethod
-    def _build_urls() -> dict:
+    def _build_urls() -> dict[str, str]:
         base_url = os.environ.get("STATBANK_BASE_URL", "Cant find url in environ.")
         end_urls = {
             "loader": "statbank/sos/v1/DataLoader?",

@@ -108,7 +108,7 @@ class StatbankTransfer(StatbankAuth):
         if date is None:
             date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
         if isinstance(date, str):
-            self.date = date
+            self.date: str = date
         else:
             self.date = date.strftime("%Y-%m-%d")
 
@@ -116,7 +116,7 @@ class StatbankTransfer(StatbankAuth):
         self.approve = approve
         self.validation = validation
         self.__delay = delay
-
+        self.oppdragsnummer: str = ""
         self.boundary = "12345"
         if validation:
             self._validate_original_parameters()
@@ -140,7 +140,7 @@ class StatbankTransfer(StatbankAuth):
         """
         # In case transfer has already happened, dont transfer again
         if hasattr(self, "oppdragsnummer"):
-            error_msg = f"Already transferred? {self.urls['gui'] +self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
+            error_msg = f"Already transferred? {self.urls['gui'] + self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
             raise ValueError(error_msg)
         if headers is None:
             self.headers = self._build_headers()
@@ -209,7 +209,7 @@ class StatbankTransfer(StatbankAuth):
                 error_msg = f'Brukeren {shortuser} - "trebokstavsforkortelse" - må være tre bokstaver...'
                 raise ValueError(error_msg)
 
-        if not isinstance(self.date, dt) and not self._valid_date_form(self.date):
+        if not isinstance(self.date, str) and not self._valid_date_form(self.date):
             error_msg = "Skriv inn datoformen for publisering som 1900-01-01"
             raise TypeError(error_msg)
 

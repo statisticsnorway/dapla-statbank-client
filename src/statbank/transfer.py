@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import gc
 import json
 import math
 import os
@@ -157,6 +158,7 @@ class StatbankTransfer(StatbankAuth):
 
             url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
             self.response = self._make_transfer_request(url_load_params)
+            self._cleanup_response()
         finally:
             del self.headers  # Cleaning up auth-storing
             self.__delay = False
@@ -286,12 +288,20 @@ class StatbankTransfer(StatbankAuth):
         url_params: str,
     ) -> r.Response:
         result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
-        if hasattr(result.request, "headers"):
-            del result.request.headers  # Auth is stored here also, for some reason
-            # del result.headers.cookies  # where are the cookies?
-
+        # Trying to clean all auth etc out of response
         result.raise_for_status()
         return result
+
+    def _cleanup_response(self) -> None:
+        if hasattr(self.response.request, "headers"):
+            del (
+                self.response.request.headers
+            )  # Auth is stored here also, for some reason
+        if hasattr(self.response, "cookies"):
+            del self.response.cookies
+        if hasattr(self.response, "raw"):
+            del self.response.raw
+        gc.collect()  # Hoping this removes the del-ed stuff from memory
 
     def _handle_response(self) -> None:
         resp_json: TransferResultType = self.response.json()

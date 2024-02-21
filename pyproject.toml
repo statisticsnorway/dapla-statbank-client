@@ -53,6 +53,7 @@ ipykernel = ">=6.0.0"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+markers = ["integration_dapla: actually runs against the real statbank API, therefore needs username and password"]
 
 [tool.poetry.scripts]
 dapla-statbank-client = "statbank.__main__:main"

@@ -298,7 +298,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                     # Nan-handling?
                     if (
                         "float"
-                        in str(data_copy[deltabell_name].dtypes[col_num]).lower()
+                        in str(data_copy[deltabell_name].dtypes.iloc[col_num]).lower()
                     ):  # If column is passed in as a float, we can handle it
                         logger.info(
                             "Rounding column %s in %s into a string, with %s decimals.",
@@ -321,7 +321,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                         logger.info(
                             "not a float %s: %s",
                             col_num,
-                            str(data_copy[deltabell_name].dtypes[col_num]),
+                            str(data_copy[deltabell_name].dtypes.iloc[col_num]),
                         )
         return data_copy
 

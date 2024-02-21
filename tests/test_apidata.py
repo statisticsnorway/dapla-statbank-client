@@ -4,6 +4,7 @@ from unittest import mock
 import pandas as pd
 import pytest
 import requests
+from dotenv import load_dotenv
 from requests.exceptions import HTTPError
 
 from statbank import StatbankClient
@@ -11,6 +12,8 @@ from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_query_all
 from statbank.apidata import apidata_rotate
+
+load_dotenv()
 
 DIGITS_IN_YEAR = 4
 

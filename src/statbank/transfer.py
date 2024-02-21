@@ -111,8 +111,8 @@ class StatbankTransfer(StatbankAuth):
         # At this point we want date to be a string?
         if date is None:
             date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
-        if isinstance(date, str):
-            self.date: str = date
+        if isinstance(date, str):  # type: ignore[unreachable]
+            self.date: str = date  # type: ignore[unreachable]
         else:
             self.date = date.strftime("%Y-%m-%d")
 
@@ -180,7 +180,7 @@ class StatbankTransfer(StatbankAuth):
         """Obfuscate the delay a bit from the user. We dont want transfers transferring again without recreating the object."""
         return self.__delay
 
-    def to_json(self, path: str = "") -> dict[str, str] | None:
+    def to_json(self, path: str = "") -> str | None:
         """Store a copy of the current state of the transfer-object as a json.
 
         If path is provided, tries to write to it,
@@ -213,12 +213,12 @@ class StatbankTransfer(StatbankAuth):
                 error_msg = f'Brukeren {shortuser} - "trebokstavsforkortelse" - må være tre bokstaver...'
                 raise ValueError(error_msg)
 
-        if not isinstance(self.date, str) and not self._valid_date_form(self.date):
-            error_msg = "Skriv inn datoformen for publisering som 1900-01-01"
+        if not isinstance(self.date, str) and not self._valid_date_form(self.date):  # type: ignore[unreachable]
+            error_msg = "Skriv inn datoformen for publisering som 1900-01-01"  # type: ignore[unreachable]
             raise TypeError(error_msg)
 
         if not isinstance(self.overwrite, bool):
-            error_msg = "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving."
+            error_msg = "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving."  # type: ignore[unreachable]
             raise TypeError(error_msg)
 
         if self.approve not in [0, 1, 2]:
@@ -228,10 +228,10 @@ class StatbankTransfer(StatbankAuth):
     def _validate_datatype(self) -> None:
         for deltabell_name, deltabell_data in self.data.items():
             if not isinstance(deltabell_name, str):
-                error_msg = f"{deltabell_name} is not a string."
+                error_msg = f"{deltabell_name} is not a string."  # type: ignore[unreachable]
                 raise TypeError(error_msg)
             if not isinstance(deltabell_data, pd.DataFrame):
-                error_msg = f"Data for {deltabell_name}, must be a pandas DataFrame"
+                error_msg = f"Data for {deltabell_name}, must be a pandas DataFrame"  # type: ignore[unreachable]
                 raise TypeError(error_msg)
 
     @staticmethod
@@ -241,7 +241,7 @@ class StatbankTransfer(StatbankAuth):
         So let's implement our own.
         """
         multiplier = 10**decimals
-        return math.ceil(n * multiplier) / multiplier
+        return int(math.ceil(n * multiplier) / multiplier)
 
     def _body_from_data(self) -> str:
         # Data should be a iterable of pd.DataFrames at this point,
@@ -266,9 +266,9 @@ class StatbankTransfer(StatbankAuth):
             return True
         return False
 
-    def _build_params(self) -> dict[str, str]:
-        if isinstance(self.date, dt):
-            date = self.date.strftime("%Y-%m-%d")
+    def _build_params(self) -> dict[str, str | int]:
+        if isinstance(self.date, dt):  # type: ignore[unreachable]
+            date = self.date.strftime("%Y-%m-%d")  # type: ignore[unreachable]
         else:
             date = self.date
         return {
@@ -286,9 +286,9 @@ class StatbankTransfer(StatbankAuth):
         url_params: str,
     ) -> r.Response:
         result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
-        if hasattr(result.request, "headers") or result.request.get("headers", ""):
+        if hasattr(result.request, "headers"):
             del result.request.headers  # Auth is stored here also, for some reason
-            del result.headers.cookies
+            # del result.headers.cookies  # where are the cookies?
 
         result.raise_for_status()
         return result
@@ -314,9 +314,8 @@ class StatbankTransfer(StatbankAuth):
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],
         )
         publish_time = publish_hour * 3600 + publish_minute * 60
-        publish = publish_date + td(0, publish_time)
-        publish = publish.isoformat("T", "seconds")
-        logger.info("Publisering satt til: %s", publish)
+        publish_date = publish_date + td(0, publish_time)
+        logger.info("Publisering satt til: %s", publish_date.isoformat("T", "seconds"))
         logger.info(
             "Følg med på lasteloggen (tar noen minutter): %s",
             {self.urls["gui"] + self.oppdragsnummer},

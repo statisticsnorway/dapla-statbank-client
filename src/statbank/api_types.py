@@ -4,6 +4,32 @@ from typing import TypedDict
 
 from typing_extensions import NotRequired
 
+#################################
+# Statbank get public data type #
+#################################
+
+
+class QueryWholeType(TypedDict):
+    """The query-type is used to get the data from Statbank."""
+
+    query: list[QueryPartType]
+    response: dict[str, str]
+
+
+class QueryPartType(TypedDict):
+    """The query-type is used to get the data from Statbank."""
+
+    code: str
+    selection: SelectionPartType
+
+
+class SelectionPartType(TypedDict):
+    """The selection-type is used to get the data from Statbank."""
+
+    filter: str
+    values: list[str]
+
+
 ####################
 # TRANSFER RESULTS #
 ####################

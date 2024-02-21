@@ -10,6 +10,10 @@ from pyjstat import pyjstat
 if TYPE_CHECKING:
     import pandas as pd
 
+    from statbank.api_types import QueryPartType
+    from statbank.api_types import QueryWholeType
+
+
 from statbank.logger import logger
 
 # Getting data from Statbank
@@ -20,7 +24,7 @@ REQUESTS_OK_RETURN = 200
 
 def apidata(
     id_or_url: str = "",
-    payload: dict = {"query": [], "response": {"format": "json-stat2"}},  # noqa: B006
+    payload: QueryWholeType | None = None,
     include_id: bool = False,
 ) -> pd.DataFrame:
     """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
@@ -35,6 +39,13 @@ def apidata(
     -------
     A pandas dataframe with the table-content
     """
+    if payload is None:
+        payload_now: QueryWholeType = {
+            "query": [],
+            "response": {"format": "json-stat2"},
+        }
+    else:
+        payload_now = payload
     if len(id_or_url) == STATBANK_TABLE_ID_LENGTH and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
     else:
@@ -48,12 +59,12 @@ def apidata(
 
     logger.info(url)
     # Spør APIet om å få resultatet med requests-biblioteket
-    resultat = r.post(url, json=payload, timeout=10)
+    resultat = r.post(url, json=payload_now, timeout=10)
     resultat.raise_for_status()
     # Putt teksten i resultatet inn i ett pyjstat-datasett-objekt
     dataset_pyjstat = pyjstat.Dataset.read(resultat.text)
     # Skriv pyjstat-objektet ut som en pandas dataframe
-    table_data = dataset_pyjstat.write("dataframe")
+    table_data: pd.DataFrame = dataset_pyjstat.write("dataframe")
     # Om man ønsker IDen påført dataframen, så er vi fancy
     if include_id:
         table_data_ids = dataset_pyjstat.write("dataframe", naming="id")
@@ -88,7 +99,7 @@ def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
     return apidata(id_or_url, apidata_query_all(id_or_url), include_id=include_id)
 
 
-def apidata_query_all(id_or_url: str = "") -> dict[str, str | dict[str, str]]:
+def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
     """Builds a query for ALL THE DATA in a table based on a request for metadata on the table.
 
     Args:
@@ -110,14 +121,14 @@ def apidata_query_all(id_or_url: str = "") -> dict[str, str | dict[str, str]]:
     res = r.get(url, timeout=5)
     res.raise_for_status()
     meta = res.json()["variables"]
-    code_list = []
+    code_list: list[QueryPartType] = []
     for code in meta:
-        tmp = {}
+        tmp: QueryPartType = {"code": "", "selection": {"filter": "", "values": []}}
         for k, v in code.items():
             if k == "code":
-                tmp[k] = v
+                tmp["code"] = v
             if k == "values":
-                tmp["selection"] = {"filter": "item", k: v}
+                tmp["selection"] = {"filter": "item", "values": v}
         code_list += [tmp]
     return {"query": code_list, "response": {"format": "json-stat2"}}
 

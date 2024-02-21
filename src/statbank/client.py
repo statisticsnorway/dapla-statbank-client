@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Any
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -11,10 +10,13 @@ import datetime as dt
 import json
 import os
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import ipywidgets as widgets
 from IPython.display import display
 
+if TYPE_CHECKING:
+    from statbank.api_types import QueryWholeType
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
@@ -130,11 +132,9 @@ class StatbankClient(StatbankAuth):
         self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()
-        self.log = []
-        if isinstance(date, str):
-            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                OSLO_TIMEZONE,
-            )
+        self.log: list[str] = []
+        if isinstance(date, str):  # type: ignore[unreachable]
+            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)  # type: ignore[unreachable]
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
@@ -199,7 +199,7 @@ class StatbankClient(StatbankAuth):
             disabled=False,
             value=self.date,
         )
-        display(datepicker)
+        display(datepicker)  # type: ignore[no-untyped-call]
         return datepicker
 
     def set_publish_date(self, date: dt.datetime) -> None:
@@ -214,8 +214,8 @@ class StatbankClient(StatbankAuth):
         """
         if isinstance(date, widgets.widget_date.DatePicker):
             self.date = date.value
-        elif isinstance(date, str):
-            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
+        elif isinstance(date, str):  # type: ignore[unreachable]
+            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)  # type: ignore[unreachable]
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
@@ -279,7 +279,7 @@ class StatbankClient(StatbankAuth):
         dfs: dict[str, pd.DataFrame],
         tableid: str = "00000",
         raise_errors: bool = False,
-    ) -> dict[str, str]:
+    ) -> dict[str, ValueError]:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
 
         All validation happens locally, so dont be afraid of any data
@@ -363,7 +363,7 @@ class StatbankClient(StatbankAuth):
     @staticmethod
     def apidata(
         id_or_url: str = "",
-        payload: dict[str, str | dict[str, Any]] | None = None,
+        payload: QueryWholeType | None = None,
         include_id: bool = False,
     ) -> pd.DataFrame:
         """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
@@ -376,8 +376,12 @@ class StatbankClient(StatbankAuth):
         Returns:
             pd.DataFrame: A pandas dataframe with the table-content
         """
+        replace_payload: QueryWholeType = {
+            "query": [],
+            "response": {"format": "json-stat2"},
+        }
         if payload is None:
-            payload = {"query": [], "response": {"format": "json-stat2"}}
+            payload = replace_payload
         return apidata(id_or_url=id_or_url, payload=payload, include_id=include_id)
 
     @staticmethod
@@ -414,7 +418,7 @@ class StatbankClient(StatbankAuth):
     def _validate_date(self) -> None:
         """Validate dates provided to the client."""
         if not (isinstance(self.date, (dt.date, dt.datetime))):
-            error_msg = "Date must be a datetime.datetime or datetime.date"
+            error_msg = "Date must be a datetime.datetime or datetime.date"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         # Date should not be on a weekend
         if self.date.weekday() in [5, 6]:
@@ -426,7 +430,7 @@ class StatbankClient(StatbankAuth):
     def _validate_params_action(self, tableid: str) -> None:
         """Validates tableid mainly, more actively than other params."""
         if not isinstance(tableid, str):
-            error_msg = f"{tableid} is not a string."
+            error_msg = f"{tableid} is not a string."  # type: ignore[unreachable]
             raise TypeError(error_msg)
         if (
             tableid.isdigit() and len(tableid) != STATBANK_TABLE_ID_LEN
@@ -446,7 +450,7 @@ class StatbankClient(StatbankAuth):
         if not self.bcc:
             self.bcc = self.cc
         if not isinstance(self.overwrite, bool):
-            error_msg = "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"
+            error_msg = "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         if not isinstance(self.approve, int) or self.approve not in [0, 1, 2]:
             error_msg = "(Int) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"

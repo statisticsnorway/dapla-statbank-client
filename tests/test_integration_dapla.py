@@ -18,25 +18,24 @@ def monkeymodule():
     mpatch.undo()
 
 
-@pytest.mark.integration_dapla()
-@pytest.fixture(scope="module", autouse=True)
-def client(monkeymodule: Callable) -> StatbankClient:
+@pytest.fixture(scope="module")
+def client_input(monkeymodule: Callable) -> StatbankClient:
     monkeymodule.setattr(
         "getpass.getpass",
-        lambda _: os.environ.get("STATBANK_TEST_PASSWORD"),
+        lambda _: os.environ["STATBANK_TEST_PASSWORD"],
     )
     return StatbankClient(
-        os.environ.get("STATBANK_TEST_USER"),
+        os.environ["STATBANK_TEST_USER"],
         check_username_password=False,
     )
 
 
 @pytest.mark.integration_dapla()
-def test_client_date(client: StatbankClient):
-    assert isinstance(client.approve, int)
+def test_client_date(client_input: StatbankClient):
+    assert isinstance(client_input.approve, int)
 
 
 @pytest.mark.integration_dapla()
-def test_client_get_description(client: StatbankClient):
-    filbesk = client.get_description("05300")
+def test_client_get_description(client_input: StatbankClient):
+    filbesk = client_input.get_description("05300")
     assert len(filbesk.codelists)

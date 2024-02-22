@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Nox
         run: |
-          nox --python=${{ matrix.python }}
+          nox --python=${{ matrix.python }} -- -v -- -m -- "not integration_dapla"
 
       - name: Upload coverage data
         if: always() && matrix.session == 'tests'

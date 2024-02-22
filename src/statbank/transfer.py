@@ -215,7 +215,7 @@ class StatbankTransfer(StatbankAuth):
                 error_msg = f'Brukeren {shortuser} - "trebokstavsforkortelse" - må være tre bokstaver...'
                 raise ValueError(error_msg)
 
-        if not isinstance(self.date, str) and not self._valid_date_form(self.date):  # type: ignore[unreachable]
+        if not isinstance(self.date, str) or not self._valid_date_form(self.date):  # type: ignore[unreachable]
             error_msg = "Skriv inn datoformen for publisering som 1900-01-01"  # type: ignore[unreachable]
             raise TypeError(error_msg)
 

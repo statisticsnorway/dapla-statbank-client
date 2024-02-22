@@ -65,11 +65,12 @@ tests = ["tests", "*/tests"]
 [tool.coverage.run]
 branch = true
 source = ["statbank", "tests"]
-omit = ["statbank/api_types.py"]
+omit = ["*api_types.py"]
 
 [tool.coverage.report]
 show_missing = true
 fail_under = 80
+omit = ["*api_types.py"]
 
 [tool.mypy]
 strict = true

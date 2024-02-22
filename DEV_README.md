@@ -10,6 +10,12 @@ poetry install --with dev
 ```bash
 poetry run pytest --cov -v -m "not integration_dapla"
 ```
+
+Or if you want to call nox with poetry and pass pytest flags through...
+```bash
+poetry run nox --session tests --python 3.10 -- -v -- -m "not integration_dapla"
+```
+
 The marker "integration_dapla" is for running specific tests locally on a dapla. They are placed in tests/test_integration_dapla.py .\
 Use this flag in the command-line call to avoid running them on other platforms.
 

@@ -524,8 +524,8 @@ def test_transfer_no_auth_residuals(transfer_success: StatbankTransfer):
 def search__dict__(
     obj: dict[str, Any],
     searchterm: str,
+    keep: dict[str, str],
     path: str = "root",
-    keep: dict[str, str] | None = None,
 ):
     """Recursive search through all nested objects having a __dict__-attribute."""
     if keep is None:

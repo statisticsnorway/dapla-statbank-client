@@ -10,14 +10,14 @@ from typing_extensions import NotRequired
 
 
 class QueryWholeType(TypedDict):
-    """The query-type is used to get the data from Statbank."""
+    """The whole query-type is used to get the data from Statbank."""
 
     query: list[QueryPartType]
     response: dict[str, str]
 
 
 class QueryPartType(TypedDict):
-    """The query-type is used to get the data from Statbank."""
+    """This represents each part of the query sent to statbanken."""
 
     code: str
     selection: SelectionPartType
@@ -58,7 +58,7 @@ class TransferResultType(TypedDict):
 
 
 class SuppressionCodeListType(TypedDict):
-    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse."""
+    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse, lower-level."""
 
     Kode: str
     Vises_som: str
@@ -66,7 +66,7 @@ class SuppressionCodeListType(TypedDict):
 
 
 class SuppressionDeltabellCodeListType(TypedDict):
-    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse."""
+    """The suppression-codes are used to filter out rows in the Uttrekksbeskrivelse, top-level."""
 
     kolonnenummer: str
     gjelder_for_text: str

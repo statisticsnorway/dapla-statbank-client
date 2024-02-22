@@ -32,7 +32,7 @@ Validates and transfers data from Dapla to Statbank.
 Gets data from public and internal statbank.
 
 
-### Installing from Pypi with Poetry
+## Installing from Pypi with Poetry
 If your project has been set up with `ssb-project create`, navigate into the folder with the terminal. `cd project-name`. Then install the package:
 ```bash
 poetry add dapla-statbank-client
@@ -53,7 +53,7 @@ print(stat_client)
 Be aware that from the **dapla-staging environment** you will be sending to statbank-TEST-database, your changes will not be published. For this you need the "test-password", which is for the same user (lastebruker), but different from the ordinary password (lastepassord). If you are missing the test-password, have the statbank-team send it to you for you loaduser. If you are in the main dapla-jupyterlab (prod), you **WILL** publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab. And be aware of which password you are entering, based on your environment. [To see data actually published to the test-database, you can use this link if you work at SSB.](https://i.test.ssb.no/pxwebi/pxweb/no/test_24v_intern/)
 
 
-### Usage Transferring
+## Usage Transferring
 
 ```python
 stat_client.transfer({"deltabellfilnavn.dat" : df_06399}, "06339")
@@ -61,7 +61,7 @@ stat_client.transfer({"deltabellfilnavn.dat" : df_06399}, "06339")
 The simplest form of usage, is directly-transferring using the transfer-method under the client-class. The statbanktable expects named "deltabeller" in a dictionary, see `trasferdata_template()` below. This might be all you need if this data has been sent in the same shape to statbanken before... If you are unsure at all, keep reading.
 
 
-### Building datasets
+## Building datasets
 You can look at the "filbeskrivelse" which is returned from `stat_client.get_description()` in its own local class: StatbankUttrekksBeskrivelse
 ```python
 description_06339 = stat_client.get_description(tableid="06339")
@@ -101,7 +101,7 @@ data_dict_06339 = description_06339.round_data({"deltabellfilnavn.dat" : df_0639
 
 
 
-### Getting apidata
+## Getting apidata
 
 These functions can be imported directly and will then not ask for username and password, but are also available through the client...
 ```python
@@ -132,7 +132,7 @@ df_folkemengde_rotert = apidata_rotate(df_folkemengde, 'tidskolonne', "verdikolo
 ```
 
 
-### Using a date-widget for publish day
+## Using a date-widget for publish day
 For easier setting of the date on the client, after it has been initialized, you can use a date-picker in JupyterLab from ipywidgets.
 ```python
 date = stat_client.date_picker()
@@ -143,7 +143,7 @@ stat_client.set_publish_date(date)
 ```
 
 
-### Saving and restoring Uttrekksbeskrivelser and Transfers as json
+## Saving and restoring Uttrekksbeskrivelser and Transfers as json
 
 From `stat_client.transfer()` you will recieve a StatbankTransfer object, from `stat_client.get_description` a StatbankUttrekksBeskrivelse-object. These can be serialized and saved to disk, and later be restored, maybe this can be a form of logging on which transfers were done?
 
@@ -157,7 +157,7 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 
 ---
 
-### Version history
+## Version history
 - 1.0.6 fixing new functionality on "IRkodelister"
 - 1.0.5 Making transferdata_template smarter, were it can take a bunch of dataframes and incorporate them in the returned dict. Trying to support columntype "internasjonal rapportering".
 - 1.0.4 Fixing bug where empty codelists stops description initialization, Updating pyjstat to 2.4.0, changing imports to absolute from package root

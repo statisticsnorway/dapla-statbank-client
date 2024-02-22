@@ -36,45 +36,31 @@ class StatbankClient(StatbankAuth):
     An initialized client, an object of this class, will contain data/parameters
     that often is shared, among all transfers within a statistical production.
     Call methods under this client to:
-    - transfer the data
-        .transfer()
-    - only validate the data against a description
-        .validate()
-    - get transfer/data description (filbeskrivelse)
-        .get_description()
-    - set the publish date with a datepicker
-        .date_picker() + .set_publish_date()
-    - get published data from the external or internal API of statbanken
-        apidata_all() / apidata()
-    ...
+    - transfer the data: .transfer()
+    - only validate the data against a description: .validate()
+    - get transfer/data description (filbeskrivelse): .get_description()
+    - set the publish date with a datepicker: .date_picker() + .set_publish_date()
+    - get published data from the external or internal API of statbanken: apidata_all() / apidata()
 
     Attributes:
-        loaduser : str
-            Username for Statbanken, not the same as "tbf"
+        loaduser (str): Username for Statbanken, not the same as "tbf"
             or "common personal username" in other SSB-systems
-        date : str
-            Date for publishing the transfer. Shape should be "yyyy-mm-dd",
+        date (str): Date for publishing the transfer. Shape should be "yyyy-mm-dd",
             like "2022-01-01".
             Statbanken only allows publishing four months into the future?
-        shortuser : str
-            The abbrivation of username at ssb. Three letters, like "cfc".
+        shortuser (str): The abbrivation of username at ssb. Three letters, like "cfc".
             If not specified,
             we will try to get this from daplas environement variables.
-        cc : str
-            First person to be notified by email of transfer.
+        cc (str): First person to be notified by email of transfer.
             Defaults to the same as "shortuser"
-        bcc : str
-            Second person to be notified by email of transfer.
+        bcc (str): Second person to be notified by email of transfer.
             Defaults to the same as "cc"
-        overwrite : bool
-            False = no overwrite
+        overwrite (bool): False = no overwrite
             True = overwrite
-        approve : int
-            0 = manual approval
+        approve (int): 0 = manual approval
             1 = automatic approval at transfer-time (immediately)
             2 = JIT (Just In Time), approval right before publishing time
-        log: list
-            Each "action" (method used) on the client is appended to the log.
+        log (list[str]): Each "action" (method used) on the client is appended to the log.
             Nice to use for appending to your own logging after you are done,
             or printing it in a try-except-block to see what the last actions were,
             before error being raised.

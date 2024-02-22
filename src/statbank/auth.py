@@ -22,6 +22,7 @@ class StatbankAuth:
         _build_urls() -> dict:
             Urls will differ based environment variables, returns a dict of urls.
         __init__():
+
             is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
     """
 
@@ -49,15 +50,11 @@ class StatbankAuth:
         Simplified terribly by the addition of env vars for this, keeping this method for legacy reasons.
 
         Returns:
-        -------
-        str
-            "DAPLA" if on dapla, "PROD" if you are in prodsone.
+            str: "DAPLA" if on dapla, "PROD" if you are in prodsone.
 
         Raises:
-        ------
-        OSError
-            If no indications match, dapla/prod may have changed (please report)
-            Or you are using the function outside of dapla/prod on purpose?
+            OSError: If no indications match, dapla/prod may have changed (please report)
+                Or you are using the function outside of dapla/prod on purpose?
         """
         return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
 

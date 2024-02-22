@@ -16,11 +16,38 @@ statbank package
 =============================================================================
 
 
-statbank.functions module
------------------------------------------------------------------------------
+statbank package
+================
 
-.. automodule:: statbank.functions
+
+statbank.apidata module
+-----------------------
+
+.. automodule:: statbank.apidata
    :members:
    :undoc-members:
    :show-inheritance:
-```
+
+statbank.client module
+----------------------
+
+.. automodule:: statbank.client
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.transfer module
+------------------------
+
+.. automodule:: statbank.transfer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.uttrekk module
+-----------------------
+
+.. automodule:: statbank.uttrekk
+   :members:
+   :undoc-members:
+   :show-inheritance:

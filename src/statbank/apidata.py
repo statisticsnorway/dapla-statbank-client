@@ -35,6 +35,9 @@ def apidata(
 
     Returns:
         pd.DataFrame: The table-content
+
+    Raises:
+        ValueError: If the first parameter is not recognized as a statbank ID or a direct url.
     """
     if payload is None:
         payload_now: QueryWholeType = {
@@ -102,6 +105,9 @@ def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
 
     Returns:
         QueryWholeType: The prepared query based on all the codes in the table.
+
+    Raises:
+        ValueError: If the parameter is not a valid statbank ID or a direct url.
     """
     if len(id_or_url) == STATBANK_TABLE_ID_LENGTH and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"

@@ -136,6 +136,9 @@ class StatbankTransfer(StatbankAuth):
         Args:
             headers (dict[str, str] | None): Mostly for internal use by the package.
                 Needs to be a finished compiled headers for a request including Authorization.
+
+        Raises:
+            ValueError: If the transfer is already transferred.
         """
         # In case transfer has already happened, dont transfer again
         if self.oppdragsnummer:

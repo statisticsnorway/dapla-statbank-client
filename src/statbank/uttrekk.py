@@ -52,16 +52,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         headers (dict): The headers for the request, might be sent in from a StatbankTransfer-object.
         filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
 
-    Methods:
-        validate(data=pd.DataFrame, raise_errors=bool):
-            Checks sent data against UttrekksBeskrivelse,
-            raises errors at end of checking, if raise_errors not set to False.
-        transferdata_template():
-        round_data():
-        to_json():
-        get_totalcodes_dict():
-
-
     """
 
     def __init__(

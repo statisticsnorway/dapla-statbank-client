@@ -29,15 +29,13 @@ def apidata(
 ) -> pd.DataFrame:
     """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
 
-    Parameters
-    -------
-    id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-    payload: a dict of the query to include with the request, can be copied from the statbank-webpage.
-    include_id: If you want to include "codes" in the dataframe, set this to True
+    Args:
+        id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        payload (QueryWholeType): a dict in the shape of a QueryWhole, to include with the request, can be copied from the statbank-webpage.
+        include_id (bool): If you want to include "codes" in the dataframe, set this to True
 
     Returns:
-    -------
-    A pandas dataframe with the table-content
+        pd.DataFrame: The table-content
     """
     if payload is None:
         payload_now: QueryWholeType = {
@@ -87,14 +85,12 @@ def apidata(
 def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
     """Get ALL the contents of a published statbank-table as a pandas Dataframe.
 
-    Parameters
-    -------
-    id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-    include_id: If you want to include "codes" in the dataframe, set this to True
+    Args:
+        id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        include_id (bool): If you want to include "codes" in the dataframe, set this to True
 
     Returns:
-    -------
-    A pandas dataframe with the table-content
+        pd.DataFrame: Table-content
     """
     return apidata(id_or_url, apidata_query_all(id_or_url), include_id=include_id)
 

@@ -61,11 +61,6 @@ class StatbankTransfer(StatbankAuth):
             Keep it in this nice shape for later introspection.
         body (str): The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
         response (requests.Response): The resulting response from the transfer-request. Headers might be deleted without warning.
-        delay (bool): Not editable, please dont try. Indicates if the Transfer has been sent yet, or not.
-
-    Methods:
-        transfer(): If Transfer was delayed, you can make the transfer by calling this method.
-        to_json(): Saves the transfer as a json-file. Can be integrated into a log perhaps.
     """
 
     def __init__(  # noqa: PLR0913, PLR0912

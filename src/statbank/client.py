@@ -64,37 +64,6 @@ class StatbankClient(StatbankAuth):
             Nice to use for appending to your own logging after you are done,
             or printing it in a try-except-block to see what the last actions were,
             before error being raised.
-
-    Methods:
-        get_description(tableid): Get the "uttrekksbeskrivelse" for the tableid, which describes metadata
-            about shape of data to be transferred, and metadata about the table
-            itself in Statbankens system, like ID, name and content of codelists.
-            Returns an object of the internal class "StatbankUttrekksBeskrivelse"
-        validate(data, tableid): Gets an "uttrekksbeskrivelse" and validates the data against this.
-            All validation happens locally, so dont be afraid of any data
-            being sent to statbanken using this method.
-            Logic is built in Python, and can probably be expanded upon.
-        transfer(data, tableid): Transfers your data to Statbanken.
-            First it gets an uttrekksbeskrivelse, validates against this,
-            then makes the actual transfer. Validation can be set to False,
-            to avoid this checking beforehand.
-            Make sure you've set the publish-date correctly before sending.
-        date = date_picker(): Shows a date-picker widget using ipywidget.
-        set_publish_date(date): To actually set the date,
-            the result of the picker must be sent into this function after editing.
-            This method also excepts a datetime, datetime.date,
-            or a string in the format YYYY-mm-dd.
-        apidata_all(tableid): Finds "all the codes" of data for the table, using a first request.
-            Then builds a query from this to get all the data using apidata().
-            Use this if you want "all the data" from a table, and this isnt too big.
-        apidata(tableid, query): Lets you specify a query, to limit the data in the response.
-            Get this query from the bottom of the statbank-webpage (API-spørring).
-
-        read_description_json(path.json): Tries to restore a StatbankUttrekksBeskrivelse-object from a stored, serialized json.
-        read_transfer_json(path.json): Tries to restore a StatbankTransfer-object from a stored, serialized json.
-
-        __init__():
-            Sets attributes, validates them, builds header, initializes log.
     """
 
     def __init__(  # noqa: PLR0913

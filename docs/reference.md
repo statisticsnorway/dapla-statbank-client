@@ -19,6 +19,13 @@ statbank package
 statbank package
 ================
 
+statbank.client module
+----------------------
+
+.. automodule:: statbank.client
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 statbank.apidata module
 -----------------------
@@ -28,13 +35,6 @@ statbank.apidata module
    :undoc-members:
    :show-inheritance:
 
-statbank.client module
-----------------------
-
-.. automodule:: statbank.client
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 statbank.transfer module
 ------------------------

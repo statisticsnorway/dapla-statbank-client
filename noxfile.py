@@ -191,7 +191,13 @@ def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
     session.install(".")
     session.install("pytest", "typeguard", "pygments")
-    session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
+    session.run(
+        "pytest",
+        f"--typeguard-packages={package}",
+        *session.posargs,
+        "-m",
+        '"not integration_dapla"',
+    )
 
 
 @session(python=python_versions)

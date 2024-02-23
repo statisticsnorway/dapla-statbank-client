@@ -303,6 +303,34 @@ class StatbankUttrekkValidators:
                     )
         return check_codes
 
+    def _category_columns_are_strings(
+        self,
+        data: dict[str, pd.DataFrame],
+        validation_errors: dict[str, ValueError],
+    ) -> tuple[list[str], dict[str, ValueError]]:
+        categorycode_not_string = []
+        check_codes = self._get_check_codes()
+        for deltabell_name, variabel in check_codes.items():
+            for col_num in variabel:
+                col = data[deltabell_name].iloc[:, int(col_num) - 1]
+                if pd.api.types.is_string_dtype(col):
+                    categorycode_not_string += [
+                        f"""{col_num} is a categorical column, but is not a string columns?
+                            Convert the column to string before validating / transferring.
+                            {col_num}, in deltabell {deltabell_name}""",
+                    ]
+        if categorycode_not_string:
+            logger.warning("Codes in data, outside codelist:")
+            logger.warning("\n".join(categorycode_not_string))
+            validation_errors["categorycode_outside"] = ValueError(
+                categorycode_not_string,
+            )
+        else:
+            logger.debug(
+                "All categorical columns are string, thats correct.",
+            )
+        return categorycode_not_string, validation_errors
+
     def _category_code_usage(
         self,
         data: dict[str, pd.DataFrame],
@@ -315,7 +343,8 @@ class StatbankUttrekkValidators:
 
         for deltabell_name, variabel in check_codes.items():
             for col_num, codelist in variabel.items():
-                col_unique = data[deltabell_name].iloc[:, int(col_num) - 1].unique()
+                col = data[deltabell_name].iloc[:, int(col_num) - 1]
+                col_unique = col.unique()
                 for kod in col_unique:
                     if kod not in codelist and " " in kod:
                         categorycode_outside += [
@@ -353,7 +382,7 @@ class StatbankUttrekkValidators:
             logger.info("\n".join(categorycode_missing))
         else:
             logger.debug("No codes missing from categorical columns.")
-        return categorycode_outside, categorycode_missing, validation_errors
+        return validation_errors
 
     def _check_rounding(
         self,

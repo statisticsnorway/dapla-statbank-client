@@ -226,11 +226,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             data,
             validation_errors,
         )
-        (
-            categorycode_outside,
-            categorycode_missing,
-            validation_errors,
-        ) = self._category_code_usage(data, validation_errors)
+        validation_errors = self._category_columns_are_strings(data, validation_errors)
+        validation_errors = self._category_code_usage(data, validation_errors)
         validation_errors = self._check_for_floats(data, validation_errors)
         validation_errors = self._check_for_literal_nans_in_strings(
             data,

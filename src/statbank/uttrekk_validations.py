@@ -181,10 +181,12 @@ class StatbankUttrekkValidators:
                     "Kodeliste_text",
                     "",
                 ):
-                    found = []
+                    found: list[str] = []
                     col_num = int(variabel["kolonnenummer"]) - 1
                     for del_data in data.values():
-                        unique_times = del_data.iloc[:, col_num].unique()
+                        unique_times = [
+                            str(x) for x in del_data.iloc[:, col_num].unique()
+                        ]
                         if found == []:
                             found = unique_times
                         else:
@@ -343,7 +345,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> tuple[list[str], dict[str, ValueError]]:
+    ) -> dict[str, ValueError]:
         categorycode_not_string = []
         check_codes = self._get_check_codes()
         for deltabell_name, variabel in check_codes.items():
@@ -371,7 +373,7 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-    ) -> tuple[list[str], list[str], dict[str, ValueError]]:
+    ) -> dict[str, ValueError]:
         categorycode_outside = []
         categorycode_missing = []
 

@@ -16,8 +16,8 @@ jobs:
       matrix:
         include:
           - { python: "3.10", os: "ubuntu-latest", session: "pre-commit" }
-          - { python: "3.11", os: "ubuntu-latest", session: "mypy src" }
-          - { python: "3.10", os: "ubuntu-latest", session: "mypy src" }
+          - { python: "3.11", os: "ubuntu-latest", session: "mypy"}
+          - { python: "3.10", os: "ubuntu-latest", session: "mypy"}
           - { python: "3.11", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.10", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.11", os: "windows-latest", session: "tests", m: "not_integration_dapla"}

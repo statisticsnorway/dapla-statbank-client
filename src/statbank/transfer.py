@@ -134,7 +134,7 @@ class StatbankTransfer(StatbankAuth):
         Will only work if the transfer has not already been sent, meaning it was "delayed".
 
         Args:
-            headers (dict[str, str]): Mostly for internal use by the package.
+            headers (dict[str, str] | None): Mostly for internal use by the package.
                 Needs to be a finished compiled headers for a request including Authorization.
         """
         # In case transfer has already happened, dont transfer again

@@ -30,7 +30,7 @@ def apidata(
 
     Args:
         id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-        payload (QueryWholeType): a dict in the shape of a QueryWhole, to include with the request, can be copied from the statbank-webpage.
+        payload (QueryWholeType | None): a dict in the shape of a QueryWhole, to include with the request, can be copied from the statbank-webpage.
         include_id (bool): If you want to include "codes" in the dataframe, set this to True
 
     Returns:
@@ -101,7 +101,7 @@ def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
         id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
 
     Returns:
-        dict: The prepared query based on all the codes in the table.
+        QueryWholeType: The prepared query based on all the codes in the table.
     """
     if len(id_or_url) == STATBANK_TABLE_ID_LENGTH and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"

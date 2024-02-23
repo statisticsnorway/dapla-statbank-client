@@ -94,9 +94,9 @@ class StatbankUttrekkValidators:
                     Maybe with a .fillna("") before an .astype(str) """
                     nan_len = len(string_df[string_df[col].str.lower().isin(nans)])
                     if nan_len:
-                        validation_errors[
-                            f"contains_string_nans_{name}_{col}"
-                        ] = ValueError(error_text)
+                        validation_errors[f"contains_string_nans_{name}_{col}"] = (
+                            ValueError(error_text)
+                        )
                         logger.warning(error_text)
             if len(cat_df.columns):
                 for col in cat_df.columns:
@@ -259,10 +259,10 @@ class StatbankUttrekkValidators:
         if specials:
             for i, special in specials.items():
                 if not all(data[deltabell_name].iloc[:, col_num].str[i] == special):
-                    validation_errors[
-                        f"special_character_match_column{col_num}"
-                    ] = ValueError(
-                        f"Should be the special character {special}, character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}",
+                    validation_errors[f"special_character_match_column{col_num}"] = (
+                        ValueError(
+                            f"Should be the special character {special}, character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}",
+                        )
                     )
         return validation_errors
 
@@ -487,8 +487,8 @@ class StatbankUttrekkValidators:
                     data = uttrekksbeskrivelse.round_data(data),
                 this rounds UP like SAS and Excel, not to-even as
                 Python does otherwise."""
-                    validation_errors[
-                        f"rounding_error_{deltabell_name}_{col_num}"
-                    ] = ValueError(error_text)
+                    validation_errors[f"rounding_error_{deltabell_name}_{col_num}"] = (
+                        ValueError(error_text)
+                    )
                     logger.warning(error_text)
         return validation_errors

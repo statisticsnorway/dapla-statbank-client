@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from __future__ import annotations
 
 import copy
@@ -213,7 +212,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise_errors (bool): True/False based on if you want the method to raise its own errors or not.
 
         Returns:
-            dict[str, Exception]: A dictionary of the errors the validation wants to raise.
+            dict[str, ValueError]: A dictionary of the errors the validation wants to raise.
+
+        Raises:
+            StatbankValidateError: if raise_errors is set to True and there are validation errors.
         """
         if not raise_errors:
             raise_errors = self.raise_errors
@@ -378,9 +380,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                     new_kodeliste[kode["kode"]] = kode["text"]
                 self.codelists[kodeliste["kodeliste"]] = {"koder": new_kodeliste}
                 if "SumIALtTotalKode" in kodeliste:
-                    self.codelists[kodeliste["kodeliste"]][
-                        "SumIALtTotalKode"
-                    ] = kodeliste["SumIALtTotalKode"]
+                    self.codelists[kodeliste["kodeliste"]]["SumIALtTotalKode"] = (
+                        kodeliste["SumIALtTotalKode"]
+                    )
 
         if "null_prikk_missing_kodeliste" in self.filbeskrivelse:
             self.suppression = self.filbeskrivelse["null_prikk_missing_kodeliste"]

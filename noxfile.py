@@ -196,7 +196,7 @@ def typeguard(session: Session) -> None:
         f"--typeguard-packages={package}",
         *session.posargs,
         "-m",
-        '"not integration_dapla"',
+        "not integration_dapla",
     )
 
 

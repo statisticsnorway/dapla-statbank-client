@@ -14,9 +14,9 @@ class ColoredFormatter(logging.Formatter):
 
     def __init__(
         self,
-        *args: str | bool | dict[str, Any],
+        *args: Any,  # noqa: ANN401
         colors: dict[str, str] | None = None,
-        **kwargs: str | bool | dict[str, Any],
+        **kwargs: Any,  # noqa: ANN401
     ) -> None:
         """Initialize the formatter with specified format strings."""
         super().__init__(*args, **kwargs)
@@ -32,19 +32,19 @@ class ColoredFormatter(logging.Formatter):
 
 
 formatter = ColoredFormatter(
-    "{color} {levelname:8} {reset}| {name} | {message}",
+    "{color} {levelname:8} {reset}| {message}",
     style="{",
     colors={
         "DEBUG": Fore.CYAN,
         "INFO": Fore.GREEN,
-        "WARNING": Fore.YELLOW,
+        "WARNING": Fore.MAGENTA,
         "ERROR": Fore.RED,
         "CRITICAL": Fore.RED + Back.WHITE + Style.BRIGHT,
     },
 )
 handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(formatter)
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.handlers[:] = []
 logger.addHandler(handler)
+logger.setLevel(logging.INFO)

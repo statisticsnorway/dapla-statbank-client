@@ -193,10 +193,10 @@ def typeguard(session: Session) -> None:
     session.install("pytest", "typeguard", "pygments")
     session.run(
         "pytest",
-        f"--typeguard-packages={package}",
-        *session.posargs,
         "-m",
         "not integration_dapla",
+        f"--typeguard-packages={package}",
+        *session.posargs,
     )
 
 

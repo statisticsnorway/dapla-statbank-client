@@ -49,10 +49,6 @@ class StatbankAuth:
 
         Returns:
             str: "DAPLA" if on dapla, "PROD" if you are in prodsone.
-
-        Raises:
-            OSError: If no indications match, dapla/prod may have changed (please report)
-                Or you are using the function outside of dapla/prod on purpose?
         """
         return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
 

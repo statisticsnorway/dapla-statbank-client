@@ -233,10 +233,15 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             data,
             validation_errors,
         )
+        validation_errors = self._check_statistikkvar_numerical(data, validation_errors)
         validation_errors = self._check_rounding(data, validation_errors)
+        validation_errors = self._check_time_same_values_in_deltabeller(
+            data,
+            validation_errors,
+        )
         validation_errors = self._check_time_formats(data, validation_errors)
         validation_errors = self._check_suppression(data, validation_errors)
-        validation_errors = self._check_unique_combinations_categories(
+        validation_errors = self._check_unique_combinations_categories_times(
             data,
             validation_errors,
         )

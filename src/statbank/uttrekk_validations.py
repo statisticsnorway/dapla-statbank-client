@@ -168,6 +168,42 @@ class StatbankUttrekkValidators:
 
         return validation_errors
 
+    def _check_time_same_values_in_deltabeller(
+        self,
+        data: dict[str, pd.DataFrame],
+        validation_errors: dict[str, ValueError],
+    ) -> dict[str, ValueError]:
+        # Time-columns should have same values in all deltabeller
+
+        for deltabell in self.variables:
+            for variabel in deltabell["variabler"]:
+                if "Kodeliste_text" in variabel and "format = " in variabel.get(
+                    "Kodeliste_text",
+                    "",
+                ):
+                    found = []
+                    col_num = int(variabel["kolonnenummer"]) - 1
+                    for del_data in data.values():
+                        unique_times = del_data.iloc[:, col_num].unique()
+                        if found == []:
+                            found = unique_times
+                        else:
+                            times_missing = [x for x in found if x not in unique_times]
+                            times_extra = [x for x in unique_times if x not in found]
+                            if times_missing:
+                                validation_errors[
+                                    f"time_missing_in_deltabell_{deltabell['deltabell']}"
+                                ] = ValueError(
+                                    f"""Time(s) {times_missing} missing in deltabell {deltabell['deltabell']}""",
+                                )
+                            if times_extra:
+                                validation_errors[
+                                    f"time_extra_in_deltabell_{deltabell['deltabell']}"
+                                ] = ValueError(
+                                    f"""Time(s) {times_extra} extra in deltabell {deltabell['deltabell']}""",
+                                )
+        return validation_errors
+
     def _check_time_columns(
         self,
         deltabell_name: str,
@@ -261,7 +297,7 @@ class StatbankUttrekkValidators:
 
         return validation_errors
 
-    def _check_unique_combinations_categories(
+    def _check_unique_combinations_categories_times(
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
@@ -274,12 +310,12 @@ class StatbankUttrekkValidators:
             df_colcheck = data[deltabell["deltabell"]].iloc[:, category_col_nums]
             if df_colcheck.duplicated().any():
                 validation_errors[
-                    f"duplicate_categorical_groups_{deltabell['deltabell']}"
+                    f"duplicate_categorical_time_groups_{deltabell['deltabell']}"
                 ] = ValueError(
                     f"There seems to be duplicate rows across the categorical values (including time) in deltabell {deltabell['deltabell']}.",
                 )
         for k in validation_errors:
-            if "duplicate_categorical_groups" in k:
+            if "duplicate_categorical_time_groups" in k:
                 break
         else:
             logger.debug(
@@ -313,7 +349,7 @@ class StatbankUttrekkValidators:
         for deltabell_name, variabel in check_codes.items():
             for col_num in variabel:
                 col = data[deltabell_name].iloc[:, int(col_num) - 1]
-                if pd.api.types.is_string_dtype(col):
+                if not pd.api.types.is_string_dtype(col):
                     categorycode_not_string += [
                         f"""{col_num} is a categorical column, but is not a string columns?
                             Convert the column to string before validating / transferring.
@@ -329,7 +365,7 @@ class StatbankUttrekkValidators:
             logger.debug(
                 "All categorical columns are string, thats correct.",
             )
-        return categorycode_not_string, validation_errors
+        return validation_errors
 
     def _category_code_usage(
         self,
@@ -382,6 +418,27 @@ class StatbankUttrekkValidators:
             logger.info("\n".join(categorycode_missing))
         else:
             logger.debug("No codes missing from categorical columns.")
+        return validation_errors
+
+    def _check_statistikkvar_numerical(
+        self,
+        data: dict[str, pd.DataFrame],
+        validation_errors: dict[str, ValueError],
+    ) -> dict[str, ValueError]:
+        for deltabell in self.variables:
+            deltabell_name = deltabell["deltabell"]
+            for variabel in deltabell["statistikkvariabler"]:
+                col_num = int(variabel["kolonnenummer"]) - 1
+                col = data[deltabell_name].iloc[:, col_num].copy()
+                # Check if can be converted to float and int
+                try:
+                    if pd.api.types.is_string_dtype(col):
+                        col = col.str.replace(",", ".", regex=False)
+                    col.astype("Float64")
+                except ValueError as e:
+                    validation_errors[
+                        f"statistikkvar_not_numerical_column{col_num}"
+                    ] = ValueError(e)
         return validation_errors
 
     def _check_rounding(

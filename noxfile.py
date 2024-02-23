@@ -165,6 +165,8 @@ def tests(session: Session) -> None:
             "-o",
             "pythonpath=",
             *session.posargs,
+            "-m",
+            "not integration_dapla",
         )
     finally:
         if session.interactive:

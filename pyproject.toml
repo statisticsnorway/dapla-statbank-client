@@ -68,6 +68,7 @@ tests = ["tests", "*/tests"]
 branch = true
 source = ["statbank", "tests"]
 omit = ["*api_types.py"]
+relative_files = true
 
 [tool.coverage.report]
 show_missing = true

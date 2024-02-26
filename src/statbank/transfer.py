@@ -68,7 +68,7 @@ class StatbankTransfer(StatbankAuth):
         tableid: str = "",
         loaduser: str = "",
         shortuser: str = "",
-        date: dt | None = None,
+        date: dt | str | None = None,
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
@@ -106,8 +106,8 @@ class StatbankTransfer(StatbankAuth):
         # At this point we want date to be a string?
         if date is None:
             date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
-        if isinstance(date, str):  # type: ignore[unreachable]
-            self.date: str = date  # type: ignore[unreachable]
+        if isinstance(date, str):
+            self.date: str = date
         else:
             self.date = date.strftime("%Y-%m-%d")
 

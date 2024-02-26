@@ -68,7 +68,7 @@ class StatbankClient(StatbankAuth):
     def __init__(  # noqa: PLR0913
         self,
         loaduser: str = "",
-        date: dt.datetime = TOMORROW,
+        date: str | dt.datetime = TOMORROW,
         shortuser: str = "",
         cc: str = "",
         bcc: str = "",
@@ -87,8 +87,10 @@ class StatbankClient(StatbankAuth):
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log: list[str] = []
-        if isinstance(date, str):  # type: ignore[unreachable]
-            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)  # type: ignore[unreachable]
+        if isinstance(date, str):
+            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
+                OSLO_TIMEZONE,
+            )
         else:
             self.date = date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
@@ -156,7 +158,7 @@ class StatbankClient(StatbankAuth):
         display(datepicker)  # type: ignore[no-untyped-call]
         return datepicker
 
-    def set_publish_date(self, date: dt.datetime) -> None:
+    def set_publish_date(self, date: dt.datetime | str | widgets.DatePicker) -> None:
         """Set the publishing date on the client.
 
         Takes the widget from date_picker assigned to a variable, which is probably the intended use.
@@ -165,13 +167,24 @@ class StatbankClient(StatbankAuth):
 
         Args:
             date (datetime): date-picker widget, or a date-string formatted as 2000-12-31
+
+        Raises:
+            TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
         """
-        if isinstance(date, widgets.widget_date.DatePicker):
-            self.date = date.value
-        elif isinstance(date, str):  # type: ignore[unreachable]
-            self.date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)  # type: ignore[unreachable]
+        if isinstance(date, widgets.DatePicker):
+            date_date: dt.datetime = dt.datetime.combine(
+                date.value.today(),
+                dt.datetime.min.time(),
+            )
+        elif isinstance(date, str):
+            date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
+        elif isinstance(date, dt.datetime):
+            date_date = date
         else:
-            self.date = date
+            error_msg = f"date-parameter is of type {type(date)} must be a string, datetime, or ipywidgets.DatePicker"
+            raise TypeError(error_msg)
+
+        self.date = date_date
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         logger.info("Publishing date set to: %s", self.date)

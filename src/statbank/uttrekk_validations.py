@@ -455,7 +455,7 @@ class StatbankUttrekkValidators:
                 col_num = int(variabel["kolonnenummer"]) - 1
                 decimal_num = int(variabel["Antall_lagrede_desimaler"])
                 error = False
-                column: pd.Series[str] = (
+                column = (
                     data[deltabell_name]
                     .iloc[:, col_num]
                     .copy()

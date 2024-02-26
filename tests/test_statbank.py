@@ -11,6 +11,7 @@ import ipywidgets as widgets
 import pandas as pd
 import pytest
 import requests
+from typeguard import suppress_type_checks
 
 from statbank import StatbankClient
 from statbank.globals import OSLO_TIMEZONE
@@ -195,6 +196,7 @@ def test_str_transfer_on_delay_and_after(
     assert "Ikke overført enda" not in trans.__str__()
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
 @mock.patch.object(StatbankTransfer, "_build_user_agent")
@@ -210,6 +212,7 @@ def test_transfer_overwrite_wrong_format(
         StatbankTransfer(fake_data(), "10000", fake_user(), overwrite=1)
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
 @mock.patch.object(StatbankTransfer, "_build_user_agent")
@@ -269,6 +272,7 @@ def client_fake(test_build_user_agent: Callable, encrypt_fake: Callable):
     return StatbankClient(fake_user(), check_username_password=False)
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_no_loaduser_set(
@@ -281,6 +285,7 @@ def test_client_no_loaduser_set(
         StatbankClient(1, check_username_password=False)
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_approve_wrong_datatype(
@@ -293,6 +298,7 @@ def test_client_approve_wrong_datatype(
         StatbankClient(fake_user(), approve="1", check_username_password=False)
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_overwrite_wrong_datatype(
@@ -337,8 +343,12 @@ def test_client_set_date_str(client_fake: StatbankClient):
     assert "Date set to " in client_fake.log[-1]
 
 
+@suppress_type_checks
 def test_client_set_date_int_raises(client_fake: StatbankClient):
-    with pytest.raises(AttributeError, match="object has no attribute") as _:
+    with pytest.raises(
+        TypeError,
+        match="must be a string, datetime, or ipywidgets.DatePicker",
+    ) as _:
         client_fake.set_publish_date(1)
 
 
@@ -389,11 +399,13 @@ def test_client_validate_no_errors(
     assert not len(errors)
 
 
+@suppress_type_checks
 def test_client_get_uttrekk_tableid_non_string(client_fake: StatbankClient):
     with pytest.raises(TypeError, match="not a string") as _:
         client_fake.get_description(10000)
 
 
+@suppress_type_checks
 def test_client_get_uttrekk_tableid_wrong_length(client_fake: StatbankClient):
     with pytest.raises(ValueError, match="is numeric, but not") as _:
         client_fake.get_description("1")

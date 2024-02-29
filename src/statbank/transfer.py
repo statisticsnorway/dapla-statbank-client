@@ -16,7 +16,7 @@ import requests as r
 from statbank.auth import StatbankAuth
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
     from statbank.api_types import TransferResultType

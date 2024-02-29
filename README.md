@@ -157,6 +157,17 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 
 ---
 
+
+## The logger
+Statbank-package makes its own logger using the python logging package. The logger is available at `statbank.logger`.
+A lot of the validations are logged as the level "info", if they seem ok, but on the level "warning" if things seem not ok. The levels are colorized with colorama, green for Info, magenta for warning.
+If you dont want to see the info-parts of the validate-method, you can change the loggers level before calling validate, like this:
+```python
+import statbank
+import logging
+statbank.logger.setLevel(logging.WARNING)
+```
+
 ## Version history
 - 1.1.0 Migrating to "new template" for Pypi-packages at SSB, with full typing support, a reference website, logging instead of print etc.
 - 1.0.6 fixing new functionality on "IRkodelister"

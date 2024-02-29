@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 import pandas as pd
 
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 
 
 class StatbankValidateError(Exception):

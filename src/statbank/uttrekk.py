@@ -23,7 +23,7 @@ import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 from statbank.uttrekk_validations import StatbankUttrekkValidators
 from statbank.uttrekk_validations import StatbankValidateError
 

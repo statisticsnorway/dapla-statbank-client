@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
 
 
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 
 # Getting data from Statbank
 

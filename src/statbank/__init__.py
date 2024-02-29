@@ -14,7 +14,7 @@ from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
 from statbank.client import StatbankClient
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 
 __all__ = ["StatbankClient", "apidata", "apidata_all", "apidata_rotate"]
 

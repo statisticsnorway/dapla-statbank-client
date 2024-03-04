@@ -224,7 +224,7 @@ class StatbankUttrekkValidators:
 
     @staticmethod
     def _check_time_same_values_in_deltabeller_data(
-        deltabell: list[DelTabellType],
+        deltabell: DelTabellType,
         variabel: KolonneVariabelType,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],

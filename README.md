@@ -145,7 +145,11 @@ stat_client.set_publish_date(date)
 
 ## Saving and restoring Uttrekksbeskrivelser and Transfers as json
 
-From `stat_client.transfer()` you will recieve a StatbankTransfer object, from `stat_client.get_description` a StatbankUttrekksBeskrivelse-object. These can be serialized and saved to disk, and later be restored, maybe this can be a form of logging on which transfers were done? This is also a way of having one notebook get all the descriptions, then have a notebook for each table, which can actually run .validate, withoug setting up a client with username and password. Then have another notebook that sends all the tabels, which requires username and password...
+From `stat_client.transfer()` you will recieve a StatbankTransfer object, from `stat_client.get_description()` a StatbankUttrekksBeskrivelse-object. These can be serialized and saved to disk, and later be restored, maybe this can be a form of logging on which transfers were done?
+This can also be used to:
+1. have one notebook get all the descriptions of all tables produced from the pipeline (requires password).
+1. then have a notebook for each table, restoring the description from the local jsos, which can actually run .validate (without typing in password).
+1. then have a notebook at the end, that sends all the tables (requiring password-entry a second time).
 
 ```python
 filbesk_06339 = stat_client.get_description("06339")
@@ -160,8 +164,9 @@ Some deeper data-structures, like the dataframes in the transfer will not be ser
 
 ## The logger
 Statbank-package makes its own logger using the python logging package. The logger is available at `statbank.logger`.
-A lot of the validations are logged as the level "info", if they seem ok, but on the level "warning" if things seem not ok. The levels are colorized with colorama, green for Info, magenta for warning.
-If you dont want to see the info-parts of the validate-method, you can change the loggers level before calling validate, like this:
+A lot of the validations are logged as the level "info", if they seem ok.
+Or on the level "warning" if things are not ok. The levels are colorized with colorama, green for INFO, magenta for WARNING.
+If you *dont* want to see the info-parts of the validate-method, you can change the loggers level before calling validate, like this:
 ```python
 import statbank
 import logging

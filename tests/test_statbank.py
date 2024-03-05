@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 from unittest import mock
@@ -12,6 +13,9 @@ import pandas as pd
 import pytest
 import requests
 from typeguard import suppress_type_checks
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from statbank import StatbankClient
 from statbank.globals import OSLO_TIMEZONE
@@ -537,15 +541,20 @@ def search__dict__(
     searchterm: str,
     keep: dict[str, str],
     path: str = "root",
+    seen: Sequence[Any] | None = None,
 ):
     """Recursive search through all nested objects having a __dict__-attribute."""
     if keep is None:
         keep = {}
-    if hasattr(obj, "__dict__"):
+    if seen is None:
+        seen = []
+
+    if hasattr(obj, "__dict__") and not any(obj is seen_obj for seen_obj in seen):
+        seen.append(obj)
         for key, elem in obj.__dict__.items():
             if hasattr(elem, "__dict__"):
                 path = path + "/" + key
-                keep = search__dict__(elem, searchterm, path=path, keep=keep)
+                keep = search__dict__(elem, searchterm, path=path, keep=keep, seen=seen)
             if (
                 searchterm.lower() in str(elem).lower()
                 or searchterm.lower() in str(key).lower()

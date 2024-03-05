@@ -24,6 +24,7 @@ from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
+from statbank.globals import Approve
 from statbank.statbank_logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
@@ -56,7 +57,7 @@ class StatbankClient(StatbankAuth):
             Defaults to the same as "cc"
         overwrite (bool): False = no overwrite
             True = overwrite
-        approve (int): 0 = manual approval
+        approve (Approve): 0 = manual approval
             1 = automatic approval at transfer-time (immediately)
             2 = JIT (Just In Time), approval right before publishing time
         log (list[str]): Each "action" (method used) on the client is appended to the log.
@@ -73,7 +74,7 @@ class StatbankClient(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: int = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
+        approve: Approve = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
@@ -419,8 +420,8 @@ class StatbankClient(StatbankAuth):
         if not isinstance(self.overwrite, bool):
             error_msg = "(Bool) Set overwrite to either False = no overwrite (dublicates give errors), or  True = automatic overwrite"  # type: ignore[unreachable]
             raise TypeError(error_msg)
-        if not isinstance(self.approve, int) or self.approve not in [0, 1, 2]:
-            error_msg = "(Int) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
+        if not isinstance(self.approve, int) or self.approve not in iter(Approve):
+            error_msg = "(Approve) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
             raise ValueError(error_msg)
 
     @staticmethod

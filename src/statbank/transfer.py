@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import gc
 import json
 import math
@@ -17,21 +16,11 @@ import requests as r
 from statbank.auth import StatbankAuth
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
+from statbank.globals import Approve
 from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
     from statbank.api_types import TransferResultType
-
-
-class Approve(enum.IntEnum):
-    """Enum for approval codes."""
-
-    MANUAL = 0
-    """Manual approval."""
-    AUTOMATIC = 1
-    """Automatic approval at transfer-time (immediately)."""
-    JIT = 2
-    """Just in time approval right before publishing time."""
 
 
 class StatbankTransfer(StatbankAuth):

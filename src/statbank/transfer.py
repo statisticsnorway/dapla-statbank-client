@@ -16,7 +16,7 @@ import requests as r
 from statbank.auth import StatbankAuth
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
-from statbank.logger import logger
+from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
     from statbank.api_types import TransferResultType
@@ -62,7 +62,7 @@ class StatbankTransfer(StatbankAuth):
         response (requests.Response): The resulting response from the transfer-request. Headers might be deleted without warning.
     """
 
-    def __init__(  # noqa: PLR0913, PLR0912
+    def __init__(  # noqa: PLR0913
         self,
         data: dict[str, pd.DataFrame],
         tableid: str = "",
@@ -81,36 +81,10 @@ class StatbankTransfer(StatbankAuth):
 
         May run the validations from the StatbankValidation class before the transfer.
         """
+        self._set_user_attrs(loaduser=loaduser, shortuser=shortuser, cc=cc, bcc=bcc)
+        self._set_date(date=date)
         self.data = data
         self.tableid = tableid
-
-        if isinstance(loaduser, str) and loaduser != "":
-            self.loaduser = loaduser
-        else:
-            error_msg = "You must set loaduser as a parameter"
-            raise ValueError(error_msg)
-
-        if shortuser:
-            self.shortuser = shortuser
-        else:
-            self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
-        if cc:
-            self.cc = cc
-        else:
-            self.cc = self.shortuser
-        if bcc:
-            self.bcc = bcc
-        else:
-            self.bcc = self.cc
-
-        # At this point we want date to be a string?
-        if date is None:
-            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
-        if isinstance(date, str):
-            self.date: str = date
-        else:
-            self.date = date.strftime("%Y-%m-%d")
-
         self.overwrite = overwrite
         self.approve = approve
         self.validation = validation
@@ -178,6 +152,41 @@ class StatbankTransfer(StatbankAuth):
     def delay(self) -> bool:
         """Obfuscate the delay a bit from the user. We dont want transfers transferring again without recreating the object."""
         return self.__delay
+
+    def _set_user_attrs(
+        self,
+        loaduser: str = "",
+        shortuser: str = "",
+        cc: str = "",
+        bcc: str = "",
+    ) -> None:
+        if isinstance(loaduser, str) and loaduser != "":
+            self.loaduser = loaduser
+        else:
+            error_msg = "You must set loaduser as a parameter"
+            raise ValueError(error_msg)
+
+        if shortuser:
+            self.shortuser = shortuser
+        else:
+            self.shortuser = os.environ["JUPYTERHUB_USER"].split("@")[0]
+        if cc:
+            self.cc = cc
+        else:
+            self.cc = self.shortuser
+        if bcc:
+            self.bcc = bcc
+        else:
+            self.bcc = self.cc
+
+    def _set_date(self, date: dt | str | None = None) -> None:
+        # At this point we want date to be a string?
+        if date is None:
+            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
+        if isinstance(date, str):
+            self.date: str = date
+        else:
+            self.date = date.strftime("%Y-%m-%d")
 
     def to_json(self, path: str = "") -> str | None:
         """Store a copy of the current state of the transfer-object as a json.

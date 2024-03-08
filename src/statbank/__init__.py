@@ -6,7 +6,9 @@ Used internally by SSB (Statistics Norway).
 from __future__ import annotations
 
 import datetime as dt
+
 import importlib
+import importlib.metadata  # Needed even with whole import over
 
 import toml
 

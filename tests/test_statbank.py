@@ -12,6 +12,7 @@ import ipywidgets as widgets
 import pandas as pd
 import pytest
 import requests
+import requests.cookies
 from typeguard import suppress_type_checks
 
 if TYPE_CHECKING:
@@ -536,6 +537,17 @@ def test_transfer_no_auth_residuals(transfer_success: StatbankTransfer):
     assert len(search__dict__(transfer_success, fake_auth(), keep={})) == 0
 
 
+def test_transfer_has_auth_residuals(transfer_success: StatbankTransfer):
+    """Checks that auth information is actually detected."""
+    response = fake_post_response_transfer_successful()
+    response.cookies = requests.cookies.cookiejar_from_dict({"password": fake_pass()})
+    transfer_success.response = response
+
+    # Make sure none of these are in the object for security
+    assert len(search__dict__(transfer_success, fake_pass(), keep={})) >= 1
+    assert len(search__dict__(transfer_success, fake_auth(), keep={})) >= 1
+
+
 def search__dict__(
     obj: dict[str, Any],
     searchterm: str,
@@ -551,7 +563,7 @@ def search__dict__(
 
     if hasattr(obj, "__dict__") and not any(obj is seen_obj for seen_obj in seen):
         seen.append(obj)
-        for key, elem in obj.__dict__.items():
+        for key, elem in vars(obj).items():
             if hasattr(elem, "__dict__"):
                 path = path + "/" + key
                 keep = search__dict__(elem, searchterm, path=path, keep=keep, seen=seen)

@@ -232,6 +232,7 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
         """
+        content = json_path_or_str
         try:
             try_path = json_path_or_str
             if Path(try_path).exists():
@@ -242,7 +243,6 @@ class StatbankClient(StatbankAuth):
                 "Assuming you sent a json-string to open as description, cause that path does not exist. %s",
                 str(e),
             )
-            content = json_path_or_str
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
         for k, v in json.loads(content).items():
             setattr(new, k, v)
@@ -327,6 +327,7 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankTransfer: An instance of the class StatbankTransfer, missing the data transferred and some other bits probably.
         """
+        content = json_path_or_str
         try:
             try_path = json_path_or_str
             if Path(try_path).exists():
@@ -337,7 +338,6 @@ class StatbankClient(StatbankAuth):
                 "Assuming you sent a json-string to open as transfer, cause that path does not exist. %s",
                 str(e),
             )
-            content = json_path_or_str
         new = StatbankTransfer.__new__(StatbankTransfer)
         for k, v in json.loads(content).items():
             setattr(new, k, v)

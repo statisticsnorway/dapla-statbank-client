@@ -293,17 +293,14 @@ def test_client_set_approve_overwrite(
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    return StatbankClient(
+    client = StatbankClient(
         fake_user(),
         check_username_password=False,
         overwrite=False,
         approve=1,
     )
-
-
-def test_repr_overwrite_approve(test_client_set_approve_overwrite: StatbankClient):
-    assert "overwrite" in test_client_set_approve_overwrite.__repr__()
-    assert "approve" in test_client_set_approve_overwrite.__repr__()
+    assert "overwrite" in client.__repr__()
+    assert "approve" in client.__repr__()
 
 
 @suppress_type_checks

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Callable
 from unittest import mock
@@ -11,7 +12,11 @@ import ipywidgets as widgets
 import pandas as pd
 import pytest
 import requests
+import requests.cookies
 from typeguard import suppress_type_checks
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 from statbank import StatbankClient
 from statbank.globals import OSLO_TIMEZONE
@@ -589,20 +594,36 @@ def test_transfer_no_auth_residuals(transfer_success: StatbankTransfer):
     assert len(search__dict__(transfer_success, fake_auth(), keep={})) == 0
 
 
+def test_transfer_has_auth_residuals(transfer_success: StatbankTransfer):
+    """Checks that auth information is actually detected."""
+    response = fake_post_response_transfer_successful()
+    response.cookies = requests.cookies.cookiejar_from_dict({"password": fake_pass()})
+    transfer_success.response = response
+
+    # Make sure we now find the inserted auth, verifying that search__dict__ is doing its job
+    assert len(search__dict__(transfer_success, fake_pass(), keep={})) >= 1
+    assert len(search__dict__(transfer_success, fake_auth(), keep={})) >= 1
+
+
 def search__dict__(
     obj: dict[str, Any],
     searchterm: str,
     keep: dict[str, str],
     path: str = "root",
+    seen: Sequence[Any] | None = None,
 ):
     """Recursive search through all nested objects having a __dict__-attribute."""
     if keep is None:
         keep = {}
-    if hasattr(obj, "__dict__"):
-        for key, elem in obj.__dict__.items():
+    if seen is None:
+        seen = []
+
+    if hasattr(obj, "__dict__") and not any(obj is seen_obj for seen_obj in seen):
+        seen.append(obj)
+        for key, elem in vars(obj).items():
             if hasattr(elem, "__dict__"):
                 path = path + "/" + key
-                keep = search__dict__(elem, searchterm, path=path, keep=keep)
+                keep = search__dict__(elem, searchterm, path=path, keep=keep, seen=seen)
             if (
                 searchterm.lower() in str(elem).lower()
                 or searchterm.lower() in str(key).lower()

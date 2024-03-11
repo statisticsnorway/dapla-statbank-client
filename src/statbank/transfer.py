@@ -16,6 +16,7 @@ import requests as r
 from statbank.auth import StatbankAuth
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
+from statbank.globals import Approve
 from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
@@ -43,7 +44,7 @@ class StatbankTransfer(StatbankAuth):
         overwrite (bool):
             - False = no overwrite
             - True = overwrite
-        approve (int):
+        approve (Approve):
             - 0 = manual approval
             - 1 = automatic approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
@@ -72,7 +73,7 @@ class StatbankTransfer(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: int = 1,
+        approve: Approve = Approve.MANUAL,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -114,7 +115,7 @@ class StatbankTransfer(StatbankAuth):
         Raises:
             ValueError: If the transfer is already transferred.
         """
-        # In case transfer has already happened, dont transfer again
+        # In case transfer has already happened, don't transfer again
         if self.oppdragsnummer:
             error_msg = f"Already transferred? {self.urls['gui'] + self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
             raise ValueError(error_msg)
@@ -229,7 +230,7 @@ class StatbankTransfer(StatbankAuth):
             error_msg = "(Bool) Sett overwrite til enten False = ingen overskriving (dubletter gir feil), eller  True = automatisk overskriving."  # type: ignore[unreachable]
             raise TypeError(error_msg)
 
-        if self.approve not in [0, 1, 2]:
+        if self.approve not in iter(Approve):
             error_msg = "(Integer) Sett approve til enten 0 = manuell, 1 = automatisk (umiddelbart), eller 2 = JIT-automatisk (just-in-time)"
             raise ValueError(error_msg)
 

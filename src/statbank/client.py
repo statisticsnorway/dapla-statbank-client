@@ -238,7 +238,10 @@ class StatbankClient(StatbankAuth):
                 with Path(try_path).open("r") as json_file:
                     content = json_file.read()
         except OSError as e:
-            logger.debug("Assuming you sent a json-string to open as description, cause that path does not exist. %s", str(e))
+            logger.debug(
+                "Assuming you sent a json-string to open as description, cause that path does not exist. %s",
+                str(e)
+            )
             content = json_path_or_str
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
         for k, v in json.loads(content).items():
@@ -330,7 +333,10 @@ class StatbankClient(StatbankAuth):
                 with Path(try_path).open("r") as json_file:
                     content = json_file.read()
         except OSError as e:
-            logger.debug("Assuming you sent a json-string to open as transfer, cause that path does not exist. %s", str(e))
+            logger.debug(
+                "Assuming you sent a json-string to open as transfer, cause that path does not exist. %s",
+                str(e)
+            )
             content = json_path_or_str
         new = StatbankTransfer.__new__(StatbankTransfer)
         for k, v in json.loads(content).items():

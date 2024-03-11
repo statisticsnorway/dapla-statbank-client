@@ -232,11 +232,19 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
         """
-        if Path(json_path_or_str).exists():
-            with Path(json_path_or_str).open("r") as json_file:
-                json_path_or_str = json_file.read()
+        try:
+            try_path = json_path_or_str
+            if Path(try_path).exists():
+                with Path(try_path).open("r") as json_file:
+                    content = json_file.read()
+        except OSError as e:
+            logger.debug(
+                "Assuming you sent a json-string to open as description, cause that path does not exist. %s",
+                str(e),
+            )
+            content = json_path_or_str
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
-        for k, v in json.loads(json_path_or_str).items():
+        for k, v in json.loads(content).items():
             setattr(new, k, v)
         return new
 
@@ -319,11 +327,19 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankTransfer: An instance of the class StatbankTransfer, missing the data transferred and some other bits probably.
         """
-        if Path(json_path_or_str).exists():
-            with Path(json_path_or_str).open("r") as json_file:
-                json_path_or_str = json_file.read()
+        try:
+            try_path = json_path_or_str
+            if Path(try_path).exists():
+                with Path(try_path).open("r") as json_file:
+                    content = json_file.read()
+        except OSError as e:
+            logger.debug(
+                "Assuming you sent a json-string to open as transfer, cause that path does not exist. %s",
+                str(e),
+            )
+            content = json_path_or_str
         new = StatbankTransfer.__new__(StatbankTransfer)
-        for k, v in json.loads(json_path_or_str).items():
+        for k, v in json.loads(content).items():
             setattr(new, k, v)
         return new
 

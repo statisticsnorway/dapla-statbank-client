@@ -285,6 +285,27 @@ def test_client_no_loaduser_set(
         StatbankClient(1, check_username_password=False)
 
 
+@mock.patch.object(StatbankClient, "_encrypt_request")
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_set_approve_overwrite(
+    test_build_user_agent: Callable,
+    encrypt_fake: Callable,
+):
+    encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    return StatbankClient(
+        fake_user(),
+        check_username_password=False,
+        overwrite=False,
+        approve=1,
+    )
+
+
+def test_repr_overwrite_approve(test_client_set_approve_overwrite: StatbankClient):
+    assert "overwrite" in test_client_set_approve_overwrite.__repr__()
+    assert "approve" in test_client_set_approve_overwrite.__repr__()
+
+
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_build_user_agent")
@@ -309,6 +330,19 @@ def test_client_overwrite_wrong_datatype(
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="overwrite") as _:
         StatbankClient(fake_user(), overwrite="1", check_username_password=False)
+
+
+@suppress_type_checks
+@mock.patch.object(StatbankClient, "_encrypt_request")
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_date_wrong_datatype(
+    test_build_user_agent: Callable,
+    encrypt_fake: Callable,
+):
+    encrypt_fake.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    with pytest.raises(TypeError, match="Date must be a datetime") as _:
+        StatbankClient(fake_user(), check_username_password=False, date=1)
 
 
 def test_client_print(client_fake: StatbankClient):
@@ -461,6 +495,19 @@ def test_uttrekk_json_write_read(
     assert len(test_uttrekk.codelists)
 
 
+def test_uttrekk_json_write_read_str(
+    uttrekksbeskrivelse_success: Callable,
+    client_fake: StatbankClient,
+):
+    json_file_path = "test_uttrekk.json"
+    uttrekksbeskrivelse_success.to_json(json_file_path)
+    with Path(json_file_path).open() as f:
+        content = f.read()
+    test_uttrekk = client_fake.read_description_json(content)
+    Path(json_file_path).unlink()
+    assert len(test_uttrekk.codelists)
+
+
 def test_transfer_json_write_read(
     transfer_success: StatbankTransfer,
     client_fake: StatbankClient,
@@ -468,6 +515,19 @@ def test_transfer_json_write_read(
     json_file_path = "test_transfer.json"
     transfer_success.to_json(json_file_path)
     test_transfer = client_fake.read_transfer_json(json_file_path)
+    Path(json_file_path).unlink()
+    assert test_transfer.oppdragsnummer.isdigit()
+
+
+def test_transfer_json_write_read_str(
+    transfer_success: StatbankTransfer,
+    client_fake: StatbankClient,
+):
+    json_file_path = "test_transfer.json"
+    transfer_success.to_json(json_file_path)
+    with Path(json_file_path).open() as f:
+        content = f.read()
+    test_transfer = client_fake.read_transfer_json(content)
     Path(json_file_path).unlink()
     assert test_transfer.oppdragsnummer.isdigit()
 

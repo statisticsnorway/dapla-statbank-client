@@ -93,8 +93,8 @@ class StatbankClient(StatbankAuth):
             )
         else:
             self.date = date
-        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
+        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         if self.check_username_password:
             self.get_description(
                 "05300",

@@ -543,7 +543,7 @@ def test_transfer_has_auth_residuals(transfer_success: StatbankTransfer):
     response.cookies = requests.cookies.cookiejar_from_dict({"password": fake_pass()})
     transfer_success.response = response
 
-    # Make sure none of these are in the object for security
+    # Make sure we now find the inserted auth, verifying that search__dict__ is doing its job
     assert len(search__dict__(transfer_success, fake_pass(), keep={})) >= 1
     assert len(search__dict__(transfer_success, fake_auth(), keep={})) >= 1
 

@@ -88,7 +88,7 @@ class StatbankTransfer(StatbankAuth):
         self.data = data
         self.tableid = tableid
         self.overwrite = overwrite
-        if isinstance(approve, int):
+        if isinstance(approve, int) and not isinstance(approve, Approve):
             self.approve: Approve = Approve(approve)
         elif isinstance(approve, str):
             self.approve = getattr(Approve, approve)

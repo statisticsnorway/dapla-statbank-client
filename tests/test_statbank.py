@@ -230,8 +230,8 @@ def test_transfer_approve_wrong_format(
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(ValueError, match="approve") as _:
-        StatbankTransfer(fake_data(), "10000", fake_user(), approve="1")
+    with pytest.raises(TypeError, match="approve") as _:
+        StatbankTransfer(fake_data(), "10000", fake_user(), approve={"1"})
 
 
 def test_repr_transfer(transfer_success: StatbankTransfer):

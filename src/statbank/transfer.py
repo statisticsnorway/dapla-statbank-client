@@ -90,10 +90,13 @@ class StatbankTransfer(StatbankAuth):
         self.overwrite = overwrite
         if isinstance(approve, int):
             self.approve: Approve = Approve(approve)
-        if isinstance(approve, str):
+        elif isinstance(approve, str):
             self.approve = getattr(Approve, approve)
-        else:
+        elif isinstance(approve, Approve):
             self.approve = approve
+        else:
+            error_msg = f"Dont know how to handle approve of type {type(approve)}"
+            raise TypeError(error_msg)
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""

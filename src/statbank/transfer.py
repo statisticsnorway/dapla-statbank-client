@@ -183,7 +183,7 @@ class StatbankTransfer(StatbankAuth):
     def _set_date(self, date: dt | str | None = None) -> None:
         # At this point we want date to be a string?
         if date is None:
-            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
+            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1, hours=1)
         if isinstance(date, str):
             self.date: str = date
         else:
@@ -325,7 +325,7 @@ class StatbankTransfer(StatbankAuth):
         publish_date = dt.strptime(
             response_msg.split("Publiseringsdato '")[1].split("',")[0],
             "%d.%m.%Y %H:%M:%S",
-        ).astimezone(OSLO_TIMEZONE)
+        ).astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)
         publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
         publish_minute = int(
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],

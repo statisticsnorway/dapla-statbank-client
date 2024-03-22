@@ -234,6 +234,38 @@ def test_transfer_approve_wrong_format(
         StatbankTransfer(fake_data(), "10000", fake_user(), approve={"1"})
 
 
+@suppress_type_checks
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
+def test_transfer_approve_int_intstr_str(
+    test_build_user_agent: Callable,
+    test_transfer_encrypt: Callable,
+    test_transfer_make_request: Callable,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve=1,
+    ).oppdragsnummer.isdigit()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve="1",
+    ).oppdragsnummer.isdigit()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve="MANUAL",
+    ).oppdragsnummer.isdigit()
+
+
 def test_repr_transfer(transfer_success: StatbankTransfer):
     assert "StatbankTransfer" in transfer_success.__repr__()
 

@@ -25,6 +25,7 @@ from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
+from statbank.globals import approve_type_check
 from statbank.statbank_logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
@@ -86,17 +87,7 @@ class StatbankClient(StatbankAuth):
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
-        if isinstance(approve, int) and not isinstance(approve, Approve):
-            self.approve: Approve = Approve(approve)
-        elif isinstance(approve, str) and approve.isdigit():
-            self.approve = Approve(int(approve))
-        elif isinstance(approve, str):
-            self.approve = getattr(Approve, approve)
-        elif isinstance(approve, Approve):
-            self.approve = approve
-        else:
-            error_msg = f"Dont know how to handle approve of type {type(approve)}"  # type: ignore[unreachable]
-            raise TypeError(error_msg)
+        self.approve = approve_type_check(approve)
         self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()

@@ -18,6 +18,7 @@ from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
 from statbank.globals import Approve
+from statbank.globals import _approve_type_check
 from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
@@ -88,17 +89,7 @@ class StatbankTransfer(StatbankAuth):
         self.data = data
         self.tableid = tableid
         self.overwrite = overwrite
-        if isinstance(approve, int) and not isinstance(approve, Approve):
-            self.approve: Approve = Approve(approve)
-        elif isinstance(approve, str) and approve.isdigit():
-            self.approve = Approve(int(approve))
-        elif isinstance(approve, str):
-            self.approve = getattr(Approve, approve)
-        elif isinstance(approve, Approve):
-            self.approve = approve
-        else:
-            error_msg = f"Dont know how to handle approve of type {type(approve)}"  # type: ignore[unreachable]
-            raise TypeError(error_msg)
+        self.approve = _approve_type_check(approve)
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""

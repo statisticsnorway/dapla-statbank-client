@@ -45,9 +45,9 @@ class StatbankTransfer(StatbankAuth):
         overwrite (bool):
             - False = no overwrite
             - True = overwrite
-        approve (Approve):
-            - 0 = manual approval
-            - 1 = automatic approval at transfer-time (immediately)
+        approve (Approve | str | int):
+            - 0 = MANUAL approval
+            - 1 = AUTOMATIC approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
         validation (bool):
             - True, if you want the python-validation code to run user-side.

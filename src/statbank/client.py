@@ -57,8 +57,9 @@ class StatbankClient(StatbankAuth):
             Defaults to the same as "cc"
         overwrite (bool): False = no overwrite
             True = overwrite
-        approve (Approve): 0 = manual approval
-            1 = automatic approval at transfer-time (immediately)
+        approve (Approve | str | int):
+            0 = MANUAL approval
+            1 = AUTOMATIC approval at transfer-time (immediately)
             2 = JIT (Just In Time), approval right before publishing time
         log (list[str]): Each "action" (method used) on the client is appended to the log.
             Nice to use for appending to your own logging after you are done,

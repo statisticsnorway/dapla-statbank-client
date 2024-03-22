@@ -14,6 +14,7 @@ import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
+from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
 from statbank.globals import Approve
@@ -73,7 +74,7 @@ class StatbankTransfer(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: Approve = Approve.MANUAL,
+        approve: int | str | Approve = APPROVE_DEFAULT_JIT,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -87,7 +88,12 @@ class StatbankTransfer(StatbankAuth):
         self.data = data
         self.tableid = tableid
         self.overwrite = overwrite
-        self.approve = approve
+        if isinstance(approve, int):
+            self.approve: Approve = Approve(approve)
+        if isinstance(approve, str):
+            self.approve = getattr(Approve, approve)
+        else:
+            self.approve = approve
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""
@@ -325,7 +331,7 @@ class StatbankTransfer(StatbankAuth):
         publish_date = dt.strptime(
             response_msg.split("Publiseringsdato '")[1].split("',")[0],
             "%d.%m.%Y %H:%M:%S",
-        ).astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)
+        ).astimezone(OSLO_TIMEZONE) + td(hours=1)
         publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
         publish_minute = int(
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],

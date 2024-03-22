@@ -74,7 +74,9 @@ class StatbankClient(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: Approve = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
+        approve: (
+            int | str | Approve
+        ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
@@ -83,7 +85,12 @@ class StatbankClient(StatbankAuth):
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
-        self.approve = approve
+        if isinstance(approve, int):
+            self.approve: Approve = Approve(approve)
+        if isinstance(approve, str):
+            self.approve = getattr(Approve, approve)
+        else:
+            self.approve = approve
         self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()

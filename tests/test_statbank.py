@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -390,7 +391,7 @@ def test_client_set_date_int_raises(client_fake: StatbankClient):
 
 def test_client_set_date_datetime(client_fake: StatbankClient):
     client_fake.set_publish_date(
-        datetime.now().astimezone(OSLO_TIMEZONE) + datetime.timedelta(hours=1),
+        datetime.now().astimezone(OSLO_TIMEZONE) + td(hours=1),
     )
     assert "Date set to " in client_fake.log[-1]
 

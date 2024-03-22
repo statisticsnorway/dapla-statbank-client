@@ -25,7 +25,7 @@ from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
-from statbank.globals import approve_type_check
+from statbank.globals import _approve_type_check
 from statbank.statbank_logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
@@ -87,7 +87,7 @@ class StatbankClient(StatbankAuth):
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
-        self.approve = approve_type_check(approve)
+        self.approve = _approve_type_check(approve)
         self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()

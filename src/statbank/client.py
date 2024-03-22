@@ -87,12 +87,14 @@ class StatbankClient(StatbankAuth):
         self.overwrite = overwrite
         if isinstance(approve, int) and not isinstance(approve, Approve):
             self.approve: Approve = Approve(approve)
+        elif isinstance(approve, str) and approve.isdigit():
+            self.approve = Approve(int(approve))
         elif isinstance(approve, str):
             self.approve = getattr(Approve, approve)
         elif isinstance(approve, Approve):
             self.approve = approve
         else:
-            error_msg = f"Dont know how to handle approve of type {type(approve)}"
+            error_msg = f"Dont know how to handle approve of type {type(approve)}"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         self.check_username_password = check_username_password
         self._validate_params_init()

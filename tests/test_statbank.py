@@ -318,7 +318,7 @@ def test_client_approve_wrong_datatype(
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(ValueError, match="approve") as _:
+    with pytest.raises(TypeError, match="handle approve") as _:
         StatbankClient(fake_user(), approve=[1], check_username_password=False)
 
 

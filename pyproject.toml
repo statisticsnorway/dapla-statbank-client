@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dapla-statbank-client"
-version = "1.1.0"
+version = "1.1.1"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 authors = ["Statistics Norway", "Carl F. Corneil <cfc@ssb.no>"]
 license = "MIT"

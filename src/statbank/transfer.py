@@ -14,9 +14,11 @@ import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
+from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
 from statbank.globals import Approve
+from statbank.globals import _approve_type_check
 from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
@@ -44,9 +46,9 @@ class StatbankTransfer(StatbankAuth):
         overwrite (bool):
             - False = no overwrite
             - True = overwrite
-        approve (Approve):
-            - 0 = manual approval
-            - 1 = automatic approval at transfer-time (immediately)
+        approve (Approve | str | int):
+            - 0 = MANUAL approval
+            - 1 = AUTOMATIC approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
         validation (bool):
             - True, if you want the python-validation code to run user-side.
@@ -73,7 +75,7 @@ class StatbankTransfer(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: Approve = Approve.MANUAL,
+        approve: int | str | Approve = APPROVE_DEFAULT_JIT,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -87,7 +89,7 @@ class StatbankTransfer(StatbankAuth):
         self.data = data
         self.tableid = tableid
         self.overwrite = overwrite
-        self.approve = approve
+        self.approve = _approve_type_check(approve)
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""
@@ -183,7 +185,7 @@ class StatbankTransfer(StatbankAuth):
     def _set_date(self, date: dt | str | None = None) -> None:
         # At this point we want date to be a string?
         if date is None:
-            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1)
+            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1, hours=1)
         if isinstance(date, str):
             self.date: str = date
         else:
@@ -325,7 +327,7 @@ class StatbankTransfer(StatbankAuth):
         publish_date = dt.strptime(
             response_msg.split("Publiseringsdato '")[1].split("',")[0],
             "%d.%m.%Y %H:%M:%S",
-        ).astimezone(OSLO_TIMEZONE)
+        ).astimezone(OSLO_TIMEZONE) + td(hours=1)
         publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
         publish_minute = int(
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],

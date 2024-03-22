@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
+from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -229,8 +230,40 @@ def test_transfer_approve_wrong_format(
     test_transfer_make_request.return_value = fake_post_response_transfer_successful()
     test_transfer_encrypt.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(ValueError, match="approve") as _:
-        StatbankTransfer(fake_data(), "10000", fake_user(), approve="1")
+    with pytest.raises(TypeError, match="approve") as _:
+        StatbankTransfer(fake_data(), "10000", fake_user(), approve={"1"})
+
+
+@suppress_type_checks
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
+def test_transfer_approve_int_intstr_str(
+    test_build_user_agent: Callable,
+    test_transfer_encrypt: Callable,
+    test_transfer_make_request: Callable,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve=1,
+    ).oppdragsnummer.isdigit()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve="1",
+    ).oppdragsnummer.isdigit()
+    assert StatbankTransfer(
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve="MANUAL",
+    ).oppdragsnummer.isdigit()
 
 
 def test_repr_transfer(transfer_success: StatbankTransfer):
@@ -317,8 +350,8 @@ def test_client_approve_wrong_datatype(
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(ValueError, match="approve") as _:
-        StatbankClient(fake_user(), approve="1", check_username_password=False)
+    with pytest.raises(TypeError, match="handle approve") as _:
+        StatbankClient(fake_user(), approve=[1], check_username_password=False)
 
 
 @suppress_type_checks
@@ -390,7 +423,7 @@ def test_client_set_date_int_raises(client_fake: StatbankClient):
 
 def test_client_set_date_datetime(client_fake: StatbankClient):
     client_fake.set_publish_date(
-        datetime.now().astimezone(OSLO_TIMEZONE),
+        datetime.now().astimezone(OSLO_TIMEZONE) + td(hours=1),
     )
     assert "Date set to " in client_fake.log[-1]
 

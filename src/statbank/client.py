@@ -25,6 +25,7 @@ from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
+from statbank.globals import _approve_type_check
 from statbank.statbank_logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
@@ -57,8 +58,9 @@ class StatbankClient(StatbankAuth):
             Defaults to the same as "cc"
         overwrite (bool): False = no overwrite
             True = overwrite
-        approve (Approve): 0 = manual approval
-            1 = automatic approval at transfer-time (immediately)
+        approve (Approve | str | int):
+            0 = MANUAL approval
+            1 = AUTOMATIC approval at transfer-time (immediately)
             2 = JIT (Just In Time), approval right before publishing time
         log (list[str]): Each "action" (method used) on the client is appended to the log.
             Nice to use for appending to your own logging after you are done,
@@ -74,7 +76,9 @@ class StatbankClient(StatbankAuth):
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
-        approve: Approve = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
+        approve: (
+            int | str | Approve
+        ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
@@ -83,7 +87,7 @@ class StatbankClient(StatbankAuth):
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
-        self.approve = approve
+        self.approve = _approve_type_check(approve)
         self.check_username_password = check_username_password
         self._validate_params_init()
         self.__headers = self._build_headers()
@@ -91,7 +95,9 @@ class StatbankClient(StatbankAuth):
         if isinstance(date, str):
             self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
                 OSLO_TIMEZONE,
-            )
+            ) + dt.timedelta(
+                hours=1,
+            )  # Compensate for setting the timezone, stop publishing date from moving
         else:
             self.date = date
         self._validate_date()
@@ -178,7 +184,9 @@ class StatbankClient(StatbankAuth):
                 dt.datetime.min.time(),
             )
         elif isinstance(date, str):
-            date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(OSLO_TIMEZONE)
+            date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
+                OSLO_TIMEZONE,
+            ) + dt.timedelta(hours=1)
         elif isinstance(date, dt.datetime):
             date_date = date
         else:
@@ -190,7 +198,7 @@ class StatbankClient(StatbankAuth):
         self._validate_date()
         logger.info("Publishing date set to: %s", self.date)
         self.log.append(
-            f"Date set to {self.date.isoformat('T', 'seconds')} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
+            f"Date set to {self.date.isoformat('T', 'seconds')} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
         )
 
     # Descriptions
@@ -211,7 +219,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Getting description for tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE,).isoformat('T', 'seconds')}",
+            f"Getting description for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE,) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
@@ -278,7 +286,7 @@ class StatbankClient(StatbankAuth):
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
-            f"Validated data for tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
+            f"Validated data for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
         )
         return validation_errors
 
@@ -300,7 +308,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Transferring tableid {tableid} at {dt.datetime.now().astimezone(OSLO_TIMEZONE).isoformat('T', 'seconds')}",
+            f"Transferring tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
         )
         return StatbankTransfer(
             dfs,

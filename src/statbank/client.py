@@ -103,9 +103,12 @@ class StatbankClient(StatbankAuth):
         self._validate_date()
         self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         if self.check_username_password:
+            logger.info(
+                "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
+            )
             self.get_description(
                 "05300",
-            )  # Random tableid to double check username&password early
+            )
         logger.info("Publishing date set to %s", self.date.isoformat("T", "seconds"))
 
     # Representation

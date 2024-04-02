@@ -252,18 +252,30 @@ def test_transfer_approve_int_intstr_str(
         fake_user(),
         approve=1,
     ).oppdragsnummer.isdigit()
+
     assert StatbankTransfer(
         fake_data(),
         "10000",
         fake_user(),
         approve="1",
     ).oppdragsnummer.isdigit()
+
     assert StatbankTransfer(
         fake_data(),
         "10000",
         fake_user(),
         approve="MANUAL",
     ).oppdragsnummer.isdigit()
+
+    params_dict: dict[str, str] = StatbankTransfer(  # noqa: SLF001
+        fake_data(),
+        "10000",
+        fake_user(),
+        approve="MANUAL",
+    )._build_params()
+    for v in params_dict.values():
+        assert isinstance(v, str)
+        assert "Approve." not in v
 
 
 def test_repr_transfer(transfer_success: StatbankTransfer):

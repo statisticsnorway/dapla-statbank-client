@@ -44,8 +44,6 @@ class StatbankClient(StatbankAuth):
     - get published data from the external or internal API of statbanken: apidata_all() / apidata()
 
     Attributes:
-        loaduser (str): Username for Statbanken, not the same as "tbf"
-            or "common personal username" in other SSB-systems
         date (str): Date for publishing the transfer. Shape should be "yyyy-mm-dd",
             like "2022-01-01".
             Statbanken only allows publishing four months into the future?
@@ -70,7 +68,6 @@ class StatbankClient(StatbankAuth):
 
     def __init__(  # noqa: PLR0913
         self,
-        loaduser: str = "",
         date: str | dt.datetime = TOMORROW,
         shortuser: str = "",
         cc: str = "",
@@ -82,7 +79,6 @@ class StatbankClient(StatbankAuth):
         check_username_password: bool = True,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
-        self.loaduser = loaduser
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
@@ -114,7 +110,7 @@ class StatbankClient(StatbankAuth):
     # Representation
     def __str__(self) -> str:
         """Print a human readable text of the clients attributes."""
-        return f"""StatbankClient for user {self.loaduser}
+        return f"""StatbankClient
         Publishing at {self.date}
         Shortuser {self.shortuser}
         Sending mail to {self.cc}
@@ -129,7 +125,7 @@ class StatbankClient(StatbankAuth):
 
     def __repr__(self) -> str:
         """Represent the class with the necessary argument to replicate."""
-        result = f'StatbankClient(loaduser = "{self.loaduser}"'
+        result = "StatbankClient("
         if self.date != TOMORROW:
             result += f', date = "{self.date.isoformat("T", "seconds")}")'
         if self.shortuser:
@@ -226,7 +222,6 @@ class StatbankClient(StatbankAuth):
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
-            loaduser=self.loaduser,
             headers=self.__headers,
         )
 
@@ -283,7 +278,6 @@ class StatbankClient(StatbankAuth):
         self._validate_params_action(tableid)
         validator = StatbankUttrekksBeskrivelse(
             tableid=tableid,
-            loaduser=self.loaduser,
             raise_errors=raise_errors,
             headers=self.__headers,
         )
@@ -316,7 +310,6 @@ class StatbankClient(StatbankAuth):
         return StatbankTransfer(
             dfs,
             tableid=tableid,
-            loaduser=self.loaduser,
             headers=self.__headers,
             shortuser=self.shortuser,
             date=self.date,
@@ -435,9 +428,6 @@ class StatbankClient(StatbankAuth):
 
     def _validate_params_init(self) -> None:
         """Validates many of the parameters sent in on client-initialization."""
-        if not self.loaduser or not isinstance(self.loaduser, str):
-            error_msg = "Please pass in a string for loaduser."
-            raise TypeError(error_msg)
         if not self.shortuser:
             self.shortuser = self._get_user_tbf()
         if not self.cc:

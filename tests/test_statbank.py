@@ -133,21 +133,6 @@ def transfer_success(
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
 @mock.patch.object(StatbankTransfer, "_build_user_agent")
-def test_transfer_no_loaduser_raises(
-    test_build_user_agent: Callable,
-    test_transfer_encrypt: Callable,
-    test_transfer_make_request: Callable,
-):
-    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
-    test_transfer_encrypt.return_value = fake_post_response_key_service()
-    test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(ValueError, match="loaduser") as _:
-        StatbankTransfer(fake_data(), "10000")
-
-
-@mock.patch.object(StatbankTransfer, "_make_transfer_request")
-@mock.patch.object(StatbankTransfer, "_encrypt_request")
-@mock.patch.object(StatbankTransfer, "_build_user_agent")
 def test_transfer_date_is_string(
     test_build_user_agent: Callable,
     test_transfer_encrypt: Callable,
@@ -320,19 +305,6 @@ def client_fake(test_build_user_agent: Callable, encrypt_fake: Callable):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(fake_user(), check_username_password=False)
-
-
-@suppress_type_checks
-@mock.patch.object(StatbankClient, "_encrypt_request")
-@mock.patch.object(StatbankClient, "_build_user_agent")
-def test_client_no_loaduser_set(
-    test_build_user_agent: Callable,
-    encrypt_fake: Callable,
-):
-    encrypt_fake.return_value = fake_post_response_key_service()
-    test_build_user_agent.return_value = fake_build_user_agent()
-    with pytest.raises(TypeError, match="loaduser") as _:
-        StatbankClient(1, check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")

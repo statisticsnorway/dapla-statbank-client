@@ -131,6 +131,7 @@ class StatbankTransfer(StatbankAuth):
             self.body = self._body_from_data()
 
             url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
+            urllib.parse.urlparse(url_load_params)  # Test to see if url is valid format
             self.response = self._make_transfer_request(url_load_params)
             self._cleanup_response()
         finally:
@@ -289,7 +290,7 @@ class StatbankTransfer(StatbankAuth):
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
             "auto_overskriv_data": str(int(self.overwrite)),
-            "auto_godkjenn_data": self.approve,
+            "auto_godkjenn_data": str(int(self.approve)),
         }
 
     def _make_transfer_request(

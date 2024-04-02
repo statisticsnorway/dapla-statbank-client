@@ -319,6 +319,28 @@ def test_transfer_shortuser_wrong_raises(
         )
 
 
+@mock.patch.object(StatbankTransfer, "_make_transfer_request")
+@mock.patch.object(StatbankTransfer, "_encrypt_request")
+@mock.patch.object(StatbankTransfer, "_get_user")
+@mock.patch.object(StatbankTransfer, "_build_user_agent")
+def test_transfer_loaduser_still(
+    test_build_user_agent: Callable,
+    test_get_user: Callable,
+    test_transfer_encrypt: Callable,
+    test_transfer_make_request: Callable,
+):
+    test_transfer_make_request.return_value = fake_post_response_transfer_successful()
+    test_transfer_encrypt.return_value = fake_post_response_key_service()
+    test_get_user.return_value = fake_user()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    with pytest.raises(ValueError, match="Loaduser") as _:
+        StatbankTransfer(
+            fake_data(),
+            fake_user(),
+            "10000",
+        )
+
+
 @pytest.fixture()
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
@@ -425,6 +447,21 @@ def test_client_with_str_date(
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient("2050-01-01", check_username_password=False)
     assert isinstance(client.date, datetime)
+
+
+@mock.patch.object(StatbankClient, "_encrypt_request")
+@mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_build_user_agent")
+def test_client_loaduser_still(
+    test_build_user_agent: Callable,
+    test_get_user: Callable,
+    encrypt_fake: Callable,
+):
+    encrypt_fake.return_value = fake_post_response_key_service()
+    test_get_user.return_value = fake_user()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    with pytest.raises(ValueError, match="Loaduser"):
+        StatbankClient(fake_user(), "2050-01-01", check_username_password=False)
 
 
 def test_client_date_picker_is_widget(client_fake: StatbankClient):
@@ -536,6 +573,25 @@ def test_uttrekk_works_no_codelists(
     test_build_user_agent.return_value = fake_build_user_agent()
     desc = client_fake.get_description("10000")
     assert desc.tableid == "10000"
+
+
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_get_user")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def test_uttrekk_raises_on_raise_non_bool(
+    test_build_user_agent: Callable,
+    test_get_user: Callable,
+    test_encrypt: Callable,
+    test_make_request: Callable,
+):
+    uttrekk = fake_get_response_uttrekksbeskrivelse_successful()
+    test_make_request.return_value = uttrekk
+    test_encrypt.return_value = fake_post_response_key_service()
+    test_get_user.return_value = fake_user()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    with pytest.raises(TypeError, match="oaduser"):
+        StatbankUttrekksBeskrivelse("10000", fake_user())
 
 
 def test_uttrekksbeskrivelse_has_kodelister(

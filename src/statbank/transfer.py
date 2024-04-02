@@ -34,8 +34,6 @@ class StatbankTransfer(StatbankAuth):
             the uttakksbeskrivelse.
             Dict-shape can be retrieved and validated before transfer with the
             Uttakksbeskrivelses-class.
-        loaduser (str): Username for Statbanken, not the same as "shortuser" or
-            "common personal username" in other SSB-systems
         tableid (str): The numeric id of the table, matching the one found on the website.
             Should be a 5-length numeric-string. Alternatively it should be possible to send in the "hovedtabellnavn" instead of the tableid.
         shortuser (str): The abbrivation of username at ssb. Three letters, like "cfc"
@@ -69,7 +67,6 @@ class StatbankTransfer(StatbankAuth):
         self,
         data: dict[str, pd.DataFrame],
         tableid: str = "",
-        loaduser: str = "",
         shortuser: str = "",
         date: dt | str | None = None,
         cc: str = "",
@@ -84,7 +81,7 @@ class StatbankTransfer(StatbankAuth):
 
         May run the validations from the StatbankValidation class before the transfer.
         """
-        self._set_user_attrs(loaduser=loaduser, shortuser=shortuser, cc=cc, bcc=bcc)
+        self._set_user_attrs(shortuser=shortuser, cc=cc, bcc=bcc)
         self._set_date(date=date)
         self.data = data
         self.tableid = tableid
@@ -141,7 +138,7 @@ class StatbankTransfer(StatbankAuth):
 
     def __str__(self) -> str:
         """Print a string with the status of the transfer."""
-        first_line = f"Overføring for statbanktabell {self.tableid}.\nloaduser: {self.loaduser}.\n"
+        first_line = f"Overføring for statbanktabell {self.tableid}.\n"
         if self.delay:
             result = f"""{first_line}Ikke overført enda."""
         else:
@@ -150,7 +147,7 @@ class StatbankTransfer(StatbankAuth):
 
     def __repr__(self) -> str:
         """Get a representation of how to recreate the object using parameters."""
-        return f'StatbankTransfer([data], tableid="{self.tableid}", loaduser="{self.loaduser}")'
+        return f'StatbankTransfer([data], tableid="{self.tableid}")'
 
     @property
     def delay(self) -> bool:
@@ -159,17 +156,10 @@ class StatbankTransfer(StatbankAuth):
 
     def _set_user_attrs(
         self,
-        loaduser: str = "",
         shortuser: str = "",
         cc: str = "",
         bcc: str = "",
     ) -> None:
-        if isinstance(loaduser, str) and loaduser != "":
-            self.loaduser = loaduser
-        else:
-            error_msg = "You must set loaduser as a parameter"
-            raise ValueError(error_msg)
-
         if shortuser:
             self.shortuser = shortuser
         else:

@@ -41,13 +41,13 @@ ssb-project build
 Make a notebook with the project's kernel, try this code to verify that you can "log in":
 ```python
 from statbank import StatbankClient
-stat_client = StatbankClient(loaduser = "LASTEBRUKER")
+stat_client = StatbankClient()
 # Change LASTEBRUKER to your load-statbank-username
 # Fill out password
 # Default publishing-date is TOMORROW
 print(stat_client)
 # Printing will show you all the default settings on the client.
-# You can change for example date by specifying it: StatbankClient(loaduser = "LASTEBRUKER", date="2023-02-16")
+# You can change for example date by specifying it: StatbankClient(date="2023-02-16")
 ```
 
 Be aware that from the **dapla-staging environment** you will be sending to statbank-TEST-database, your changes will not be published. For this you need the "test-password", which is for the same user (lastebruker), but different from the ordinary password (lastepassord). If you are missing the test-password, have the statbank-team send it to you for your loaduser. If you are in the main dapla-jupyterlab (prod), you **WILL** publish to statbanken, in the PROD database. So pay extra attention to the **publishing-date** when in dapla-main-prod-jupyterlab. And be aware of which password you are entering, based on your environment. [To see data actually published to the test-database, you can use this link if you work at SSB.](https://i.test.ssb.no/pxwebi/pxweb/no/test_24v_intern/)

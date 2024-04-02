@@ -29,7 +29,6 @@ class StatbankAuth:
 
         This is for typing with Mypy.
         """
-        self.loaduser: str
 
     def _build_headers(self) -> dict[str, str]:
         return {
@@ -73,7 +72,10 @@ class StatbankAuth:
         response = self._encrypt_request()
         try:
             username_encryptedpassword = (
-                bytes(self.loaduser, "UTF-8")
+                bytes(
+                    getpass.getpass(f"Lastebruker ({self.check_database()}):"),
+                    "UTF-8",
+                )
                 + bytes(":", "UTF-8")
                 + bytes(json.loads(response.text)["message"], "UTF-8")
             )

@@ -36,7 +36,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
 
     Attributes:
-        loaduser (str): Username for Statbanken, not the same as "tbf" or "common personal username" in other SSB-systems
         url (str): Main url for transfer
         time_retrieved  (str): Time of getting the Uttrekksbeskrivelse
         tableid (str): Originally the ID of the main table, which to get the
@@ -56,12 +55,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     def __init__(
         self,
         tableid: str,
-        loaduser: str,
         raise_errors: bool = False,
         headers: dict[str, str] | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
-        self.loaduser = loaduser
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
         self.tableid = tableid
@@ -114,7 +111,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         variabel_text += f'\n"Ekspandert matrise/antall koder i kodelistene ganget med hverandre er: {mult_codelists}'
 
         return f"""Uttrekksbeskrivelse for statbanktabell {self.tableid}.
-        loaduser: {self.loaduser}.
 
         Hele filbeskrivelsen "rå" ligger under .filbeskrivelse
         Andre attributter:
@@ -124,7 +120,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def __repr__(self) -> str:
         """Return a string representation of how to instantiate this object again."""
-        return f'StatbankUttrekksBeskrivelse(tableid="{self.tableid}", loaduser="{self.loaduser}")'
+        return f'StatbankUttrekksBeskrivelse(tableid="{self.tableid}",)'
 
     def transferdata_template(
         self,

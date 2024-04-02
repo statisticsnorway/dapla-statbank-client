@@ -69,18 +69,14 @@ class StatbankAuth:
         return user_agent + r.utils.default_headers()["User-agent"]
 
     def _build_auth(self) -> str:
-        response = self._encrypt_request()
-        try:
-            username_encryptedpassword = (
-                bytes(
-                    getpass.getpass(f"Lastebruker ({self.check_database()}):"),
-                    "UTF-8",
-                )
-                + bytes(":", "UTF-8")
-                + bytes(json.loads(response.text)["message"], "UTF-8")
+        username_encryptedpassword = (
+            bytes(
+                getpass.getpass("Lastebruker:"),
+                "UTF-8",
             )
-        finally:
-            del response
+            + bytes(":", "UTF-8")
+            + bytes(json.loads(self._encrypt_request().text)["message"], "UTF-8")
+        )
         return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
 
     def _encrypt_request(self) -> r.Response:

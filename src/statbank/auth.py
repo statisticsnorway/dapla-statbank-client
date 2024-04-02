@@ -29,7 +29,6 @@ class StatbankAuth:
 
         This is for typing with Mypy.
         """
-        self.loaduser: str
 
     def _build_headers(self) -> dict[str, str]:
         return {
@@ -70,16 +69,19 @@ class StatbankAuth:
         return user_agent + r.utils.default_headers()["User-agent"]
 
     def _build_auth(self) -> str:
-        response = self._encrypt_request()
-        try:
-            username_encryptedpassword = (
-                bytes(self.loaduser, "UTF-8")
-                + bytes(":", "UTF-8")
-                + bytes(json.loads(response.text)["message"], "UTF-8")
+        username_encryptedpassword = (
+            bytes(
+                self._get_user(),
+                "UTF-8",
             )
-        finally:
-            del response
+            + bytes(":", "UTF-8")
+            + bytes(json.loads(self._encrypt_request().text)["message"], "UTF-8")
+        )
         return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
+
+    @staticmethod
+    def _get_user() -> str:
+        return getpass.getpass("Lastebruker:")
 
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()

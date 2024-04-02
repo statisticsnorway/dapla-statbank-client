@@ -62,6 +62,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
         self.tableid = tableid
+        if not isinstance(raise_errors, bool):
+            error_msg = (
+                "raise_errors must be a bool, the loaduser parameter has been removed."
+            )
+            raise TypeError(error_msg)
         self.raise_errors = raise_errors
         self.tablename = ""
         self.subtables: dict[str, str] = {}

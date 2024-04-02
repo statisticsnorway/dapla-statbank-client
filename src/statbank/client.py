@@ -89,11 +89,18 @@ class StatbankClient(StatbankAuth):
         self.__headers = self._build_headers()
         self.log: list[str] = []
         if isinstance(date, str):
-            self.date: dt.datetime = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(
-                hours=1,
-            )  # Compensate for setting the timezone, stop publishing date from moving
+            try:
+                self.date: dt.datetime = dt.datetime.strptime(
+                    date,
+                    "%Y-%m-%d",
+                ).astimezone(
+                    OSLO_TIMEZONE,
+                ) + dt.timedelta(
+                    hours=1,
+                )  # Compensate for setting the timezone, stop publishing date from moving
+            except ValueError as e:
+                error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
+                raise ValueError(error_msg) from e
         else:
             self.date = date
         self._validate_date()

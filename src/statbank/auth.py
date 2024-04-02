@@ -71,7 +71,7 @@ class StatbankAuth:
     def _build_auth(self) -> str:
         username_encryptedpassword = (
             bytes(
-                getpass.getpass("Lastebruker:"),
+                self._get_user(),
                 "UTF-8",
             )
             + bytes(":", "UTF-8")
@@ -79,7 +79,11 @@ class StatbankAuth:
         )
         return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
 
-    def _encrypt_request(self) -> r.Response:
+    @staticmethod
+    def _get_user() -> str:
+        return getpass.getpass("Lastebruker:")
+
+    def _encrypt_request(self) -> tuple[str, r.Response]:
         db = self.check_database()
         if AuthClient.is_ready():
             headers = {

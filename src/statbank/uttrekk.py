@@ -252,7 +252,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         if raise_errors and validation_errors:
             raise StatbankValidateError(list(validation_errors.values()))
         logger.info(
-            "validation finished (if nothing is logged over debug level, everything should be fine.)",
+            "validation finished (if nothing is logged over info level, everything should be fine.)",
         )
         return validation_errors
 

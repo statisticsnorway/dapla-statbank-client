@@ -84,7 +84,7 @@ class StatbankTransfer(StatbankAuth):
         self._set_user_attrs(shortuser=shortuser, cc=cc, bcc=bcc)
         self._set_date(date=date)
         self.data = data
-        if not isinstance(tableid, str) or tableid.isdigit():
+        if not isinstance(tableid, str) or not tableid.isdigit():
             error_msg = "Loaduser is no longer a parameter, make sure the tableid parameter is a string of digits."
             raise ValueError(error_msg)
         self.tableid = tableid

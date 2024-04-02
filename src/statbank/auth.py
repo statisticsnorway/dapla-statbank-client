@@ -83,7 +83,7 @@ class StatbankAuth:
     def _get_user() -> str:
         return getpass.getpass("Lastebruker:")
 
-    def _encrypt_request(self) -> tuple[str, r.Response]:
+    def _encrypt_request(self) -> r.Response:
         db = self.check_database()
         if AuthClient.is_ready():
             headers = {

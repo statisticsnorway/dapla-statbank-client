@@ -63,7 +63,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.time_retrieved = ""
         self.tableid = tableid
         if not isinstance(raise_errors, bool):
-            error_msg = (
+            error_msg = (  # type: ignore[unreachable]
                 "raise_errors must be a bool, the loaduser parameter has been removed."
             )
             raise TypeError(error_msg)

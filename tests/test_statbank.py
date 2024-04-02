@@ -575,6 +575,7 @@ def test_uttrekk_works_no_codelists(
     assert desc.tableid == "10000"
 
 
+@suppress_type_checks
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_get_user")

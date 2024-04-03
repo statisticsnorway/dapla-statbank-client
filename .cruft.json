@@ -1,0 +1,30 @@
+{
+  "template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
+  "commit": "e81154758223bbeb62e2117de27029295c13e126",
+  "checkout": "2024.1.26",
+  "context": {
+    "cookiecutter": {
+      "project_name": "dapla-statbank-client",
+      "package_name": "statbank",
+      "friendly_name": "Dapla Statbank Client",
+      "copyright_owner": "Statistics Norway",
+      "copyright_year": "2023",
+      "author": "Carl F. Corneil",
+      "email": "cfc@ssb.no",
+      "github_organization": "statisticsnorway",
+      "version": "1.0.9",
+      "license": "MIT",
+      "development_status": "Development Status :: 5 - Production/Stable",
+      "code_quality_level": "High",
+      "_copy_without_render": [
+        "*.rst_t"
+      ],
+      "_jinja2_env_vars": {
+        "lstrip_blocks": true,
+        "trim_blocks": true
+      },
+      "_template": "https://github.com/statisticsnorway/ssb-pypitemplate.git"
+    }
+  },
+  "directory": null
+}

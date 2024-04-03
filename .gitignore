@@ -3,6 +3,9 @@
 # It contains three sections: SSB specific ignores, GitHub's Python-ignore
 # template and GitHub's R-ignore template.
 
+
+.vscode/
+
 # Papermill output
 *_output.ipynb
 

@@ -35,7 +35,7 @@ flake8 = "^5.0.4"
 bump2version = "^1.0.1"
 pytest-cov = "^4.0.0"
 mypy = "^0.982"
-black = "^22.12.0"
+black = "^24.3.0"
 
 
 [build-system]

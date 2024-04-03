@@ -33,7 +33,7 @@ dapla-toolbelt = "^2.0.6"
 
 [tool.poetry.group.dev.dependencies]
 pygments = ">=2.10.0"
-black = { extras = ["jupyter"], version = ">=23.1.0" }
+black = { extras = ["jupyter"], version = ">=24.3.0" }
 coverage = { extras = ["toml"], version = ">=6.2" }
 darglint = ">=1.8.1"
 furo = ">=2021.11.12"

@@ -3,6 +3,8 @@
 # It contains three sections: SSB specific ignores, GitHub's Python-ignore
 # template and GitHub's R-ignore template.
 
+# Papermill output
+*_output.ipynb
  /.python-version
  /.pytype/
  /docs/_build/
@@ -212,6 +214,7 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
 
 # ignore poetry in .config
 .poetry/**

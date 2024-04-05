@@ -1,43 +1,80 @@
+default_language_version:
+  python: python3.10
 repos:
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
-    hooks:
-      - id: check-ast
-      - id: check-added-large-files
-      - id: check-merge-conflict
-      - id: check-case-conflict
-      - id: check-docstring-first
-      - id: check-json
-      - id: check-yaml
-      - id: debug-statements
-      - id: end-of-file-fixer
-      - id: trailing-whitespace
-      - id: mixed-line-ending
   - repo: local
     hooks:
-      - id: autoflake
-        name: autoflake
-        entry: poetry run autoflake -r -i --remove-all-unused-imports --remove-unused-variables
+      # General file checkers
+      - id: check-added-large-files
+        name: Check added large files
+        entry: check-added-large-files
+        language: system
+      - id: check-merge-conflict
+        name: Check for merge conflict strings
+        entry: check-merge-conflict
+        language: system
+      - id: check-case-conflict
+        name: Check for problematic file names
+        entry: check-case-conflict
+        language: system
+
+      # General text checkers
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        entry: end-of-file-fixer
+        language: system
+        types: [text]
+        stages: [commit, push, manual]
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        entry: trailing-whitespace-fixer
+        language: system
+        types: [text]
+        stages: [commit, push, manual]
+      - id: mixed-line-ending
+        name: Mixed Line Ending
+        entry: mixed-line-ending
+        language: system
+        types: [text]
+        stages: [commit, push, manual]
+
+      # Serialization format checkers
+      - id: check-yaml
+        name: Check Yaml
+        entry: check-yaml
+        language: system
+        types: [yaml]
+      - id: check-json
+        name: Check JSON
+        entry: check-json
+        language: system
+        types: [json]
+      - id: check-toml
+        name: Check Toml
+        entry: check-toml
+        language: system
+        types: [toml]
+
+      # Python tools
+      - id: check-ast
+        name: Check Python syntax
+        entry: check-ast
         language: system
         types: [python]
-      - id: isort
-        name: isort
-        entry: poetry run isort
+      - id: darglint
+        name: darglint
+        entry: darglint
         language: system
         types: [python]
+        stages: [manual]
+      - id: ruff
+        name: ruff
+        entry: ruff --fix --exit-non-zero-on-fix
+        language: system
+        types_or: [python, jupyter]
+        require_serial: true
       - id: black
         name: black
-        entry: poetry run black
+        entry: black
         language: system
-        types: [python]
-      - id: pyupgrade
-        name: pyupgrade
-        entry: poetry run pyupgrade --py37-plus
-        language: system
-        types: [python]
-      - id: flake8
-        name: flake8
-        entry: poetry run flake8
-        language: system
-        types: [python]
-        exclude: E501
+        types_or: [python, jupyter]
+        require_serial: true

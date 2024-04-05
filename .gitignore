@@ -5,6 +5,16 @@
 
 # Papermill output
 *_output.ipynb
+ /.python-version
+ /.pytype/
+ /docs/_build/
+
+# Visual Studio Code
+.vscode/*
+# Local History for Visual Studio Code
+.history/
+# Built Visual Studio Code Extensions
+*.vsix
 
 
 # The section below contains SSB specific ignores, not included in the Python-
@@ -205,4 +215,6 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
+
+# ignore poetry in .config
 .poetry/**

@@ -326,9 +326,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             ctx.rounding = ROUND_HALF_UP
             if pd.isna(n):
                 result: str = ""
-            elif decimals and n:
+            elif decimals and (n or n == 0.0):
                 result = str(round(Decimal(n), decimals))
-            elif n:
+            elif n or n == 0.0:
                 result = str(Decimal(n).to_integral_value())
             else:
                 result = str(n)

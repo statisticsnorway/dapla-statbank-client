@@ -25,6 +25,10 @@ from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
 
 
+def test_round_up_zero():
+    assert StatbankUttrekksBeskrivelse._round_up(0.0, 0) == "0"  # noqa: SLF001
+
+
 def fake_user():
     return "SSB-person-456"
 

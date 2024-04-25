@@ -122,7 +122,8 @@ def apimetadata(id_or_url: str = "") -> dict[str, Any]:
         url = id_or_url
     res = r.get(url, timeout=5)
     res.raise_for_status()
-    return res.json()
+    meta: dict[str, Any] = res.json()
+    return meta
 
 
 def apicodelist(

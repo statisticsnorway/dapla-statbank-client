@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -16,9 +17,11 @@ from IPython.display import display
 
 if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
+from statbank.apidata import apicodelist
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
+from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
@@ -391,6 +394,35 @@ class StatbankClient(StatbankAuth):
             pd.DataFrame: A pandas dataframe with the table-content
         """
         return apidata_all(id_or_url=id_or_url, include_id=include_id)
+
+    @staticmethod
+    def apimetadata(id_or_url: str = "") -> dict[str, Any]:
+        """Get ALL the contents of a published statbank-table as a pandas Dataframe.
+
+        Args:
+            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            include_id (bool): If you want to include "codes" in the dataframe, set this to True
+
+        Returns:
+            pd.DataFrame: A pandas dataframe with the table-content
+        """
+        return apimetadata(id_or_url=id_or_url)
+
+    @staticmethod
+    def apicodelist(
+        id_or_url: str = "",
+        codelist_name: str = "",
+    ) -> dict[str, str] | dict[str, dict[str, str]]:
+        """Get one specific or all the codelists of a published statbank-table as a dict or nested dicts.
+
+        Args:
+            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            codelist_name (str): The name of the specific codelist to get.
+
+        Returns:
+            dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+        """
+        return apicodelist(id_or_url=id_or_url, codelist_name=codelist_name)
 
     @staticmethod
     def apidata_rotate(

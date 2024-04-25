@@ -397,14 +397,13 @@ class StatbankClient(StatbankAuth):
 
     @staticmethod
     def apimetadata(id_or_url: str = "") -> dict[str, Any]:
-        """Get ALL the contents of a published statbank-table as a pandas Dataframe.
+        """Get the metadata of a published statbank-table as a dict.
 
         Args:
             id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-            include_id (bool): If you want to include "codes" in the dataframe, set this to True
 
         Returns:
-            pd.DataFrame: A pandas dataframe with the table-content
+            dict[str, Any]: The metadata of the table as the json returned from the API-get-request.
         """
         return apimetadata(id_or_url=id_or_url)
 

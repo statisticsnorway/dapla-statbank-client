@@ -137,19 +137,20 @@ class StatbankClient(StatbankAuth):
         """Represent the class with the necessary argument to replicate."""
         result = "StatbankClient("
         if self.date != TOMORROW:
-            result += f', date = "{self.date.isoformat("T", "seconds")}")'
+            result += f'date = "{self.date.isoformat("T", "seconds")}", '
         if self.shortuser:
-            result += f', shortuser = "{self.shortuser}")'
+            result += f'shortuser = "{self.shortuser}", '
         if self.cc:
-            result += f', cc = "{self.cc}")'
+            result += f'cc = "{self.cc}", '
         if self.bcc:
-            result += f', bcc = "{self.bcc}")'
+            result += f', bcc = "{self.bcc}", '
         if not self.overwrite:
-            result += f", overwrite = {self.overwrite})"
+            result += f"overwrite = {self.overwrite}), "
         if self.approve != APPROVE_DEFAULT_JIT:
-            result += f", approve = {self.approve})"
+            result += f"approve = {self.approve}, "
         if self.check_username_password:
-            result += f", check_username_password = {self.check_username_password})"
+            result += f"check_username_password = {self.check_username_password}"
+        result = result.strip(" ").strip(",")
         result += ")"
         return result
 

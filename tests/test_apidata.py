@@ -165,11 +165,11 @@ def test_apidata_rotate_05300(
 
 def test_client_apimetadata(client_fake: Callable) -> None:
     metadata = client_fake.apimetadata("05300")
-    assert len(metadata).get("title")
+    assert len(metadata.get("title"))
 
 
 def test_client_apicodelist(client_fake: Callable) -> None:
-    metadata = client_fake.apimetadata("05300", "Avstand1")
+    metadata = client_fake.apicodelist("05300", "Avstand1")
     assert len(metadata)
     assert isinstance(metadata, dict)
     assert all(isinstance(x, str) for x in metadata.values())

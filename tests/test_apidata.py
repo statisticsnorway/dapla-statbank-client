@@ -103,6 +103,22 @@ def test_apicodelist_specific(fake_get: Callable) -> None:
     assert all(isinstance(x, str) for x in result.values())
 
 
+@mock.patch.object(requests, "get")
+def test_apicodelist_specific_text(fake_get: Callable) -> None:
+    fake_get.return_value = fake_get_table_meta()
+    result = apicodelist("05300", "avstand")
+    assert len(result)
+    assert isinstance(result, dict)
+    assert all(isinstance(x, str) for x in result.values())
+
+
+@mock.patch.object(requests, "get")
+def test_apicodelist_specific_missing_raises(fake_get: Callable) -> None:
+    fake_get.return_value = fake_get_table_meta()
+    with pytest.raises(ValueError, match="Cant find") as _:
+        apicodelist("05300", "missing")
+
+
 @pytest.fixture()
 @mock.patch.object(requests, "get")
 def query_all_05300(fake_get: Callable) -> pd.DataFrame:
@@ -145,6 +161,18 @@ def test_apidata_rotate_05300(
     for ind in df_rotate.index:
         assert len(ind) == DIGITS_IN_YEAR
         assert ind.isdigit()
+
+
+def test_client_apimetadata(client_fake: Callable) -> None:
+    metadata = client_fake.apimetadata("05300")
+    assert len(metadata).get("title")
+
+
+def test_client_apicodelist(client_fake: Callable) -> None:
+    metadata = client_fake.apimetadata("05300", "Avstand1")
+    assert len(metadata)
+    assert isinstance(metadata, dict)
+    assert all(isinstance(x, str) for x in metadata.values())
 
 
 def test_client_apidata(client_fake: Callable, query_all_05300: pd.DataFrame) -> None:

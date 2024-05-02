@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -16,9 +17,11 @@ from IPython.display import display
 
 if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
+from statbank.apidata import apicodelist
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
+from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
@@ -134,19 +137,20 @@ class StatbankClient(StatbankAuth):
         """Represent the class with the necessary argument to replicate."""
         result = "StatbankClient("
         if self.date != TOMORROW:
-            result += f', date = "{self.date.isoformat("T", "seconds")}")'
+            result += f'date = "{self.date.isoformat("T", "seconds")}", '
         if self.shortuser:
-            result += f', shortuser = "{self.shortuser}")'
+            result += f'shortuser = "{self.shortuser}", '
         if self.cc:
-            result += f', cc = "{self.cc}")'
+            result += f'cc = "{self.cc}", '
         if self.bcc:
-            result += f', bcc = "{self.bcc}")'
+            result += f', bcc = "{self.bcc}", '
         if not self.overwrite:
-            result += f", overwrite = {self.overwrite})"
+            result += f"overwrite = {self.overwrite}), "
         if self.approve != APPROVE_DEFAULT_JIT:
-            result += f", approve = {self.approve})"
+            result += f"approve = {self.approve}, "
         if self.check_username_password:
-            result += f", check_username_password = {self.check_username_password})"
+            result += f"check_username_password = {self.check_username_password}"
+        result = result.strip(" ").strip(",")
         result += ")"
         return result
 
@@ -391,6 +395,34 @@ class StatbankClient(StatbankAuth):
             pd.DataFrame: A pandas dataframe with the table-content
         """
         return apidata_all(id_or_url=id_or_url, include_id=include_id)
+
+    @staticmethod
+    def apimetadata(id_or_url: str = "") -> dict[str, Any]:
+        """Get the metadata of a published statbank-table as a dict.
+
+        Args:
+            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+
+        Returns:
+            dict[str, Any]: The metadata of the table as the json returned from the API-get-request.
+        """
+        return apimetadata(id_or_url=id_or_url)
+
+    @staticmethod
+    def apicodelist(
+        id_or_url: str = "",
+        codelist_name: str = "",
+    ) -> dict[str, str] | dict[str, dict[str, str]]:
+        """Get one specific or all the codelists of a published statbank-table as a dict or nested dicts.
+
+        Args:
+            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            codelist_name (str): The name of the specific codelist to get.
+
+        Returns:
+            dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+        """
+        return apicodelist(id_or_url=id_or_url, codelist_name=codelist_name)
 
     @staticmethod
     def apidata_rotate(

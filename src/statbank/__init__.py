@@ -11,13 +11,22 @@ import importlib.metadata  # Needed even with whole import over
 
 import toml
 
+from statbank.apidata import apicodelist
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
+from statbank.apidata import apimetadata
 from statbank.client import StatbankClient
 from statbank.statbank_logger import logger
 
-__all__ = ["StatbankClient", "apidata", "apidata_all", "apidata_rotate"]
+__all__ = [
+    "StatbankClient",
+    "apidata",
+    "apidata_all",
+    "apidata_rotate",
+    "apimetadata",
+    "apicodelist",
+]
 
 
 # Split into function for testing

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import urllib
 from typing import TYPE_CHECKING
+from typing import Any
 
 import requests as r
 from pyjstat import pyjstat
@@ -97,17 +98,17 @@ def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:
     return apidata(id_or_url, apidata_query_all(id_or_url), include_id=include_id)
 
 
-def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
-    """Builds a query for ALL THE DATA in a table based on a request for metadata on the table.
+def apimetadata(id_or_url: str = "") -> dict[str, Any]:
+    """Get the metadata of a published statbank-table as a dict.
 
     Args:
         id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
 
     Returns:
-        QueryWholeType: The prepared query based on all the codes in the table.
+        dict[str, Any]: The metadata of the table as the json returned from the API-get-request.
 
     Raises:
-        ValueError: If the parameter is not a valid statbank ID or a direct url.
+        ValueError: If the first parameter is not recognized as a statbank ID or a direct url.
     """
     if len(id_or_url) == STATBANK_TABLE_ID_LENGTH and id_or_url.isdigit():
         url = f"https://data.ssb.no/api/v0/no/table/{id_or_url}/"
@@ -121,7 +122,52 @@ def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
         url = id_or_url
     res = r.get(url, timeout=5)
     res.raise_for_status()
-    meta = res.json()["variables"]
+    meta: dict[str, Any] = res.json()
+    return meta
+
+
+def apicodelist(
+    id_or_url: str = "",
+    codelist_name: str = "",
+) -> dict[str, str] | dict[str, dict[str, str]]:
+    """Get one specific or all the codelists of a published statbank-table as a dict or nested dicts.
+
+    Args:
+        id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        codelist_name (str): The name of the specific codelist to get.
+
+    Returns:
+        dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+
+    Raises:
+        ValueError: If the specified codelist_name is not in the returned metadata.
+    """
+    metadata = apimetadata(id_or_url)
+    results = {}
+    for col in metadata["variables"]:
+        results[col["code"]] = dict(zip(col["values"], col["valueTexts"]))
+    if codelist_name == "":
+        return results
+    if codelist_name in results:
+        return results[codelist_name]
+    for col in metadata["variables"]:
+        if codelist_name == col["text"]:
+            return dict(zip(col["values"], col["valueTexts"]))
+    col_names = ", ".join([col["code"] for col in metadata["variables"]])
+    error_msg = f"Cant find {codelist_name} among the available names: {col_names}"
+    raise ValueError(error_msg)
+
+
+def apidata_query_all(id_or_url: str = "") -> QueryWholeType:
+    """Builds a query for ALL THE DATA in a table based on a request for metadata on the table.
+
+    Args:
+        id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+
+    Returns:
+        QueryWholeType: The prepared query based on all the codes in the table.
+    """
+    meta = apimetadata(id_or_url)["variables"]
     code_list: list[QueryPartType] = []
     for code in meta:
         tmp: QueryPartType = {"code": "", "selection": {"filter": "", "values": []}}

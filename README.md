@@ -126,6 +126,18 @@ df_folkemengde = apidata("https://i.ssb.no/pxwebi/api/v0/no/prod_24v_intern/STAR
                                     )
 ```
 
+`apimetadata` gets metadata from the *public* api, like apidata does.
+```python
+meta = apimetadata("05300")
+```
+
+`apicodelist` gets a specific codelist out of the metadata, or all the codelists.
+```python
+all_codelists = apimetadata("05300")
+avstand_codelist = apimetadata("05300", "Avstand1")
+```
+
+
 `apidata_rotate` is a thin wrapper around pivot_table. Stolen from: https://github.com/sehyoun/SSB_API_helper/blob/master/src/ssb_api_helper.py
 ```python
 df_folkemengde_rotert = apidata_rotate(df_folkemengde, 'tidskolonne', "verdikolonne")
@@ -172,22 +184,6 @@ import statbank
 import logging
 statbank.logger.setLevel(logging.WARNING)
 ```
-
-## Version history
-- 1.1.0 Migrating to "new template" for Pypi-packages at SSB, with full typing support, a reference website, logging instead of print etc.
-- 1.0.6 fixing new functionality on "IRkodelister"
-- 1.0.5 Making transferdata_template smarter, were it can take a bunch of dataframes and incorporate them in the returned dict. Trying to support columntype "internasjonal rapportering".
-- 1.0.4 Fixing bug where empty codelists stops description initialization, Updating pyjstat to 2.4.0, changing imports to absolute from package root
-- 1.0.2 Doc-string style cleanup, a check on username and password on client init, changes to time and display of time, demo notebooks cleaned
-- 1.0.0 Finished going through initial issues, less complaining from verify on floats
-- 0.0.11 Statbank people wanted a user-agent-requesst-header to differentiate test from prod
-- 0.0.9 After further user-testing and requests
-- 0.0.5 Still some parameter issues
-- 0.0.4 More test coverage, some bugs fixed in rounding checks and parameter-passing
-- 0.0.3 Removed batches, stripping uttrekk from transfer, rounding function on uttrekk, data required in as a dict of dataframes, with "deltabell-navn". Tableid now works to transfer to instead of only "hovedtabellnavn"
-- 0.0.2 Starting alpha, fine-tuning release to Pypi on github-release
-- 0.0.1 Client, transfer, description, apidata. Quite a lot of work done already. Pre-alpha.
-
 
 ## License
 

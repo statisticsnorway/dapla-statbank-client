@@ -189,10 +189,12 @@ class StatbankClient(StatbankAuth):
             TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
         """
         if isinstance(date, widgets.DatePicker):
-            date_date: dt.datetime = dt.datetime.combine(
-                date.value.today(),
+            dt.datetime.combine(
+                date.value,
                 dt.datetime.min.time(),
-            )
+            ).astimezone(
+                OSLO_TIMEZONE,
+            ) + dt.timedelta(hours=1)
         elif isinstance(date, str):
             date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
                 OSLO_TIMEZONE,

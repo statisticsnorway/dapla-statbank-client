@@ -189,7 +189,7 @@ class StatbankClient(StatbankAuth):
             TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
         """
         if isinstance(date, widgets.DatePicker):
-            dt.datetime.combine(
+            date_date = dt.datetime.combine(
                 date.value,
                 dt.datetime.min.time(),
             ).astimezone(

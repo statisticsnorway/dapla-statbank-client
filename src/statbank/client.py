@@ -192,9 +192,7 @@ class StatbankClient(StatbankAuth):
             date_date = dt.datetime.combine(
                 date.value,
                 dt.datetime.min.time(),
-            ).astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
+            ).astimezone(OSLO_TIMEZONE,) + dt.timedelta(hours=1)
         elif isinstance(date, str):
             date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
                 OSLO_TIMEZONE,

@@ -271,7 +271,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 result[name] = kodeliste["SumIALtTotalKode"]
         return result
 
-    def round_data(self, data: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
+    def round_data(
+        self,
+        data: dict[str, pd.DataFrame],
+        round_up: bool = True,
+    ) -> dict[str, pd.DataFrame]:
         """Converts all decimal numbers to strings, with the correct number of decimals.
 
         IMPORTANT: Rounds "real halves" (0.5) UP, instead of "to even numbers" like Python does by default.
@@ -279,6 +283,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
         Args:
             data (dict[str, pd.DataFrame]): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+            round_up (bool): Default behaviour is rounding up like Excel or SAS. Setting this to False will instead use Python's default "Round towards equal" / "Banker's rounding"
 
         Returns:
             dict[str, pd.DataFrame]: A dictionary in the same shape as sent in, but with dataframes altered to correct for rounding.
@@ -307,7 +312,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                             data_copy[deltabell_name]
                             .iloc[:, col_num]
                             .astype("Float64")
-                            .apply(self._round_up, decimals=decimal_num)
+                            .apply(self._round, decimals=decimal_num, round_up=round_up)
                             .astype(str)
                             .str.replace("<NA>", "", regex=False)
                             .str.replace(".", ",", regex=False)
@@ -321,17 +326,19 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         return data_copy
 
     @staticmethod
-    def _round_up(n: float, decimals: int = 0) -> str:
-        with localcontext() as ctx:
-            ctx.rounding = ROUND_HALF_UP
-            if pd.isna(n):
-                result: str = ""
-            elif decimals and (n or n == 0):
+    def _round(n: float, decimals: int = 0, round_up: bool = True) -> str:
+        if pd.isna(n):
+            result: str = ""
+        elif round_up and decimals and (n or n == 0):
+            with localcontext() as ctx:
+                ctx.rounding = ROUND_HALF_UP
                 result = str(round(Decimal(n), decimals))
-            elif n or n == 0:
-                result = str(Decimal(n).to_integral_value())
-            else:
-                result = str(n)
+        elif not round_up and decimals and (n or n == 0):
+            result = str(round(Decimal(n), decimals))
+        elif n or n == 0:
+            result = str(Decimal(n).to_integral_value())
+        else:
+            result = str(n)
         return result
 
     def _get_uttrekksbeskrivelse(self) -> None:

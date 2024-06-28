@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import gc
 import json
-import math
 import os
 import urllib
 from datetime import datetime as dt
@@ -238,15 +237,6 @@ class StatbankTransfer(StatbankAuth):
             if not isinstance(deltabell_data, pd.DataFrame):
                 error_msg = f"Data for {deltabell_name}, must be a pandas DataFrame"  # type: ignore[unreachable]
                 raise TypeError(error_msg)
-
-    @staticmethod
-    def _round_up(n: float, decimals: int = 0) -> int:
-        """Python uses "round to even" as default, wanted behaviour is "round up".
-
-        So let's implement our own.
-        """
-        multiplier = 10**decimals
-        return int(math.ceil(n * multiplier) / multiplier)
 
     def _body_from_data(self) -> str:
         # Data should be a iterable of pd.DataFrames at this point,

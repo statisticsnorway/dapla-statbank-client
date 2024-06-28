@@ -133,8 +133,8 @@ meta = apimetadata("05300")
 
 `apicodelist` gets a specific codelist out of the metadata, or all the codelists.
 ```python
-all_codelists = apimetadata("05300")
-avstand_codelist = apimetadata("05300", "Avstand1")
+all_codelists = apicodelist("05300")
+avstand_codelist = apicodelist("05300", "Avstand1")
 ```
 
 

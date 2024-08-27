@@ -104,7 +104,7 @@ def fake_build_user_agent():
 
 
 # Our only get-request is for the "uttrekksbeskrivelse"
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_get_user")
@@ -122,7 +122,7 @@ def uttrekksbeskrivelse_success(
     return StatbankUttrekksBeskrivelse("10000")
 
 
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")
 @mock.patch.object(StatbankTransfer, "_get_user")
@@ -345,7 +345,7 @@ def test_transfer_loaduser_still(
         )
 
 
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
 @mock.patch.object(StatbankClient, "_build_user_agent")

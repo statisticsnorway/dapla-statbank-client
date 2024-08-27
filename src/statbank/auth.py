@@ -85,7 +85,7 @@ class StatbankAuth:
 
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()
-        if AuthClient.is_ready():
+        if AuthClient._is_ready():  # noqa: SLF001
             headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",

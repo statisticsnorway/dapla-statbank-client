@@ -255,11 +255,9 @@ class StatbankTransfer(StatbankAuth):
 
     @staticmethod
     def _valid_date_form(date: str) -> bool:
-        if (date[:4] + date[5:7] + date[8:]).isdigit() and (
+        return (date[:4] + date[5:7] + date[8:]).isdigit() and (
             (date[4] + date[7]) == "--"
-        ):
-            return True
-        return False
+        )
 
     def _build_params(self) -> dict[str, str | int]:
         if isinstance(self.date, dt):  # type: ignore[unreachable]

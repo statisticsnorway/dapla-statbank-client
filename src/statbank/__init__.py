@@ -40,7 +40,7 @@ def _try_getting_pyproject_toml(e: Exception | None = None) -> str:
             version: str = toml.load("../pyproject.toml")["tool"]["poetry"]["version"]
         except FileNotFoundError:
             version = toml.load("./pyproject.toml")["tool"]["poetry"]["version"]
-    except toml.TomlDecodeError as e:
+    except toml.TomlDecodeError:
         version = "0.0.0"
         logger.exception(
             "Error from dapla-statbank-clients __init__, not able to get version-number, setting it to %s. Exception: %s",

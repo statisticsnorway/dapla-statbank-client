@@ -97,6 +97,18 @@ src = ["src", "tests"]
 target-version = "py39"  # Minimum Python version supported
 
 # Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
+
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+extend-exclude = [
+    "__pycache__",
+    "old",
+    ".ipynb_checkpoints",
+    "noxfile.py",
+    "docs/conf.py",
+     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
+]
+
+[tool.ruff.lint]
 select = ["ALL"]
 ignore = [
     "ANN101", # Supress missing-type-self.
@@ -107,15 +119,6 @@ ignore = [
     "FBT001", # Carl: Users will not want to create Enums just to run the function
     "FBT002", # Carl: Users will not want to create Enums just to run the function
 
-]
-include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
-extend-exclude = [
-    "__pycache__",
-    "old",
-    ".ipynb_checkpoints",
-    "noxfile.py",
-    "docs/conf.py",
-     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
 ]
 
 [tool.ruff.lint.isort]

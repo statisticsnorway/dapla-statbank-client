@@ -5,6 +5,9 @@ import os
 
 import requests as r
 from dapla import AuthClient
+from dapla.auth import AuthError
+
+from statbank.statbank_logger import logger
 
 
 class StatbankAuth:
@@ -85,15 +88,17 @@ class StatbankAuth:
 
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()
-        if AuthClient._is_ready():  # noqa: SLF001
+        try:
             headers = {
                 "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",
             }
-        else:
+        except AuthError as err:
+            logger.warning(str(err))
             headers = {
                 "Content-type": "application/json",
             }
+
         return r.post(
             os.environ.get("STATBANK_ENCRYPT_URL", "Cant find url in environ."),
             headers=headers,

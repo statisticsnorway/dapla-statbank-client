@@ -73,3 +73,5 @@ list(errors.keys())
 
 # %%
 statclient.transfer(data, "11721")
+
+# %%

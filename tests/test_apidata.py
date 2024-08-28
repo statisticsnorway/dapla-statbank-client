@@ -67,7 +67,7 @@ def fake_post_apidata() -> requests.Response:
     return response
 
 
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
 @mock.patch.object(StatbankClient, "_build_user_agent")
@@ -119,14 +119,14 @@ def test_apicodelist_specific_missing_raises(fake_get: Callable) -> None:
         apicodelist("05300", "missing")
 
 
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(requests, "get")
 def query_all_05300(fake_get: Callable) -> pd.DataFrame:
     fake_get.return_value = fake_get_table_meta()
     return apidata_query_all("05300")
 
 
-@pytest.fixture()
+@pytest.fixture
 @mock.patch.object(requests, "post")
 def apidata_05300(fake_post: Callable, query_all_05300: pd.DataFrame) -> pd.DataFrame:
     fake_post.return_value = fake_post_apidata()

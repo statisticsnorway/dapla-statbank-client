@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dapla-statbank-client"
-version = "1.2.4"
+version = "1.2.6"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 authors = ["Statistics Norway", "Carl F. Corneil <cfc@ssb.no>"]
 license = "MIT"
@@ -21,7 +21,7 @@ requests = ">=2.28.2"
 ipywidgets = ">=8.0.4"
 IPython = ">=8.11.0"
 pyjstat = ">=2.4.0"
-toml = "^0.10.2"
+toml = ">=0.10.2"
 python-dotenv = ">=1.0.1"
 colorama = ">=0.4.6"
 # Stubs for Mypy
@@ -29,7 +29,7 @@ pandas-stubs = ">=2.1.1.230928"
 types-requests = ">=2.31.0.10"
 types-toml = ">=0.10.8.7"
 types-colorama = ">=0.4.15.20240205"
-dapla-toolbelt = "^2.0.6"
+dapla-toolbelt = ">=2.0.6"
 
 [tool.poetry.group.dev.dependencies]
 pygments = ">=2.10.0"
@@ -97,7 +97,21 @@ src = ["src", "tests"]
 target-version = "py39"  # Minimum Python version supported
 
 # Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
+
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+extend-exclude = [
+    "__pycache__",
+    "old",
+    ".ipynb_checkpoints",
+    "noxfile.py",
+    "docs/conf.py",
+     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
+     "demo/",
+]
+
+[tool.ruff.lint]
 select = ["ALL"]
+exclude = ["demo"]
 ignore = [
     "ANN101", # Supress missing-type-self.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
@@ -107,15 +121,6 @@ ignore = [
     "FBT001", # Carl: Users will not want to create Enums just to run the function
     "FBT002", # Carl: Users will not want to create Enums just to run the function
 
-]
-include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
-extend-exclude = [
-    "__pycache__",
-    "old",
-    ".ipynb_checkpoints",
-    "noxfile.py",
-    "docs/conf.py",
-     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
 ]
 
 [tool.ruff.lint.isort]

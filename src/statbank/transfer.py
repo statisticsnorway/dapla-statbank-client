@@ -255,11 +255,9 @@ class StatbankTransfer(StatbankAuth):
 
     @staticmethod
     def _valid_date_form(date: str) -> bool:
-        if (date[:4] + date[5:7] + date[8:]).isdigit() and (
+        return (date[:4] + date[5:7] + date[8:]).isdigit() and (
             (date[4] + date[7]) == "--"
-        ):
-            return True
-        return False
+        )
 
     def _build_params(self) -> dict[str, str | int]:
         if isinstance(self.date, dt):  # type: ignore[unreachable]
@@ -282,7 +280,11 @@ class StatbankTransfer(StatbankAuth):
     ) -> r.Response:
         result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
         # Trying to clean all auth etc out of response
-        result.raise_for_status()
+        try:
+            result.raise_for_status()
+        except r.HTTPError:
+            logger.error(result.text)
+            raise
         return result
 
     def _cleanup_response(self) -> None:

@@ -68,7 +68,7 @@ repos:
         stages: [manual]
       - id: ruff
         name: ruff
-        entry: ruff --fix --exit-non-zero-on-fix
+        entry: ruff check --fix --exit-non-zero-on-fix
         language: system
         types_or: [python, jupyter]
         require_serial: true

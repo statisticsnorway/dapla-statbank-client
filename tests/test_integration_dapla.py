@@ -30,12 +30,12 @@ def client_input(monkeymodule: Callable) -> StatbankClient:
     )
 
 
-@pytest.mark.integration_dapla()
+@pytest.mark.integration_dapla
 def test_client_date(client_input: StatbankClient):
     assert isinstance(client_input.approve, int)
 
 
-@pytest.mark.integration_dapla()
+@pytest.mark.integration_dapla
 def test_client_get_description(client_input: StatbankClient):
     filbesk = client_input.get_description("05300")
     assert len(filbesk.codelists)

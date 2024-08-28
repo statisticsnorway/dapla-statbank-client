@@ -16,6 +16,7 @@
 # %%
 import dapla as dp
 import pandas as pd
+
 from statbank import StatbankClient
 
 fileclient = dp.FileClient()
@@ -25,28 +26,36 @@ statclient = StatbankClient()
 tableid = "03629"
 
 # %%
-df_stat = statclient.apidata(tableid, {
-  "query": [
+df_stat = statclient.apidata(
+    tableid,
     {
-      "code": "Tid",
-      "selection": {
-        "filter": "item",
-        "values": [
-          "2021",
+        "query": [
+            {
+                "code": "Tid",
+                "selection": {
+                    "filter": "item",
+                    "values": [
+                        "2021",
+                    ],
+                },
+            },
         ],
-      },
+        "response": {
+            "format": "json-stat2",
+        },
     },
-  ],
-  "response": {
-    "format": "json-stat2",
-  },
-}, include_id=True)
+    include_id=True,
+)
 
 # %%
 df_stat
 
 # %%
-df_piv = df_stat.pivot_table(values="value", index="år", columns="ContentsCode").astype("Int64").reset_index()
+df_piv = (
+    df_stat.pivot_table(values="value", index="år", columns="ContentsCode")
+    .astype("Int64")
+    .reset_index()
+)
 df_piv
 
 # %%

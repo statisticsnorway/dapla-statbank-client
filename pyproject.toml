@@ -106,10 +106,12 @@ extend-exclude = [
     "noxfile.py",
     "docs/conf.py",
      "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
+     "demo/",
 ]
 
 [tool.ruff.lint]
 select = ["ALL"]
+exclude = ["demo"]
 ignore = [
     "ANN101", # Supress missing-type-self.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.

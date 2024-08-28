@@ -15,18 +15,20 @@
 
 # %%
 import pandas as pd
+
 from statbank import StatbankClient
 
 # %% [markdown]
 # ### Create client
 
 # %%
-client = StatbankClient(#date="2023-02-21",
-                        shortuser="cfc",
-                        cc="thu",
-                        bcc="tir",
-                        overwrite=True,
-                        approve=2)
+client = StatbankClient(  # date="2023-02-21",
+    shortuser="cfc",
+    cc="thu",
+    bcc="tir",
+    overwrite=True,
+    approve=2,
+)
 
 # %% [markdown]
 # ### Sett dato interaktivt med widget
@@ -57,8 +59,10 @@ df_07495_fylker = pd.read_parquet("07495_statbank_fylker.parquet")
 df_07495_landet = pd.read_parquet("07495_statbank_landet.parquet")
 
 # %%
-data_07495 = {"kargrs01fylker1.dat" : df_07495_fylker,
-              "kargrs01landet1.dat" : df_07495_landet}
+data_07495 = {
+    "kargrs01fylker1.dat": df_07495_fylker,
+    "kargrs01landet1.dat": df_07495_landet,
+}
 
 # %% [markdown]
 # ### Validate data

@@ -16,6 +16,7 @@
 # %%
 import dapla as dp
 import pandas as pd
+
 from statbank import StatbankClient
 
 # %%
@@ -40,16 +41,16 @@ stillnaring.head()
 desc = statclient.get_description("08771")
 
 # %%
-#desc.variables
+# desc.variables
 
 # %%
 desc.transferdata_template()
 
 # %%
-validate_result = statclient.validate({"stillnaring1.dat" : stillnaring}, "08771")
+validate_result = statclient.validate({"stillnaring1.dat": stillnaring}, "08771")
 
 # %%
-transfer_result = statclient.transfer({"stillnaring1.dat" : stillnaring}, "08771")
+transfer_result = statclient.transfer({"stillnaring1.dat": stillnaring}, "08771")
 
 # %%
 print(transfer_result)

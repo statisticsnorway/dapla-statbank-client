@@ -45,8 +45,10 @@ client = StatbankClient()
 # Din hovedtabell har kanskje bare èn deltabell, men vi trenger fortsatt navnet på den.
 
 # %%
-data_07495 = {"kargrs01fylker1.dat": df_07495_fylker,
-              "kargrs01landet1.dat": df_07495_landet }
+data_07495 = {
+    "kargrs01fylker1.dat": df_07495_fylker,
+    "kargrs01landet1.dat": df_07495_landet,
+}
 
 # %% [markdown]
 # ### Du kan validere rett på clienten?

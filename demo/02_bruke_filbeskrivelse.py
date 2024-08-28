@@ -15,6 +15,7 @@
 
 # %%
 import pandas as pd
+
 from statbank import StatbankClient
 
 # %% [markdown]
@@ -35,11 +36,11 @@ import datetime as dt
 # %%
 OSLO_TIMEZONE = dt.timezone(dt.timedelta(hours=1))
 dt.datetime.combine(
-                date.value,
-                dt.datetime.min.time(),
-            ).astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
+    date.value,
+    dt.datetime.min.time(),
+).astimezone(
+    OSLO_TIMEZONE,
+) + dt.timedelta(hours=1)
 
 # %%
 date.value
@@ -59,7 +60,10 @@ filbeskrivelse_07495 = client.get_description(tableid="07495")
 # %%
 from datetime import datetime
 
-filbesk_tid = datetime.strptime(filbeskrivelse_07495.time_retrieved.split(" ")[0], "%d.%m.%Y")
+filbesk_tid = datetime.strptime(
+    filbeskrivelse_07495.time_retrieved.split(" ")[0],
+    "%d.%m.%Y",
+)
 if filbesk_tid.year != datetime.now().year:
     raise ValueError("Filbeskrivelsen er fra i fjor, hent den på nytt.")
 
@@ -74,8 +78,10 @@ df_07495_landet = pd.read_parquet("07495_statbank_landet.parquet")
 filbeskrivelse_07495.transferdata_template(df_07495_fylker, df_07495_landet)
 
 # %%
-data_07495 = {"kargrs01fylker1.dat": df_07495_fylker,
-              "kargrs01landet1.dat": df_07495_landet}
+data_07495 = {
+    "kargrs01fylker1.dat": df_07495_fylker,
+    "kargrs01landet1.dat": df_07495_landet,
+}
 
 # %% [markdown]
 # ### Validate data

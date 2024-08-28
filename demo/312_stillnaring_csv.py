@@ -15,6 +15,7 @@
 
 # %%
 import pandas as pd
+
 from statbank import StatbankClient
 
 # %%
@@ -31,8 +32,8 @@ csv_data = pd.read_csv("stillnaring.csv", sep=";", header=None, index_col=0)
 csv_data
 
 # %%
-csv_data[4] = csv_data[4].str.replace(",",".", regex=False).astype(float)
-csv_data[6] = csv_data[6].str.replace(",",".", regex=False).astype(float)
+csv_data[4] = csv_data[4].str.replace(",", ".", regex=False).astype(float)
+csv_data[6] = csv_data[6].str.replace(",", ".", regex=False).astype(float)
 csv_data = csv_data.fillna("")
 
 # %%

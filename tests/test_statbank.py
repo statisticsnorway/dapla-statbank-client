@@ -243,6 +243,22 @@ def test_transfer_approve_wrong_format(
         StatbankTransfer(fake_data(), "10000", approve={"1"})
 
 
+def test_transfer_request_raises_error(transfer_success: StatbankTransfer):
+    # Mock the r.post method
+    with mock.patch("statbank.transfer.r.post") as mock_post:
+        # Create a mock response object
+        mock_response = mock.Mock()
+        # Set up the mock to raise an HTTPError when raise_for_status is called
+        mock_response.raise_for_status.side_effect = requests.HTTPError()
+        mock_post.return_value = mock_response
+
+        transfer_success.headers = {}
+
+        # Now, assert that the _make_transfer_request method raises an HTTPError
+        with pytest.raises(requests.HTTPError):
+            transfer_success._make_transfer_request("mock_url_params")  # noqa: SLF001
+
+
 @suppress_type_checks
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 @mock.patch.object(StatbankTransfer, "_encrypt_request")

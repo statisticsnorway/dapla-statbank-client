@@ -365,7 +365,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def _make_request(self, url: str) -> r.Response:
         response = r.get(url, headers=self.headers, timeout=10)
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except r.HTTPError:
+            logger.error(response.text)
+            raise
         return response
 
     def _split_attributes(self) -> None:

@@ -90,9 +90,10 @@ class StatbankAuth:
         db = self.check_database()
         try:
             headers = {
-                "Authorization": f"Bearer {AuthClient.fetch_personal_token()}",
                 "Content-type": "application/json",
             }
+            if os.environ.get("DAPLA_REGION", "TEST") != "ON_PREM":
+                headers["Authorization"] = f"Bearer {AuthClient.fetch_personal_token()}"
         except AuthError as err:
             logger.warning(str(err))
             headers = {

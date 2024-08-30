@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dapla-statbank-client"
-version = "1.2.6"
+version = "1.2.7"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 authors = ["Statistics Norway", "Carl F. Corneil <cfc@ssb.no>"]
 license = "MIT"
@@ -51,14 +51,17 @@ xdoctest = { extras = ["colors"], version = ">=0.15.10" }
 myst-parser = { version = ">=0.16.1" }
 ipykernel = ">=6.0.0"
 
+[tool.poetry.scripts]
+dapla-statbank-client = "statbank.__main__:main"
+
+
 
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 markers = ["integration_dapla: actually runs against the real statbank API, therefore needs username and password"]
 
-[tool.poetry.scripts]
-dapla-statbank-client = "statbank.__main__:main"
+
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]

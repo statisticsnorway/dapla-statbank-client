@@ -22,6 +22,10 @@ jobs:
           - { python: "3.10", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.11", os: "windows-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.11", os: "macos-latest", session: "tests", m: "not_integration_dapla"}
+          - { python: "3.11", os: "ubuntu-latest", session: "tests" }
+          - { python: "3.12", os: "ubuntu-latest", session: "tests" }
+          - { python: "3.12", os: "windows-latest", session: "tests" }
+          - { python: "3.12", os: "macos-latest", session: "tests" }
           - { python: "3.10", os: "ubuntu-latest", session: "typeguard" }
           - { python: "3.11", os: "ubuntu-latest", session: "xdoctest" }
           - { python: "3.10", os: "ubuntu-latest", session: "docs-build" }
@@ -36,7 +40,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python }}
 
@@ -100,6 +104,7 @@ jobs:
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python }}
           path: ".coverage.*"
+          include-hidden-files: true
 
       - name: Upload documentation
         if: matrix.session == 'docs-build'
@@ -118,9 +123,9 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Set up Python
-        uses: actions/setup-python@v5.1.1
+        uses: actions/setup-python@v5.2.0
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Upgrade pip
         run: |
@@ -165,4 +170,4 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         # No need to run SonarCloud analysis if dependabot update or token not defined
         if: env.SONAR_TOKEN != '' && (github.actor != 'dependabot[bot]')
-        uses: SonarSource/sonarcloud-github-action@v2.3.0
+        uses: SonarSource/sonarcloud-github-action@v3.0.0

@@ -6,7 +6,6 @@ from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
-from typing import Callable
 from unittest import mock
 
 import ipywidgets as widgets
@@ -17,6 +16,7 @@ import requests.cookies
 from typeguard import suppress_type_checks
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from collections.abc import Sequence
 
 from statbank import StatbankClient

@@ -145,14 +145,14 @@ def apicodelist(
     metadata = apimetadata(id_or_url)
     results = {}
     for col in metadata["variables"]:
-        results[col["code"]] = dict(zip(col["values"], col["valueTexts"]))
+        results[col["code"]] = dict(zip(col["values"], col["valueTexts"], strict=False))
     if codelist_name == "":
         return results
     if codelist_name in results:
         return results[codelist_name]
     for col in metadata["variables"]:
         if codelist_name == col["text"]:
-            return dict(zip(col["values"], col["valueTexts"]))
+            return dict(zip(col["values"], col["valueTexts"], strict=False))
     col_names = ", ".join([col["code"] for col in metadata["variables"]])
     error_msg = f"Cant find {codelist_name} among the available names: {col_names}"
     raise ValueError(error_msg)

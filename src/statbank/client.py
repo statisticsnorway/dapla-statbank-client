@@ -444,7 +444,7 @@ class StatbankClient(StatbankAuth):
 
     def _validate_date(self) -> None:
         """Validate dates provided to the client."""
-        if not (isinstance(self.date, (dt.date, dt.datetime))):
+        if not (isinstance(self.date, dt.date | dt.datetime)):
             error_msg = "Date must be a datetime.datetime or datetime.date"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         # Date should not be on a weekend

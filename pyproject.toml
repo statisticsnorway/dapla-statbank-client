@@ -97,7 +97,7 @@ ignore_missing_imports = true
 force-exclude = true  # Apply excludes to pre-commit
 show-fixes = true
 src = ["src", "tests"]
-target-version = "py39"  # Minimum Python version supported
+target-version = "py310"  # Minimum Python version supported
 
 # Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
 

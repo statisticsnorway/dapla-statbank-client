@@ -42,7 +42,6 @@ def _find_duplicates(items: Iterable[T]) -> list[T]:
     return [item for item, n in Counter(items).items() if n > 1]
 
 
-
 def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> None:
     """Raises an appropriate error."""
     if response.status_code == HTTPStatus.FORBIDDEN:
@@ -61,7 +60,9 @@ def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> N
             variable = match["variable"]
             error_message = check_selection(variable, id_or_url, query)
             if not error_message:
-                error_message = f'Your query failed with the error message: "{error_message}"'
+                error_message = (
+                    f'Your query failed with the error message: "{error_message}"'
+                )
             raise StatbankVariableSelectionError(error_message)
 
         error_message = f'Your query failed with the error message: "{error_message}"'
@@ -71,7 +72,9 @@ def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> N
 
 
 def check_selection(
-    variable: str, id_or_url: str, query: QueryWholeType,
+    variable: str,
+    id_or_url: str,
+    query: QueryWholeType,
 ) -> str | None:
     """Checks for common errors in your query selection, and returns a error message.
 
@@ -96,7 +99,9 @@ def check_selection(
 
     duplicates = _find_duplicates(query_selection["values"])
     if len(duplicates) > 0:
-        return f"The value(s) {_list_up(duplicates)} is duplicated for variable {variable}"
+        return (
+            f"The value(s) {_list_up(duplicates)} is duplicated for variable {variable}"
+        )
 
     if any("*" in values for values in query_selection["values"]):
         return (
@@ -123,9 +128,7 @@ def check_selection(
     ]
 
     if len(invalid_values) > 0:
-        return (
-            f"Invalid value(s) {_list_up(invalid_values)} have been specified for the variable {variable}"
-        )
+        return f"Invalid value(s) {_list_up(invalid_values)} have been specified for the variable {variable}"
 
     return None
 

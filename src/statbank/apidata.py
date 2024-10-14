@@ -44,16 +44,18 @@ def _find_duplicates(items: Iterable[T]) -> list[T]:
 
 def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> None:
     """Raises an appropriate error."""
+    error_message: str | None
+
     if response.status_code == HTTPStatus.FORBIDDEN:
         error_message = "Your query is too big. The API is limited to 800,000 cells (incl. empty cells)"
         raise TooBigRequestError(error_message)
 
     if response.status_code == HTTPStatus.BAD_REQUEST:
-        error_message = response.json().get("error", "")
+        api_error_message = response.json().get("error", "")
 
         match = re.match(
             r"The request for variable '(?P<variable>.+)' has an error\. Please check your query\.",
-            error_message,
+            api_error_message,
         )
 
         if match:
@@ -61,11 +63,11 @@ def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> N
             error_message = check_selection(variable, id_or_url, query)
             if not error_message:
                 error_message = (
-                    f'Your query failed with the error message: "{error_message}"'
+                    f'Your query failed with the error message: "{api_error_message}"'
                 )
             raise StatbankVariableSelectionError(error_message)
 
-        error_message = f'Your query failed with the error message: "{error_message}"'
+        error_message = f'Your query failed with the error message: "{api_error_message}"'
         raise StatbankParameterError(error_message)
 
     response.raise_for_status()

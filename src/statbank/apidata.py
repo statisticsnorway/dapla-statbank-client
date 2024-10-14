@@ -30,7 +30,8 @@ from .statbank_logger import logger
 STATBANK_TABLE_ID_LENGTH = 5
 T = TypeVar("T")
 
-def _list_up(sequence: Sequence[Any], conjunction: str = "and") -> str:
+
+def _list_up(sequence: Sequence[str], conjunction: str = "and") -> str:
     if len(sequence) == 1:
         return sequence[0]
 

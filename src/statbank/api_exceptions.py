@@ -8,7 +8,9 @@ class TooBigRequestError(StatbankApiError):
     The API is limited to 800,000 cells (incl. empty cells)
     """
 
-class StatbankQueryError(StatbankApiError):
+class StatbankParameterError(StatbankApiError):
     """Exception for invalid request."""
 
+class StatbankVariableSelectionError(StatbankApiError):
+    """Exception for invalid variable selection."""
 

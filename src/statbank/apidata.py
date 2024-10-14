@@ -20,7 +20,8 @@ if TYPE_CHECKING:
     from .api_types import QueryPartType
     from .api_types import QueryWholeType
 
-from .api_exceptions import StatbankQueryError
+from .api_exceptions import StatbankParameterError
+from .api_exceptions import StatbankVariableSelectionError
 from .api_exceptions import TooBigRequestError
 from .statbank_logger import logger
 
@@ -58,13 +59,12 @@ def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> N
         if match:
             variable = match["variable"]
             error_message = check_selection(variable, id_or_url, query)
-        else:
-            error_message = None
+            if not error_message:
+                error_message = f'Your query failed with the error message: "{error_message}"'
+            raise StatbankVariableSelectionError(error_message)
 
-        if not error_message:
-            error_message = f'Your query failed with the error message "{error_message}"'
-
-        raise StatbankQueryError(error_message)
+        error_message = f'Your query failed with the error message: "{error_message}"'
+        raise StatbankParameterError(error_message)
 
     response.raise_for_status()
 

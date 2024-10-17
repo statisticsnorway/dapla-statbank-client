@@ -5,6 +5,7 @@ import urllib
 from collections import Counter
 from http import HTTPStatus
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import TypeVar
 
 import requests as r
@@ -13,7 +14,6 @@ from pyjstat import pyjstat
 if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Sequence
-    from typing import Any
 
     import pandas as pd
 
@@ -29,110 +29,6 @@ from .statbank_logger import logger
 
 STATBANK_TABLE_ID_LENGTH = 5
 T = TypeVar("T")
-
-
-def _list_up(sequence: Sequence[str], conjunction: str = "and") -> str:
-    if len(sequence) == 1:
-        return sequence[0]
-
-    return f"{', '.join(sequence[:-1])} {conjunction} {sequence[-1]}"
-
-
-def _find_duplicates(items: Iterable[T]) -> list[T]:
-    return [item for item, n in Counter(items).items() if n > 1]
-
-
-def read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> None:
-    """Raises an appropriate error."""
-    error_message: str | None
-
-    if response.status_code == HTTPStatus.FORBIDDEN:
-        error_message = "Your query is too big. The API is limited to 800,000 cells (incl. empty cells)"
-        raise TooBigRequestError(error_message)
-
-    if response.status_code == HTTPStatus.BAD_REQUEST:
-        api_error_message = response.json().get("error", "")
-
-        match = re.match(
-            r"The request for variable '(?P<variable>.+)' has an error\. Please check your query\.",
-            api_error_message,
-        )
-
-        if match:
-            variable = match["variable"]
-            error_message = check_selection(variable, id_or_url, query)
-            if not error_message:
-                error_message = (
-                    f'Your query failed with the error message: "{api_error_message}"'
-                )
-            raise StatbankVariableSelectionError(error_message)
-
-        error_message = f'Your query failed with the error message: "{api_error_message}"'
-        raise StatbankParameterError(error_message)
-
-    response.raise_for_status()
-
-
-def check_selection(
-    variable: str,
-    id_or_url: str,
-    query: QueryWholeType,
-) -> str | None:
-    """Checks for common errors in your query selection, and returns a error message.
-
-    When the query fails with the message "The request for variable ... has an error,"
-    check that the selection don't contains duplicate and invalid values against the metadata and
-    check that the filter is set to "all" when selecting with a wildcard (*).
-    Metadata for aggregations are not available, so we can't inspect selection with agg and agg_single filters.
-    Errors with "top" and "all" filter always fail with "parameter error", so we don't validate them here.
-    """
-    query_part = next(filter(lambda part: part["code"] == variable, query["query"]))
-    query_selection = query_part["selection"]
-
-    match = re.fullmatch(
-        r"(?P<filtertype>(item)|(vs|agg|agg_single))(?(3):(?P<aggregering>.+))",
-        query_selection["filter"],
-    )
-
-    if match is None:
-        return f'The filter don\'t match one of the types "item", "all", "top", "vs:", "agg:", "agg_single:", for variable {variable}.'
-
-    filter_type = match["filtertype"]
-
-    duplicates = _find_duplicates(query_selection["values"])
-    if len(duplicates) > 0:
-        return (
-            f"The value(s) {_list_up(duplicates)} is duplicated for variable {variable}"
-        )
-
-    if any("*" in values for values in query_selection["values"]):
-        return (
-            f"One of the values for the variable {variable} contains a wildcard character (*)."
-            'If you wish to select several or all values with a wildcard, "filter" must be set to "all"'
-        )
-
-    if filter_type in ("agg", "agg_single"):
-        return (
-            "A value is probably invalid for variable {variable}, but an aggregation is used,"
-            "and metadata for aggregations is not available, so it is not possible to determine witch."
-        )
-
-    meta = apimetadata(id_or_url)
-
-    variable_meta = next(
-        filter(lambda part: part["code"] == variable, meta["variables"]),
-    )
-
-    invalid_values = [
-        value
-        for value in query_selection["values"]
-        if value not in variable_meta["values"]
-    ]
-
-    if len(invalid_values) > 0:
-        return f"Invalid value(s) {_list_up(invalid_values)} have been specified for the variable {variable}"
-
-    return None
 
 
 def apidata(
@@ -175,7 +71,7 @@ def apidata(
     # Spør APIet om å få resultatet med requests-biblioteket
     resultat = r.post(url, json=payload_now, timeout=10)
     if not resultat.ok:
-        read_error(id_or_url, payload_now, resultat)
+        _read_error(id_or_url, payload_now, resultat)
 
     # Putt teksten i resultatet inn i ett pyjstat-datasett-objekt
     dataset_pyjstat = pyjstat.Dataset.read(resultat.text)
@@ -316,3 +212,110 @@ def apidata_rotate(
         values=val,
         columns=[i for i in df.columns if i not in (ind, val)],
     )
+
+
+# Error handeling and HTTP-return code interpretations follow
+def _list_up(sequence: Sequence[str], conjunction: str = "and") -> str:
+    if len(sequence) == 1:
+        return sequence[0]
+
+    return f"{', '.join(sequence[:-1])} {conjunction} {sequence[-1]}"
+
+
+def _find_duplicates(items: Iterable[T]) -> list[T]:
+    return [item for item, n in Counter(items).items() if n > 1]
+
+
+def _read_error(id_or_url: str, query: QueryWholeType, response: r.Response) -> None:
+    """Raises an appropriate error."""
+    error_message: str | None
+
+    if response.status_code == HTTPStatus.FORBIDDEN:
+        error_message = "Your query is too big. The API is limited to 800,000 cells (incl. empty cells)"
+        raise TooBigRequestError(error_message)
+
+    if response.status_code == HTTPStatus.BAD_REQUEST:
+        api_error_message = response.json().get("error", "")
+
+        match = re.match(
+            r"The request for variable '(?P<variable>.+)' has an error\. Please check your query\.",
+            api_error_message,
+        )
+
+        if match:
+            variable = match["variable"]
+            error_message = _check_selection(variable, id_or_url, query)
+            if not error_message:
+                error_message = (
+                    f'Your query failed with the error message: "{api_error_message}"'
+                )
+            raise StatbankVariableSelectionError(error_message)
+
+        error_message = (
+            f'Your query failed with the error message: "{api_error_message}"'
+        )
+        raise StatbankParameterError(error_message)
+
+    response.raise_for_status()
+
+
+def _check_selection(
+    variable: str,
+    id_or_url: str,
+    query: QueryWholeType,
+) -> str | None:
+    """Checks for common errors in your query selection, and returns a error message.
+
+    When the query fails with the message "The request for variable ... has an error,"
+    check that the selection don't contains duplicate and invalid values against the metadata and
+    check that the filter is set to "all" when selecting with a wildcard (*).
+    Metadata for aggregations are not available, so we can't inspect selection with agg and agg_single filters.
+    Errors with "top" and "all" filter always fail with "parameter error", so we don't validate them here.
+    """
+    query_part = next(filter(lambda part: part["code"] == variable, query["query"]))
+    query_selection = query_part["selection"]
+
+    match = re.fullmatch(
+        r"(?P<filtertype>(item)|(vs|agg|agg_single))(?(3):(?P<aggregering>.+))",
+        query_selection["filter"],
+    )
+
+    if match is None:
+        return f'The filter don\'t match one of the types "item", "all", "top", "vs:", "agg:", "agg_single:", for variable {variable}.'
+
+    filter_type = match["filtertype"]
+
+    duplicates = _find_duplicates(query_selection["values"])
+    if len(duplicates) > 0:
+        return (
+            f"The value(s) {_list_up(duplicates)} is duplicated for variable {variable}"
+        )
+
+    if any("*" in values for values in query_selection["values"]):
+        return (
+            f"One of the values for the variable {variable} contains a wildcard character (*)."
+            'If you wish to select several or all values with a wildcard, "filter" must be set to "all"'
+        )
+
+    if filter_type in ("agg", "agg_single"):
+        return (
+            "A value is probably invalid for variable {variable}, but an aggregation is used,"
+            "and metadata for aggregations is not available, so it is not possible to determine witch."
+        )
+
+    meta = apimetadata(id_or_url)
+
+    variable_meta = next(
+        filter(lambda part: part["code"] == variable, meta["variables"]),
+    )
+
+    invalid_values = [
+        value
+        for value in query_selection["values"]
+        if value not in variable_meta["values"]
+    ]
+
+    if len(invalid_values) > 0:
+        return f"Invalid value(s) {_list_up(invalid_values)} have been specified for the variable {variable}"
+
+    return None

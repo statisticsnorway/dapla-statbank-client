@@ -13,13 +13,13 @@ from statbank import StatbankClient
 from statbank.api_exceptions import StatbankParameterError
 from statbank.api_exceptions import StatbankVariableSelectionError
 from statbank.api_exceptions import TooBigRequestError
+from statbank.apidata import _check_selection
 from statbank.apidata import apicodelist
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_query_all
 from statbank.apidata import apidata_rotate
 from statbank.apidata import apimetadata
-from statbank.apidata import check_selection
 
 if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
@@ -274,7 +274,8 @@ def test_client_apidata_rotate_05300(
 
 @mock.patch.object(requests, "post")
 def test_apidata_raises_parameter_error(
-    fake_post: Callable, query_all_05300: pd.DataFrame
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_parameter_error()
     fake_post.return_value.status_code = 400
@@ -284,7 +285,8 @@ def test_apidata_raises_parameter_error(
 
 @mock.patch.object(requests, "post")
 def test_apidata_raises_variable_error(
-    fake_post: Callable, query_all_05300: pd.DataFrame
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_variable_error()
     fake_post.return_value.status_code = 400
@@ -294,7 +296,8 @@ def test_apidata_raises_variable_error(
 
 @mock.patch.object(requests, "post")
 def test_apidata_raises_too_big_error(
-    fake_post: Callable, query_all_05300: pd.DataFrame
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_too_many_values_selected()
     fake_post.return_value.status_code = 403
@@ -345,7 +348,7 @@ def test_check_duplicates_in_selection():
         "response": {"format": "json-stat2"},
     }
 
-    message = check_selection(variable, "05300", request)
+    message = _check_selection(variable, "05300", request)
     expected = "The value(s) 01 is duplicated for variable Avstand1"
     assert message == expected
 
@@ -367,7 +370,7 @@ def test_check_invalid_in_selection(fake_metadata: Callable):
         "response": {"format": "json-stat2"},
     }
 
-    message = check_selection(variable, "05300", request)
+    message = _check_selection(variable, "05300", request)
     expected = (
         "Invalid value(s) 07 and 08 have been specified for the variable Avstand1"
     )
@@ -391,7 +394,7 @@ def test_check_with_wildcard(fake_metadata: Callable):
         "response": {"format": "json-stat2"},
     }
 
-    message = check_selection(variable, "05300", request)
+    message = _check_selection(variable, "05300", request)
     expected = (
         "One of the values for the variable Avstand1 contains a wildcard character (*)."
     )

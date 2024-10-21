@@ -326,7 +326,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         return data_copy
 
     @staticmethod
-    def _round(n: float, decimals: int = 0, round_up: bool = True) -> str:
+    def _round(
+        n: float | str | pd._libs.missing.NAType,
+        decimals: int = 0,
+        round_up: bool = True,
+    ) -> str:
         if pd.isna(n):
             result: str = ""
         elif round_up and decimals and (n or n == 0):

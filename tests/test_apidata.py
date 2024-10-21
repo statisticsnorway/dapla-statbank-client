@@ -1,4 +1,6 @@
 from collections.abc import Callable
+from typing import TYPE_CHECKING
+from typing import Any
 from unittest import mock
 
 import pandas as pd
@@ -8,12 +10,19 @@ from dotenv import load_dotenv
 from requests.exceptions import HTTPError
 
 from statbank import StatbankClient
+from statbank.api_exceptions import StatbankParameterError
+from statbank.api_exceptions import StatbankVariableSelectionError
+from statbank.api_exceptions import TooBigRequestError
+from statbank.apidata import _check_selection
 from statbank.apidata import apicodelist
 from statbank.apidata import apidata
 from statbank.apidata import apidata_all
 from statbank.apidata import apidata_query_all
 from statbank.apidata import apidata_rotate
 from statbank.apidata import apimetadata
+
+if TYPE_CHECKING:
+    from statbank.api_types import QueryWholeType
 
 load_dotenv()
 
@@ -65,6 +74,52 @@ def fake_post_apidata() -> requests.Response:
     )
     response.request = requests.PreparedRequest()
     return response
+
+
+def fake_post_too_many_values_selected() -> requests.Response:
+    response = requests.Response()
+    response.status_code = 400
+    response._content = bytes(  # noqa: SLF001
+        '{"error": "Too many values selected"}',
+        encoding="utf8",
+    )
+    response.request = requests.PreparedRequest()
+    return response
+
+
+def fake_post_parameter_error() -> requests.Response:
+    response = requests.Response()
+    response.status_code = 400
+    response._content = bytes(  # noqa: SLF001
+        '{"error": "Parameter error"}',
+        encoding="utf8",
+    )
+    response.request = requests.PreparedRequest()
+    return response
+
+
+def fake_post_variable_error() -> requests.Response:
+    response = requests.Response()
+    response.status_code = 400
+    response._content = bytes(  # noqa: SLF001
+        '{"error": "The request for variable \'Avstand1\' has an error. Please check your query."}',
+        encoding="utf8",
+    )
+    response.request = requests.PreparedRequest()
+    return response
+
+
+def fake_metadata() -> dict[str, Any]:
+    return {
+        "title": "05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år",
+        "variables": [
+            {
+                "code": "Avstand1",
+                "text": "avstand",
+                "values": ["01", "02", "03", "04", "05", "06"],
+            },
+        ],
+    }
 
 
 @pytest.fixture
@@ -137,7 +192,7 @@ def apidata_05300(fake_post: Callable, query_all_05300: pd.DataFrame) -> pd.Data
 def test_query_all_raises_500(fake_get: Callable) -> None:
     fake_get.return_value = fake_get_table_meta()
     fake_get.return_value.status_code = 500
-    with pytest.raises(HTTPError) as _:
+    with pytest.raises(expected_exception=HTTPError) as _:
         apidata_query_all("https://data.ssb.no/api/v0/no/table/05300")
 
 
@@ -218,18 +273,35 @@ def test_client_apidata_rotate_05300(
 
 
 @mock.patch.object(requests, "post")
-def test_apidata_raises_400(fake_post: Callable, query_all_05300: pd.DataFrame) -> None:
-    fake_post.return_value = fake_post_apidata()
+def test_apidata_raises_parameter_error(
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
+) -> None:
+    fake_post.return_value = fake_post_parameter_error()
     fake_post.return_value.status_code = 400
-    with pytest.raises(HTTPError) as _:
+    with pytest.raises(expected_exception=StatbankParameterError) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
 @mock.patch.object(requests, "post")
-def test_apidata_raises_403(fake_post: Callable, query_all_05300: pd.DataFrame) -> None:
-    fake_post.return_value = fake_post_apidata()
+def test_apidata_raises_variable_error(
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
+) -> None:
+    fake_post.return_value = fake_post_variable_error()
+    fake_post.return_value.status_code = 400
+    with pytest.raises(expected_exception=StatbankVariableSelectionError) as _:
+        apidata("05300", query_all_05300, include_id=True)
+
+
+@mock.patch.object(requests, "post")
+def test_apidata_raises_too_big_error(
+    fake_post: Callable,
+    query_all_05300: pd.DataFrame,
+) -> None:
+    fake_post.return_value = fake_post_too_many_values_selected()
     fake_post.return_value.status_code = 403
-    with pytest.raises(HTTPError) as _:
+    with pytest.raises(expected_exception=TooBigRequestError) as _:
         apidata("05300", query_all_05300, include_id=True)
 
 
@@ -259,3 +331,72 @@ def test_apidata_all_raises_wrong_id(
     fake_apidata.return_value = apidata_05300
     with pytest.raises(ValueError, match="statbank ID") as _:
         apidata_all("0", include_id=True)
+
+
+def test_check_duplicates_in_selection():
+    variable = "Avstand1"
+    request: QueryWholeType = {
+        "query": [
+            {
+                "code": "Avstand1",
+                "selection": {
+                    "filter": "item",
+                    "values": ["01", "01"],
+                },
+            },
+        ],
+        "response": {"format": "json-stat2"},
+    }
+
+    message = _check_selection(variable, "05300", request)
+    expected = "The value(s) 01 is duplicated for variable Avstand1"
+    assert message == expected
+
+
+@mock.patch("statbank.apimetadata")
+def test_check_invalid_in_selection(fake_metadata: Callable):
+    fake_metadata.return_value = fake_metadata()
+    variable = "Avstand1"
+    request: QueryWholeType = {
+        "query": [
+            {
+                "code": "Avstand1",
+                "selection": {
+                    "filter": "item",
+                    "values": ["01", "07", "08"],
+                },
+            },
+        ],
+        "response": {"format": "json-stat2"},
+    }
+
+    message = _check_selection(variable, "05300", request)
+    expected = (
+        "Invalid value(s) 07 and 08 have been specified for the variable Avstand1"
+    )
+    assert message == expected
+
+
+@mock.patch("statbank.apimetadata")
+def test_check_with_wildcard(fake_metadata: Callable):
+    fake_metadata.return_value = fake_metadata()
+    variable = "Avstand1"
+    request: QueryWholeType = {
+        "query": [
+            {
+                "code": "Avstand1",
+                "selection": {
+                    "filter": "item",
+                    "values": ["*"],
+                },
+            },
+        ],
+        "response": {"format": "json-stat2"},
+    }
+
+    message = _check_selection(variable, "05300", request)
+    expected = (
+        "One of the values for the variable Avstand1 contains a wildcard character (*)."
+    )
+    assert message is not None
+    assert message.startswith(expected)

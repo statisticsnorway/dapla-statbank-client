@@ -47,8 +47,7 @@ class StatbankClient(StatbankAuth):
     - get published data from the external or internal API of statbanken: apidata_all() / apidata()
 
     Attributes:
-        date (str): Date for publishing the transfer. Shape should be "yyyy-mm-dd",
-            like "2022-01-01".
+        date (dt.datetime): Date for publishing the transfer.
             Statbanken only allows publishing four months into the future?
         shortuser (str): The abbrivation of username at ssb. Three letters, like "cfc".
             If not specified,
@@ -71,7 +70,7 @@ class StatbankClient(StatbankAuth):
 
     def __init__(  # noqa: PLR0913
         self,
-        date: str | dt.datetime = TOMORROW,
+        date: str | dt.date | dt.datetime = TOMORROW,
         shortuser: str = "",
         cc: str = "",
         bcc: str = "",
@@ -104,6 +103,13 @@ class StatbankClient(StatbankAuth):
             except ValueError as e:
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
+        elif isinstance(date, dt.date) and not isinstance(date, dt.datetime):
+            self.date = dt.datetime.combine(
+                date,
+                dt.datetime.min.time(),
+            ).astimezone(
+                OSLO_TIMEZONE,
+            ) + dt.timedelta(hours=1)
         else:
             self.date = date
         self._validate_date()
@@ -444,8 +450,8 @@ class StatbankClient(StatbankAuth):
 
     def _validate_date(self) -> None:
         """Validate dates provided to the client."""
-        if not (isinstance(self.date, dt.date | dt.datetime)):
-            error_msg = "Date must be a datetime.datetime or datetime.date"  # type: ignore[unreachable]
+        if not (isinstance(self.date, dt.datetime)):
+            error_msg = "Date must be a datetime.datetime"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         # Date should not be on a weekend
         if self.date.weekday() in [5, 6]:

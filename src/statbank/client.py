@@ -103,13 +103,13 @@ class StatbankClient(StatbankAuth):
             except ValueError as e:
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
-        elif not isinstance(date, dt.datetime):
+        elif isinstance(date, dt.date) and not isinstance(date, dt.datetime):
             self.date = dt.datetime.combine(
                 date,
                 dt.datetime.min.time(),
             ).astimezone(
                 OSLO_TIMEZONE,
-                ) + dt.timedelta(hours=1)
+            ) + dt.timedelta(hours=1)
         else:
             self.date = date
         self._validate_date()

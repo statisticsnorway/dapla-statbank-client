@@ -65,9 +65,9 @@ class StatbankUttrekkValidators:
                 validation_errors[f"col_count_data_{deltabell_num}"] = ValueError(
                     error_msg,
                 )
-        for k in validation_errors:
+        for k, v in validation_errors.items():
             if "col_count_data" in k:
-                logger.warning(validation_errors[k])
+                logger.warning(v)
                 break
         else:
             logger.debug("Correct number of columns...")

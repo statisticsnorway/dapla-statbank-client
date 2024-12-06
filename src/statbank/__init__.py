@@ -21,11 +21,11 @@ from statbank.statbank_logger import logger
 
 __all__ = [
     "StatbankClient",
+    "apicodelist",
     "apidata",
     "apidata_all",
     "apidata_rotate",
     "apimetadata",
-    "apicodelist",
 ]
 
 

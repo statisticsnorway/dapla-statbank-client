@@ -7,10 +7,12 @@ if TYPE_CHECKING:
     import pandas as pd
 
 import datetime as dt
+import getpass
 import json
 import os
+import subprocess
+from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import ipywidgets as widgets
 from IPython.display import display
@@ -474,7 +476,7 @@ class StatbankClient(StatbankAuth):
     def _validate_params_init(self) -> None:
         """Validates many of the parameters sent in on client-initialization."""
         if not self.shortuser:
-            self.shortuser = self._get_user_tbf()
+            self.shortuser = self._get_user_initials()
         if not self.cc:
             self.cc = self.shortuser
         if not self.bcc:
@@ -487,10 +489,31 @@ class StatbankClient(StatbankAuth):
             raise ValueError(error_msg)
 
     @staticmethod
-    def _get_user_tbf() -> str:
-        user_mail = os.environ.get("GIT_USER_MAIL", "")
-        if not user_mail:
-            user_mail = os.environ.get("JUPYTERHUB_USER", "")
-        if "@" in user_mail:
-            user_mail = user_mail.split("@")[0]
-        return user_mail
+    def _get_user_initials() -> str:
+        attempts = (
+            partial(os.environ.get, "DAPLA_USER"),
+            partial(os.environ.get, "JUPYTERHUB_USER"),
+            lambda: subprocess.run(
+                ["git", "config", "user.email"],
+                capture_output=True,
+                text=True,
+                check=False,
+            ).stdout.strip(),
+            getpass.getuser,
+            partial(input, "Brukerinitialer: (tre bokstaver)"),
+        )
+
+        for func in attempts:
+            initials_or_email = func()
+
+            if not initials_or_email:
+                continue
+
+            initials = initials_or_email.partition("@")[0]
+            if not (len(initials) == 3 and initials.isalpha()):
+                continue
+
+            return initials
+
+        error_message = "Can't find the users email or initials in the system."
+        raise ValueError(error_message)

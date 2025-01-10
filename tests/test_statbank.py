@@ -364,28 +364,34 @@ def test_transfer_loaduser_still(
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def client_fake(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_set_approve_overwrite(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient(
         check_username_password=False,
@@ -402,11 +408,13 @@ def test_client_set_approve_overwrite(
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_approve_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="handle approve") as _:
         StatbankClient(approve=[1], check_username_password=False)
@@ -415,14 +423,17 @@ def test_client_approve_wrong_datatype(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_overwrite_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="overwrite") as _:
         StatbankClient(overwrite="1", check_username_password=False)
@@ -431,14 +442,17 @@ def test_client_overwrite_wrong_datatype(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_date_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="Date must be a datetime") as _:
         StatbankClient(check_username_password=False, date=1)
@@ -456,14 +470,17 @@ def test_client_repr(client_fake: StatbankClient):
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_with_str_date(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient("2050-01-01", check_username_password=False)
     assert isinstance(client.date, datetime)
@@ -471,14 +488,17 @@ def test_client_with_str_date(
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_loaduser_still(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(ValueError, match="Loaduser"):
         StatbankClient(fake_user(), "2050-01-01", check_username_password=False)

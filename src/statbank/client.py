@@ -494,11 +494,12 @@ class StatbankClient(StatbankAuth):
         attempts = (
             partial(os.environ.get, "DAPLA_USER"),
             partial(os.environ.get, "JUPYTERHUB_USER"),
-            subprocess.check_output("git config user.email".split(" "))  # noqa: S603
+            lambda: subprocess.check_output(  # noqa: S603
+                "git config user.email".split(" "),
+            )
             .decode("utf8")
             .strip(),
-            getpass.getuser,
-            partial(input, "Brukerinitialer: (tre bokstaver)"),
+            getpass.getuser("Brukerinitialer: (tre bokstaver)"),
         )
 
         for func in attempts:

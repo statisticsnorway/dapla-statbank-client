@@ -405,6 +405,7 @@ def test_client_set_approve_overwrite(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_approve_wrong_datatype(
     test_build_user_agent: Callable,

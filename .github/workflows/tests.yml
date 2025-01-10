@@ -152,11 +152,11 @@ jobs:
 
       - name: Combine coverage data and display human readable report
         run: |
-          nox --session=coverage
+          nox --session=coverage -p 3.12
 
       - name: Create coverage report
         run: |
-          nox --session=coverage -- xml
+          nox --session=coverage -- xml -p 3.12
 
       # Need to fix coverage source paths for SonarCloud scanning in GitHub actions.
       # Replace root path with /github/workspace (mounted in docker container).

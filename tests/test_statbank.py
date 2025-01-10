@@ -30,7 +30,7 @@ def test_round_up_zero():
 
 
 def fake_user():
-    return "SSB-person-456"
+    return "tbf"
 
 
 def fake_pass():

@@ -30,7 +30,7 @@ DIGITS_IN_YEAR = 4
 
 
 def fake_user() -> str:
-    return "SSB-person-456"
+    return "tbf"
 
 
 def fake_auth() -> str:

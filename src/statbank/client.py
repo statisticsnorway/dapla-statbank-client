@@ -27,6 +27,7 @@ from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
+from statbank.globals import SSB_TBF_LEN
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
@@ -493,12 +494,9 @@ class StatbankClient(StatbankAuth):
         attempts = (
             partial(os.environ.get, "DAPLA_USER"),
             partial(os.environ.get, "JUPYTERHUB_USER"),
-            lambda: subprocess.run(
-                ["git", "config", "user.email"],
-                capture_output=True,
-                text=True,
-                check=False,
-            ).stdout.strip(),
+            subprocess.check_output("git config user.email".split(" "))  # noqa: S603
+            .decode("utf8")
+            .strip(),
             getpass.getuser,
             partial(input, "Brukerinitialer: (tre bokstaver)"),
         )
@@ -510,7 +508,7 @@ class StatbankClient(StatbankAuth):
                 continue
 
             initials = initials_or_email.partition("@")[0]
-            if not (len(initials) == 3 and initials.isalpha()):
+            if not (len(initials) == SSB_TBF_LEN and initials.isalpha()):
                 continue
 
             return initials

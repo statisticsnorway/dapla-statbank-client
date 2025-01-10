@@ -499,7 +499,8 @@ class StatbankClient(StatbankAuth):
             )
             .decode("utf8")
             .strip(),
-            partial(getpass.getuser, "Brukerinitialer (tre bokstaver): "),
+            getpass.getuser,
+            partial(input, "Brukerinitialer (tre bokstaver): "),
         )
 
         for func in attempts:

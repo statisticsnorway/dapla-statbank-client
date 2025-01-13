@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import getpass
 import json
+import os
+import subprocess
 from datetime import datetime
 from datetime import timedelta as td
 from pathlib import Path
@@ -813,3 +816,55 @@ def test_client_transfer(
     test_get_user.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client_fake.transfer(fake_data(), "10000")
+
+
+@mock.patch("builtins.input")
+@mock.patch.object(getpass, "getuser")
+@mock.patch.object(subprocess, "check_output")
+@mock.patch.object(os.environ, "get")
+def test_get_user_initials(
+    mock_environ_get: Callable,
+    mock_check_output: Callable,
+    mock_getuser: Callable,
+    mock_input: Callable,
+):
+
+    # Test when os.environ.get("DAPLA_USER") provides a valid value
+    mock_environ_get.side_effect = lambda key: (
+        "usr@ssb.no" if key == "DAPLA_USER" else ""
+    )
+    assert StatbankClient._get_user_initials() == "usr"  # noqa: SLF001
+
+    mock_environ_get.side_effect = lambda key: (
+        "jup@ssb.no" if key == "JUPYTERHUB_USER" else ""
+    )
+    assert StatbankClient._get_user_initials() == "jup"  # noqa: SLF001
+
+    # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config
+    mock_environ_get.side_effect = lambda _: ""
+    mock_check_output.return_value = b"tba@ssb.no"
+    assert StatbankClient._get_user_initials() == "tba"  # noqa: SLF001
+
+    # Test when os.environ.get and git config fail, fallback to getpass.getuser
+    mock_check_output.side_effect = subprocess.CalledProcessError(
+        1,
+        "git config user.email",
+    )
+    mock_check_output.return_value = b""
+    mock_getuser.return_value = "tbb@ssb.no"
+    # Reset mock_check_output to avoid the error persisting into this test
+    mock_check_output.side_effect = None
+    assert StatbankClient._get_user_initials() == "tbb"  # noqa: SLF001
+
+    # Test when all other methods fail, fallback to user input
+    mock_getuser.return_value = ""
+    mock_input.return_value = "tbc@ssb.no"
+    assert StatbankClient._get_user_initials() == "tbc"  # noqa: SLF001
+
+    # Test when no valid initials can be found, ensure ValueError is raised
+    mock_input.return_value = ""
+    with pytest.raises(
+        ValueError,
+        match="Can't find the users email or initials in the system.",
+    ):
+        StatbankClient._get_user_initials()  # noqa: SLF001

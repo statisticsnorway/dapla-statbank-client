@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing import Any
+
     import pandas as pd
 
 import datetime as dt
@@ -491,7 +493,7 @@ class StatbankClient(StatbankAuth):
 
     @staticmethod
     def _get_user_initials() -> str:
-        attempts = (
+        attempts: tuple[Callable[[], str], ...] = (
             partial(os.environ.get, "DAPLA_USER"),
             partial(os.environ.get, "JUPYTERHUB_USER"),
             lambda: subprocess.check_output(  # noqa: S603
@@ -504,15 +506,14 @@ class StatbankClient(StatbankAuth):
         )
 
         for func in attempts:
-            initials_or_email = func()
+            initials_or_email: str = func()
 
             if not initials_or_email:
                 continue
 
-            initials = initials_or_email.partition("@")[0]
+            initials: str = initials_or_email.partition("@")[0]
             if not (len(initials) == SSB_TBF_LEN and initials.isalpha()):
                 continue
-
             return initials
 
         error_message = "Can't find the users email or initials in the system."

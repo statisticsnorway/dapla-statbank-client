@@ -493,7 +493,7 @@ class StatbankClient(StatbankAuth):
 
     @staticmethod
     def _get_user_initials() -> str:
-        attempts: tuple[Callable[[], str], ...] = (
+        attempts: tuple[Callable[[], str] | partial[str | None], ...] = (
             partial(os.environ.get, "DAPLA_USER"),
             partial(os.environ.get, "JUPYTERHUB_USER"),
             lambda: subprocess.check_output(  # noqa: S603

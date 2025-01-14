@@ -177,7 +177,7 @@ def tests(session: Session) -> None:
             session.notify("coverage", posargs=[])
 
 
-@session(python=python_versions[0])
+@session(python=python_versions[-1])
 def coverage(session: Session) -> None:
     """Produce the coverage report."""
     args = session.posargs or ["report", "--skip-empty"]

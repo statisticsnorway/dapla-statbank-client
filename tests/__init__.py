@@ -3,6 +3,7 @@
 import os
 
 os.environ["JUPYTERHUB_USER"] = "ssb@ssb.no"
+os.environ["DAPLA_USER"] = "usr@ssb.no"
 os.environ["DAPLA_ENVIRONMENT"] = "TEST"
 
 os.environ["STATBANK_BASE_URL"] = os.environ.get(

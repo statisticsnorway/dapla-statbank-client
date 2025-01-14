@@ -4,13 +4,17 @@ from typing import TYPE_CHECKING
 from typing import Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     import pandas as pd
 
 import datetime as dt
+import getpass
 import json
 import os
+import subprocess
+from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import ipywidgets as widgets
 from IPython.display import display
@@ -25,6 +29,7 @@ from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
+from statbank.globals import SSB_TBF_LEN
 from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
@@ -474,7 +479,7 @@ class StatbankClient(StatbankAuth):
     def _validate_params_init(self) -> None:
         """Validates many of the parameters sent in on client-initialization."""
         if not self.shortuser:
-            self.shortuser = self._get_user_tbf()
+            self.shortuser = self._get_user_initials()
         if not self.cc:
             self.cc = self.shortuser
         if not self.bcc:
@@ -487,10 +492,29 @@ class StatbankClient(StatbankAuth):
             raise ValueError(error_msg)
 
     @staticmethod
-    def _get_user_tbf() -> str:
-        user_mail = os.environ.get("GIT_USER_MAIL", "")
-        if not user_mail:
-            user_mail = os.environ.get("JUPYTERHUB_USER", "")
-        if "@" in user_mail:
-            user_mail = user_mail.split("@")[0]
-        return user_mail
+    def _get_user_initials() -> str:
+        attempts: tuple[Callable[[], str] | partial[str | None], ...] = (
+            partial(os.environ.get, "DAPLA_USER"),
+            partial(os.environ.get, "JUPYTERHUB_USER"),
+            lambda: subprocess.check_output(  # noqa: S603
+                "git config user.email".split(" "),
+            )
+            .decode("utf8")
+            .strip(),
+            getpass.getuser,
+            partial(input, "Brukerinitialer (tre bokstaver): "),
+        )
+
+        for func in attempts:
+            initials_or_email: str | None = func()
+
+            if not initials_or_email:
+                continue
+
+            initials: str = initials_or_email.partition("@")[0]
+            if not (len(initials) == SSB_TBF_LEN and initials.isalpha()):
+                continue
+            return initials
+
+        error_message = "Can't find the users email or initials in the system."
+        raise ValueError(error_message)

@@ -116,7 +116,6 @@ extend-exclude = [
 select = ["ALL"]
 exclude = ["demo"]
 ignore = [
-    "ANN101", # Supress missing-type-self.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
     "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
     "E501",   # Supress line-too-long warnings: trust black's judgement on this one.

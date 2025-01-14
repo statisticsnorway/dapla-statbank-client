@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from typing import Any
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from typing import Any
 
     import pandas as pd
 
@@ -506,7 +506,7 @@ class StatbankClient(StatbankAuth):
         )
 
         for func in attempts:
-            initials_or_email: str = func()
+            initials_or_email: str | None = func()
 
             if not initials_or_email:
                 continue

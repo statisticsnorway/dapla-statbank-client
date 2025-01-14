@@ -18,6 +18,7 @@ from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
 from statbank.globals import Approve
 from statbank.globals import _approve_type_check
+from statbank.globals import add_dst_hour
 from statbank.statbank_logger import logger
 
 if TYPE_CHECKING:
@@ -178,7 +179,7 @@ class StatbankTransfer(StatbankAuth):
     def _set_date(self, date: dt | str | None = None) -> None:
         # At this point we want date to be a string?
         if date is None:
-            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1, hours=1)
+            date = add_dst_hour(dt.now().astimezone(OSLO_TIMEZONE) + td(days=1))
         if isinstance(date, str):
             self.date: str = date
         else:
@@ -310,10 +311,12 @@ class StatbankTransfer(StatbankAuth):
             )
             raise ValueError(error_msg)
 
-        publish_date = dt.strptime(
-            response_msg.split("Publiseringsdato '")[1].split("',")[0],
-            "%d.%m.%Y %H:%M:%S",
-        ).astimezone(OSLO_TIMEZONE) + td(hours=1)
+        publish_date = add_dst_hour(
+            dt.strptime(
+                response_msg.split("Publiseringsdato '")[1].split("',")[0],
+                "%d.%m.%Y %H:%M:%S",
+            ).astimezone(OSLO_TIMEZONE),
+        )
         publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
         publish_minute = int(
             response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],

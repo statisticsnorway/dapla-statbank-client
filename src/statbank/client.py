@@ -34,6 +34,7 @@ from statbank.globals import STATBANK_TABLE_ID_LEN
 from statbank.globals import TOMORROW
 from statbank.globals import Approve
 from statbank.globals import _approve_type_check
+from statbank.globals import add_dst_hour
 from statbank.statbank_logger import logger
 from statbank.transfer import StatbankTransfer
 from statbank.uttrekk import StatbankUttrekksBeskrivelse
@@ -97,24 +98,26 @@ class StatbankClient(StatbankAuth):
         self.log: list[str] = []
         if isinstance(date, str):
             try:
-                self.date: dt.datetime = dt.datetime.strptime(
-                    date,
-                    "%Y-%m-%d",
-                ).astimezone(
-                    OSLO_TIMEZONE,
-                ) + dt.timedelta(
-                    hours=1,
+                self.date: dt.datetime = add_dst_hour(
+                    dt.datetime.strptime(
+                        date,
+                        "%Y-%m-%d",
+                    ).astimezone(
+                        OSLO_TIMEZONE,
+                    ),
                 )  # Compensate for setting the timezone, stop publishing date from moving
             except ValueError as e:
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
         elif isinstance(date, dt.date) and not isinstance(date, dt.datetime):
-            self.date = dt.datetime.combine(
-                date,
-                dt.datetime.min.time(),
-            ).astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
+            self.date = add_dst_hour(
+                dt.datetime.combine(
+                    date,
+                    dt.datetime.min.time(),
+                ).astimezone(
+                    OSLO_TIMEZONE,
+                ),
+            )
         else:
             self.date = date
         self._validate_date()
@@ -200,14 +203,18 @@ class StatbankClient(StatbankAuth):
             TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
         """
         if isinstance(date, widgets.DatePicker):
-            date_date = dt.datetime.combine(
-                date.value,
-                dt.datetime.min.time(),
-            ).astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)
+            date_date = add_dst_hour(
+                dt.datetime.combine(
+                    date.value,
+                    dt.datetime.min.time(),
+                ).astimezone(OSLO_TIMEZONE),
+            )
         elif isinstance(date, str):
-            date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
+            date_date = add_dst_hour(
+                dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
+                    OSLO_TIMEZONE,
+                ),
+            )
         elif isinstance(date, dt.datetime):
             date_date = date
         else:
@@ -219,7 +226,7 @@ class StatbankClient(StatbankAuth):
         self._validate_date()
         logger.info("Publishing date set to: %s", self.date)
         self.log.append(
-            f"Date set to {self.date.isoformat('T', 'seconds')} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Date set to {self.date.isoformat('T', 'seconds')} at {add_dst_hour(dt.datetime.now().astimezone(OSLO_TIMEZONE)).isoformat('T', 'seconds')}",
         )
 
     # Descriptions
@@ -240,7 +247,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Getting description for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE,) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Getting description for tableid {tableid} at {(add_dst_hour(dt.datetime.now().astimezone(OSLO_TIMEZONE,))).isoformat('T', 'seconds')}",
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
@@ -305,7 +312,7 @@ class StatbankClient(StatbankAuth):
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
-            f"Validated data for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Validated data for tableid {tableid} at {add_dst_hour(dt.datetime.now().astimezone(OSLO_TIMEZONE)).isoformat('T', 'seconds')}",
         )
         return validation_errors
 
@@ -327,7 +334,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Transferring tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Transferring tableid {tableid} at {(add_dst_hour(dt.datetime.now().astimezone(OSLO_TIMEZONE))).isoformat('T', 'seconds')}",
         )
         return StatbankTransfer(
             dfs,

@@ -30,7 +30,7 @@ DIGITS_IN_YEAR = 4
 
 
 def fake_user() -> str:
-    return "SSB-person-456"
+    return "tbf"
 
 
 def fake_auth() -> str:
@@ -125,14 +125,17 @@ def fake_metadata() -> dict[str, Any]:
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def client_fake(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ) -> StatbankClient:
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(check_username_password=False)
 

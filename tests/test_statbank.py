@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import getpass
 import json
+import os
+import subprocess
 from datetime import datetime
 from datetime import timedelta as td
 from pathlib import Path
@@ -30,7 +33,7 @@ def test_round_up_zero():
 
 
 def fake_user():
-    return "SSB-person-456"
+    return "tbf"
 
 
 def fake_pass():
@@ -364,28 +367,34 @@ def test_transfer_loaduser_still(
 @pytest.fixture
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def client_fake(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     return StatbankClient(check_username_password=False)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_set_approve_overwrite(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient(
         check_username_password=False,
@@ -399,14 +408,17 @@ def test_client_set_approve_overwrite(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_approve_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="handle approve") as _:
         StatbankClient(approve=[1], check_username_password=False)
@@ -415,14 +427,17 @@ def test_client_approve_wrong_datatype(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_overwrite_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="overwrite") as _:
         StatbankClient(overwrite="1", check_username_password=False)
@@ -431,14 +446,17 @@ def test_client_overwrite_wrong_datatype(
 @suppress_type_checks
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_date_wrong_datatype(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(TypeError, match="Date must be a datetime") as _:
         StatbankClient(check_username_password=False, date=1)
@@ -456,14 +474,17 @@ def test_client_repr(client_fake: StatbankClient):
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_with_str_date(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient("2050-01-01", check_username_password=False)
     assert isinstance(client.date, datetime)
@@ -471,14 +492,17 @@ def test_client_with_str_date(
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
 @mock.patch.object(StatbankClient, "_get_user")
+@mock.patch.object(StatbankClient, "_get_user_initials")
 @mock.patch.object(StatbankClient, "_build_user_agent")
 def test_client_loaduser_still(
     test_build_user_agent: Callable,
+    test_get_user_initials: Callable,
     test_get_user: Callable,
     encrypt_fake: Callable,
 ):
     encrypt_fake.return_value = fake_post_response_key_service()
     test_get_user.return_value = fake_user()
+    test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     with pytest.raises(ValueError, match="Loaduser"):
         StatbankClient(fake_user(), "2050-01-01", check_username_password=False)
@@ -792,3 +816,55 @@ def test_client_transfer(
     test_get_user.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client_fake.transfer(fake_data(), "10000")
+
+
+@mock.patch("builtins.input")
+@mock.patch.object(getpass, "getuser")
+@mock.patch.object(subprocess, "check_output")
+@mock.patch.object(os.environ, "get")
+def test_get_user_initials(
+    mock_environ_get: Callable,
+    mock_check_output: Callable,
+    mock_getuser: Callable,
+    mock_input: Callable,
+):
+
+    # Test when os.environ.get("DAPLA_USER") provides a valid value
+    mock_environ_get.side_effect = lambda key: (
+        "usr@ssb.no" if key == "DAPLA_USER" else ""
+    )
+    assert StatbankClient._get_user_initials() == "usr"  # noqa: SLF001
+
+    mock_environ_get.side_effect = lambda key: (
+        "jup@ssb.no" if key == "JUPYTERHUB_USER" else ""
+    )
+    assert StatbankClient._get_user_initials() == "jup"  # noqa: SLF001
+
+    # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config
+    mock_environ_get.side_effect = lambda _: ""
+    mock_check_output.return_value = b"tba@ssb.no"
+    assert StatbankClient._get_user_initials() == "tba"  # noqa: SLF001
+
+    # Test when os.environ.get and git config fail, fallback to getpass.getuser
+    mock_check_output.side_effect = subprocess.CalledProcessError(
+        1,
+        "git config user.email",
+    )
+    mock_check_output.return_value = b""
+    mock_getuser.return_value = "tbb@ssb.no"
+    # Reset mock_check_output to avoid the error persisting into this test
+    mock_check_output.side_effect = None
+    assert StatbankClient._get_user_initials() == "tbb"  # noqa: SLF001
+
+    # Test when all other methods fail, fallback to user input
+    mock_getuser.return_value = ""
+    mock_input.return_value = "tbc@ssb.no"
+    assert StatbankClient._get_user_initials() == "tbc"  # noqa: SLF001
+
+    # Test when no valid initials can be found, ensure ValueError is raised
+    mock_input.return_value = ""
+    with pytest.raises(
+        ValueError,
+        match="Can't find the users email or initials in the system.",
+    ):
+        StatbankClient._get_user_initials()  # noqa: SLF001

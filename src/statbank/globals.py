@@ -31,7 +31,7 @@ def _approve_type_check(approve: Approve | int | str) -> Approve:
 
 
 OSLO_TIMEZONE = dt.timezone(dt.timedelta(hours=1))
-TOMORROW = dt.datetime.now(tz=OSLO_TIMEZONE) + dt.timedelta(days=1)
+TOMORROW = dt.date.today() + dt.timedelta(days=1) # noqa: DTZ011
 APPROVE_DEFAULT_JIT = Approve.JIT
 STATBANK_TABLE_ID_LEN = 5
 REQUEST_OK = 200

@@ -8,13 +8,14 @@ if TYPE_CHECKING:
 
     import pandas as pd
 
-import datetime as dt
+import datetime
 import getpass
 import json
 import os
 import subprocess
 from functools import partial
 from pathlib import Path
+from typing import cast
 
 import ipywidgets as widgets
 from IPython.display import display
@@ -75,7 +76,7 @@ class StatbankClient(StatbankAuth):
 
     def __init__(  # noqa: PLR0913
         self,
-        date: str | dt.date | dt.datetime = TOMORROW,
+        date: str | datetime.date | datetime.datetime = TOMORROW,
         shortuser: str = "",
         cc: str = "",
         bcc: str = "",
@@ -95,30 +96,22 @@ class StatbankClient(StatbankAuth):
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log: list[str] = []
+        self.date: datetime.date
         if isinstance(date, str):
             try:
-                self.date: dt.datetime = dt.datetime.strptime(
-                    date,
-                    "%Y-%m-%d",
-                ).astimezone(
-                    OSLO_TIMEZONE,
-                ) + dt.timedelta(
-                    hours=1,
-                )  # Compensate for setting the timezone, stop publishing date from moving
+                self.date = datetime.datetime.strptime(
+                        date,
+                        "%Y-%m-%d",
+                    ).astimezone(OSLO_TIMEZONE).date()
             except ValueError as e:
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
-        elif isinstance(date, dt.date) and not isinstance(date, dt.datetime):
-            self.date = dt.datetime.combine(
-                date,
-                dt.datetime.min.time(),
-            ).astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
+        elif isinstance(date, datetime.datetime):
+            self.date = self.date = date.date()
         else:
             self.date = date
+
         self._validate_date()
-        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         if self.check_username_password:
             logger.info(
                 "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
@@ -126,7 +119,7 @@ class StatbankClient(StatbankAuth):
             self.get_description(
                 "05300",
             )
-        logger.info("Publishing date set to %s", self.date.isoformat("T", "seconds"))
+        logger.info("Publishing date set to %s", self.date.isoformat())
 
     # Representation
     def __str__(self) -> str:
@@ -148,7 +141,7 @@ class StatbankClient(StatbankAuth):
         """Represent the class with the necessary argument to replicate."""
         result = "StatbankClient("
         if self.date != TOMORROW:
-            result += f'date = "{self.date.isoformat("T", "seconds")}", '
+            result += f'date = "{self.date.isoformat()}", '
         if self.shortuser:
             result += f'shortuser = "{self.shortuser}", '
         if self.cc:
@@ -186,7 +179,7 @@ class StatbankClient(StatbankAuth):
         display(datepicker)  # type: ignore[no-untyped-call]
         return datepicker
 
-    def set_publish_date(self, date: dt.datetime | str | widgets.DatePicker) -> None:
+    def set_publish_date(self, date: datetime.date | datetime.datetime | str | widgets.DatePicker) -> None:
         """Set the publishing date on the client.
 
         Takes the widget from date_picker assigned to a variable, which is probably the intended use.
@@ -199,27 +192,26 @@ class StatbankClient(StatbankAuth):
         Raises:
             TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
         """
-        if isinstance(date, widgets.DatePicker):
-            date_date = dt.datetime.combine(
-                date.value,
-                dt.datetime.min.time(),
-            ).astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)
-        elif isinstance(date, str):
-            date_date = dt.datetime.strptime(date, "%Y-%m-%d").astimezone(
-                OSLO_TIMEZONE,
-            ) + dt.timedelta(hours=1)
-        elif isinstance(date, dt.datetime):
-            date_date = date
-        else:
-            error_msg = f"date-parameter is of type {type(date)} must be a string, datetime, or ipywidgets.DatePicker"
-            raise TypeError(error_msg)
+        match date:
+            case widgets.DatePicker():
+                self.date = cast(datetime.date, date.value)
+            case datetime.datetime():
+                self.date = date.date()
+            case datetime.date():
+                self.date = date
+            case str():
+                self.date = datetime.datetime.strptime(
+                        date,
+                        "%Y-%m-%d",
+                    ).astimezone(OSLO_TIMEZONE).date()
+            case _:
+                error_msg = f"date-parameter is of type {type(date)} must be a string, datetime, or ipywidgets.DatePicker"
+                raise TypeError(error_msg)
 
-        self.date = date_date
-        self.date = self.date.replace(hour=8, minute=0, second=0, microsecond=0)
         self._validate_date()
         logger.info("Publishing date set to: %s", self.date)
         self.log.append(
-            f"Date set to {self.date.isoformat('T', 'seconds')} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Date set to {self.date.isoformat()} at {datetime.datetime.now(tz=OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
 
     # Descriptions
@@ -240,7 +232,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Getting description for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE,) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Getting description for tableid {tableid} at {datetime.datetime.now(tz=OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
@@ -305,7 +297,7 @@ class StatbankClient(StatbankAuth):
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
-            f"Validated data for tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Validated data for tableid {tableid} at {datetime.datetime.now(tz=OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
         return validation_errors
 
@@ -327,7 +319,7 @@ class StatbankClient(StatbankAuth):
         """
         self._validate_params_action(tableid)
         self.log.append(
-            f"Transferring tableid {tableid} at {(dt.datetime.now().astimezone(OSLO_TIMEZONE) + dt.timedelta(hours=1)).isoformat('T', 'seconds')}",
+            f"Transferring tableid {tableid} at {datetime.datetime.now(tz=OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )
         return StatbankTransfer(
             dfs,
@@ -455,7 +447,7 @@ class StatbankClient(StatbankAuth):
 
     def _validate_date(self) -> None:
         """Validate dates provided to the client."""
-        if not (isinstance(self.date, dt.datetime)):
+        if not (isinstance(self.date, datetime.date)):
             error_msg = "Date must be a datetime.datetime"  # type: ignore[unreachable]
             raise TypeError(error_msg)
         # Date should not be on a weekend

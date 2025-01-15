@@ -17,17 +17,22 @@ class Approve(enum.IntEnum):
 
 
 def _approve_type_check(approve: Approve | int | str) -> Approve:
-    if isinstance(approve, int) and not isinstance(approve, Approve):
-        result: Approve = Approve(approve)
-    elif isinstance(approve, str) and approve.isdigit():
-        result = Approve(int(approve))
-    elif isinstance(approve, str):
-        result = getattr(Approve, approve)
-    elif isinstance(approve, Approve):
-        result = approve
-    else:
-        error_msg = f"Dont know how to handle approve of type {type(approve)}"  # type: ignore[unreachable]
-        raise TypeError(error_msg)
+
+    result: Approve
+
+    match approve:
+        case Approve():
+            result = approve
+        case int():
+            result = Approve(approve)
+        case str() if approve.isdigit():
+            result = Approve(int(approve))
+        case str():
+            result = getattr(Approve, approve.upper())
+        case _:
+            error_msg = f"Dont know how to handle approve of type {type(approve)}"  # type: ignore[unreachable]
+            raise TypeError(error_msg)
+
     return result
 
 OSLO_TIMEZONE = zoneinfo.ZoneInfo("Europe/Oslo")

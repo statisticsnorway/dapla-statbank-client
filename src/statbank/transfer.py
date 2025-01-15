@@ -229,7 +229,7 @@ class StatbankTransfer(StatbankAuth):
                 raise ValueError(error_msg)
 
         if not isinstance(self.date, datetime.date):
-            error_msg = "(datetime.date) Sett publiseringsdatoen til et gyldig datetime.date objekt."
+            error_msg = "(datetime.date) Sett publiseringsdatoen til et gyldig datetime.date objekt."  # type: ignore[unreachable]
             raise TypeError(error_msg)
 
         if not isinstance(self.overwrite, bool):

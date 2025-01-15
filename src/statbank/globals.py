@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import datetime as dt
 import enum
+import zoneinfo
 
 
 class Approve(enum.IntEnum):
@@ -29,8 +30,7 @@ def _approve_type_check(approve: Approve | int | str) -> Approve:
         raise TypeError(error_msg)
     return result
 
-
-OSLO_TIMEZONE = dt.timezone(dt.timedelta(hours=1))
+OSLO_TIMEZONE = zoneinfo.ZoneInfo("Europe/Oslo")
 TOMORROW = dt.date.today() + dt.timedelta(days=1) # noqa: DTZ011
 APPROVE_DEFAULT_JIT = Approve.JIT
 STATBANK_TABLE_ID_LEN = 5

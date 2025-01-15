@@ -17,7 +17,6 @@ class Approve(enum.IntEnum):
 
 
 def _approve_type_check(approve: Approve | int | str) -> Approve:
-
     result: Approve
 
     match approve:
@@ -35,8 +34,9 @@ def _approve_type_check(approve: Approve | int | str) -> Approve:
 
     return result
 
+
 OSLO_TIMEZONE = zoneinfo.ZoneInfo("Europe/Oslo")
-TOMORROW = dt.date.today() + dt.timedelta(days=1) # noqa: DTZ011
+TOMORROW = dt.date.today() + dt.timedelta(days=1)  # noqa: DTZ011
 APPROVE_DEFAULT_JIT = Approve.JIT
 STATBANK_TABLE_ID_LEN = 5
 REQUEST_OK = 200

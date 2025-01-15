@@ -6,13 +6,12 @@ import json
 import os
 import re
 import urllib
-from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import cast
 
 import pandas as pd
 import requests as r
-from typing import cast
 
 from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
@@ -87,10 +86,14 @@ class StatbankTransfer(StatbankAuth):
         self.date: datetime.date
         if isinstance(date, str):
             try:
-                self.date = datetime.datetime.strptime(
+                self.date = (
+                    datetime.datetime.strptime(
                         date,
                         "%Y-%m-%d",
-                    ).astimezone(OSLO_TIMEZONE).date()
+                    )
+                    .astimezone(OSLO_TIMEZONE)
+                    .date()
+                )
             except ValueError as e:
                 error_msg = "Skriv inn datoformen for publisering som 1900-01-01"
                 raise TypeError(error_msg) from e
@@ -298,23 +301,35 @@ class StatbankTransfer(StatbankAuth):
 
     def _handle_response(self) -> None:
         pattern_work_number = re.compile(r"lasteoppdragsnummer:(\d+)")
-        pattern_publish_date = re.compile(r"Publiseringsdato '(\d{2}.\d{2}.\d{4} \d{2}:\d{2}:\d{2})'")
+        pattern_publish_date = re.compile(
+            r"Publiseringsdato '(\d{2}.\d{2}.\d{4} \d{2}:\d{2}:\d{2})'",
+        )
         pattern_publish_time = re.compile(r"Publiseringstid '(\d{2}):(\d{2})'")
 
         resp_json: TransferResultType = self.response.json()
         response_msg = resp_json["TotalResult"]["Message"]
-        match_oppdragsnummer = cast(re.Match[str], pattern_work_number.search(response_msg))
-        match_publish_date = cast(re.Match[str], pattern_publish_date.search(response_msg))
-        match_publish_time = cast(re.Match[str], pattern_publish_time.search(response_msg))
+        match_oppdragsnummer = cast(
+            re.Match[str],
+            pattern_work_number.search(response_msg),
+        )
+        match_publish_date = cast(
+            re.Match[str],
+            pattern_publish_date.search(response_msg),
+        )
+        match_publish_time = cast(
+            re.Match[str],
+            pattern_publish_time.search(response_msg),
+        )
 
         if not match_oppdragsnummer[1].isdigit():
-            error_msg = (
-                f"Lasteoppdragsnummer: {match_oppdragsnummer[1]} er ikke ett rent nummer."
-            )
+            error_msg = f"Lasteoppdragsnummer: {match_oppdragsnummer[1]} er ikke ett rent nummer."
             raise ValueError(error_msg)
 
         self.oppdragsnummer = match_oppdragsnummer[1]
-        publish_date = datetime.datetime.strptime(match_publish_date[1], r"%d.%m.%Y %H:%M:%S").astimezone(OSLO_TIMEZONE)
+        publish_date = datetime.datetime.strptime(
+            match_publish_date[1],
+            r"%d.%m.%Y %H:%M:%S",
+        ).astimezone(OSLO_TIMEZONE)
         publish_hour, publish_minute = map(int, match_publish_time.groups())
         publish_date = publish_date.replace(hour=publish_hour, minute=publish_minute)
         logger.info("Publisering satt til: %s", publish_date.isoformat("T", "seconds"))

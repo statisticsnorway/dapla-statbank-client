@@ -99,10 +99,14 @@ class StatbankClient(StatbankAuth):
         self.date: datetime.date
         if isinstance(date, str):
             try:
-                self.date = datetime.datetime.strptime(
+                self.date = (
+                    datetime.datetime.strptime(
                         date,
                         "%Y-%m-%d",
-                    ).astimezone(OSLO_TIMEZONE).date()
+                    )
+                    .astimezone(OSLO_TIMEZONE)
+                    .date()
+                )
             except ValueError as e:
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
@@ -179,7 +183,10 @@ class StatbankClient(StatbankAuth):
         display(datepicker)  # type: ignore[no-untyped-call]
         return datepicker
 
-    def set_publish_date(self, date: datetime.date | datetime.datetime | str | widgets.DatePicker) -> None:
+    def set_publish_date(
+        self,
+        date: datetime.date | datetime.datetime | str | widgets.DatePicker,
+    ) -> None:
         """Set the publishing date on the client.
 
         Takes the widget from date_picker assigned to a variable, which is probably the intended use.
@@ -200,10 +207,14 @@ class StatbankClient(StatbankAuth):
             case datetime.date():
                 self.date = date
             case str():
-                self.date = datetime.datetime.strptime(
+                self.date = (
+                    datetime.datetime.strptime(
                         date,
                         "%Y-%m-%d",
-                    ).astimezone(OSLO_TIMEZONE).date()
+                    )
+                    .astimezone(OSLO_TIMEZONE)
+                    .date()
+                )
             case _:
                 error_msg = f"date-parameter is of type {type(date)} must be a string, datetime, or ipywidgets.DatePicker"
                 raise TypeError(error_msg)

@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import datetime
 import gc
 import json
 import os
+import re
 import urllib
-from datetime import datetime as dt
-from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import cast
 
 import pandas as pd
 import requests as r
@@ -16,6 +17,7 @@ from statbank.auth import StatbankAuth
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
+from statbank.globals import TOMORROW
 from statbank.globals import Approve
 from statbank.globals import _approve_type_check
 from statbank.statbank_logger import logger
@@ -67,7 +69,7 @@ class StatbankTransfer(StatbankAuth):
         data: dict[str, pd.DataFrame],
         tableid: str = "",
         shortuser: str = "",
-        date: dt | str | None = None,
+        date: str | datetime.date | datetime.datetime = TOMORROW,
         cc: str = "",
         bcc: str = "",
         overwrite: bool = True,
@@ -81,9 +83,27 @@ class StatbankTransfer(StatbankAuth):
         May run the validations from the StatbankValidation class before the transfer.
         """
         self._set_user_attrs(shortuser=shortuser, cc=cc, bcc=bcc)
-        self._set_date(date=date)
+        self.date: datetime.date
+        if isinstance(date, str):
+            try:
+                self.date = (
+                    datetime.datetime.strptime(
+                        date,
+                        "%Y-%m-%d",
+                    )
+                    .astimezone(OSLO_TIMEZONE)
+                    .date()
+                )
+            except ValueError as e:
+                error_msg = "Skriv inn datoformen for publisering som 1900-01-01"
+                raise TypeError(error_msg) from e
+        elif isinstance(date, datetime.datetime):
+            self.date = self.date = date.date()
+        else:
+            self.date = date
+
         self.data = data
-        if not isinstance(tableid, str) or not tableid.isdigit():
+        if not (isinstance(tableid, str) and tableid.isdigit()):
             error_msg = "Loaduser is no longer a parameter, make sure the tableid parameter is a string of digits."
             raise ValueError(error_msg)
         self.tableid = tableid
@@ -144,7 +164,7 @@ class StatbankTransfer(StatbankAuth):
         if self.delay:
             result = f"""{first_line}Ikke overført enda."""
         else:
-            result = f"""{first_line}Publisering: {self.date}.\nLastelogg: {self.urls['gui'] + self.oppdragsnummer}"""
+            result = f"""{first_line}Publisering: {self.date.strftime('%d-%m-%Y,')}.\nLastelogg: {self.urls['gui'] + self.oppdragsnummer}"""
         return result
 
     def __repr__(self) -> str:
@@ -174,15 +194,6 @@ class StatbankTransfer(StatbankAuth):
             self.bcc = bcc
         else:
             self.bcc = self.cc
-
-    def _set_date(self, date: dt | str | None = None) -> None:
-        # At this point we want date to be a string?
-        if date is None:
-            date = dt.now().astimezone(OSLO_TIMEZONE) + td(days=1, hours=1)
-        if isinstance(date, str):
-            self.date: str = date
-        else:
-            self.date = date.strftime("%Y-%m-%d")
 
     def to_json(self, path: str = "") -> str | None:
         """Store a copy of the current state of the transfer-object as a json.
@@ -217,8 +228,8 @@ class StatbankTransfer(StatbankAuth):
                 error_msg = f'Brukeren {shortuser} - "trebokstavsforkortelse" - må være tre bokstaver...'
                 raise ValueError(error_msg)
 
-        if not isinstance(self.date, str) or not self._valid_date_form(self.date):
-            error_msg = "Skriv inn datoformen for publisering som 1900-01-01"
+        if not isinstance(self.date, datetime.date):
+            error_msg = "(datetime.date) Sett publiseringsdatoen til et gyldig datetime.date objekt."  # type: ignore[unreachable]
             raise TypeError(error_msg)
 
         if not isinstance(self.overwrite, bool):
@@ -253,21 +264,11 @@ class StatbankTransfer(StatbankAuth):
         body += f"\n--{self.boundary}--"
         return body.replace("\n", "\r\n")  # Statbank likes this?
 
-    @staticmethod
-    def _valid_date_form(date: str) -> bool:
-        return (date[:4] + date[5:7] + date[8:]).isdigit() and (
-            (date[4] + date[7]) == "--"
-        )
-
-    def _build_params(self) -> dict[str, str | int]:
-        if isinstance(self.date, dt):  # type: ignore[unreachable]
-            date = self.date.strftime("%Y-%m-%d")  # type: ignore[unreachable]
-        else:
-            date = self.date
+    def _build_params(self) -> dict[str, str]:
         return {
             "initialier": self.shortuser,
             "hovedtabell": self.tableid,
-            "publiseringsdato": date,
+            "publiseringsdato": self.date.strftime("%Y-%m-%d"),
             "fagansvarlig1": self.cc,
             "fagansvarlig2": self.bcc,
             "auto_overskriv_data": str(int(self.overwrite)),
@@ -299,27 +300,38 @@ class StatbankTransfer(StatbankAuth):
         gc.collect()  # Hoping this removes the del-ed stuff from memory
 
     def _handle_response(self) -> None:
+        pattern_work_number = re.compile(r"lasteoppdragsnummer:(\d+)")
+        pattern_publish_date = re.compile(
+            r"Publiseringsdato '(\d{2}.\d{2}.\d{4} \d{2}:\d{2}:\d{2})'",
+        )
+        pattern_publish_time = re.compile(r"Publiseringstid '(\d{2}):(\d{2})'")
+
         resp_json: TransferResultType = self.response.json()
         response_msg = resp_json["TotalResult"]["Message"]
-        self.oppdragsnummer = response_msg.split("lasteoppdragsnummer:")[1].split(" =")[
-            0
-        ]
-        if not self.oppdragsnummer.isdigit():
-            error_msg = (
-                f"Lasteoppdragsnummer: {self.oppdragsnummer} er ikke ett rent nummer."
-            )
+        match_oppdragsnummer = cast(
+            re.Match[str],
+            pattern_work_number.search(response_msg),
+        )
+        match_publish_date = cast(
+            re.Match[str],
+            pattern_publish_date.search(response_msg),
+        )
+        match_publish_time = cast(
+            re.Match[str],
+            pattern_publish_time.search(response_msg),
+        )
+
+        if not match_oppdragsnummer[1].isdigit():
+            error_msg = f"Lasteoppdragsnummer: {match_oppdragsnummer[1]} er ikke ett rent nummer."
             raise ValueError(error_msg)
 
-        publish_date = dt.strptime(
-            response_msg.split("Publiseringsdato '")[1].split("',")[0],
-            "%d.%m.%Y %H:%M:%S",
-        ).astimezone(OSLO_TIMEZONE) + td(hours=1)
-        publish_hour = int(response_msg.split("Publiseringstid '")[1].split(":")[0])
-        publish_minute = int(
-            response_msg.split("Publiseringstid '")[1].split(":")[1].split("'")[0],
-        )
-        publish_time = publish_hour * 3600 + publish_minute * 60
-        publish_date = publish_date + td(0, publish_time)
+        self.oppdragsnummer = match_oppdragsnummer[1]
+        publish_date = datetime.datetime.strptime(
+            match_publish_date[1],
+            r"%d.%m.%Y %H:%M:%S",
+        ).astimezone(OSLO_TIMEZONE)
+        publish_hour, publish_minute = map(int, match_publish_time.groups())
+        publish_date = publish_date.replace(hour=publish_hour, minute=publish_minute)
         logger.info("Publisering satt til: %s", publish_date.isoformat("T", "seconds"))
         logger.info(
             "Følg med på lasteloggen (tar noen minutter): %s",

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import datetime
 import getpass
 import json
 import os
 import subprocess
-from datetime import datetime
-from datetime import timedelta as td
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -487,7 +486,7 @@ def test_client_with_str_date(
     test_get_user_initials.return_value = fake_user()
     test_build_user_agent.return_value = fake_build_user_agent()
     client = StatbankClient("2050-01-01", check_username_password=False)
-    assert isinstance(client.date, datetime)
+    assert isinstance(client.date, datetime.date)
 
 
 @mock.patch.object(StatbankClient, "_encrypt_request")
@@ -529,7 +528,7 @@ def test_client_set_date_int_raises(client_fake: StatbankClient):
 
 def test_client_set_date_datetime(client_fake: StatbankClient):
     client_fake.set_publish_date(
-        datetime.now().astimezone(OSLO_TIMEZONE) + td(hours=1),
+        datetime.datetime.now().astimezone(OSLO_TIMEZONE),
     )
     assert "Date set to " in client_fake.log[-1]
 

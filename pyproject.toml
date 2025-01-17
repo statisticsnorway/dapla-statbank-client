@@ -24,12 +24,12 @@ pyjstat = ">=2.4.0"
 toml = ">=0.10.2"
 python-dotenv = ">=1.0.1"
 colorama = ">=0.4.6"
+dapla-toolbelt = ">=2.0.6"
 # Stubs for Mypy
 pandas-stubs = ">=2.1.1.230928"
 types-requests = ">=2.31.0.10"
 types-toml = ">=0.10.8.7"
 types-colorama = ">=0.4.15.20240205"
-dapla-toolbelt = ">=2.0.6"
 
 [tool.poetry.group.dev.dependencies]
 pygments = ">=2.10.0"
@@ -116,6 +116,8 @@ extend-exclude = [
 select = ["ALL"]
 exclude = ["demo"]
 ignore = [
+    "ANN202", # Don't requiere return type annotation for private functions.
+    "ANN401", # Allow type annotation with type Any.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
     "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
     "E501",   # Supress line-too-long warnings: trust black's judgement on this one.

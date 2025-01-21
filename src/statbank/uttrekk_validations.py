@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,6 +13,8 @@ if TYPE_CHECKING:
 import pandas as pd
 
 from statbank.statbank_logger import logger
+
+NANS = ["nan", "na", "none", ".", "<NA>", "NA"]
 
 
 class StatbankValidateError(Exception):
@@ -73,30 +76,86 @@ class StatbankUttrekkValidators:
             logger.debug("Correct number of columns...")
         return validation_errors
 
+    def _filter_away_suppressed_values(
+        self,
+        data: dict[str, pd.DataFrame],
+    ) -> dict[str, pd.DataFrame]:
+        """Creat a filtered copy of the data where suppressed values are replaced with pd.NA.
+
+        Ensuring integer columns retain their nullable integer dtype (Int64).
+        And that string has the nullable type (string[pyarrow]).
+        """
+        if not self.suppression:
+            return data  # No suppression rules, return original data
+
+        suppression_codes = {code["Kode"] for code in self.suppression}
+
+        # Create a copy to avoid modifying original data
+        filtered_data = {key: df.copy() for key, df in data.items()}
+
+        for deltabell in self.variables:
+            deltabell_name = deltabell["deltabell"]
+            deltab_filter = filtered_data[deltabell_name]
+            if "null_prikk_missing" in deltabell:
+                for prikk in deltabell["null_prikk_missing"]:
+                    suppression_num = int(prikk["kolonnenummer"])  # The col number
+                    target_num = int(
+                        prikk["gjelder_for__kolonner_nummer"],
+                    )  # The col number
+
+                    target_name = deltab_filter.columns[target_num - 1]
+                    suppression_name = deltab_filter.columns[suppression_num - 1]
+
+                    if pd.api.types.is_integer_dtype(deltab_filter[target_name]):
+                        deltab_filter[target_name] = deltab_filter[target_name].astype(
+                            "Int64",
+                        )  # nullable type
+
+                    if pd.api.types.is_string_dtype(deltab_filter[target_name]):
+                        deltab_filter[target_name] = deltab_filter[target_name].astype(
+                            "string[pyarrow]",
+                        )  # nullable type
+
+                    suppression_mask = deltab_filter[suppression_name].isin(
+                        suppression_codes,
+                    )
+
+                    # Ensure suppression columns only contain valid suppression codes or NaN
+                    deltab_filter.loc[~suppression_mask, suppression_name] = None
+
+                    # Empty columns to pd.NA when they are suppressed
+                    deltab_filter.loc[suppression_mask, target_name] = pd.NA
+
+            filtered_data[deltabell_name] = deltab_filter
+        return filtered_data
+
     def _check_for_literal_nans_in_strings(
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
-        for name, df in data.items():
+        # Filter out suppressed values
+        data_validate = self._filter_away_suppressed_values(data)
+        for name, df in data_validate.items():
             string_df = df.select_dtypes(
                 include=["object", "string", "string[pyarrow]"],
             )
             cat_df = df.select_dtypes(include=["category"])
 
-            nans = ["nan", "na", "none", "."]
             validation_errors = self._check_for_literal_nans_string_dtype(
                 string_df,
                 name,
-                nans,
+                NANS,
                 validation_errors,
             )
             validation_errors = self._check_for_literal_nans_categorical_dtype(
                 cat_df,
                 name,
-                nans,
+                NANS,
                 validation_errors,
             )
+        del data_validate
+        gc.collect()
         return validation_errors
 
     @staticmethod
@@ -106,13 +165,22 @@ class StatbankUttrekkValidators:
         nans: list[str],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
+
         if len(string_df.columns):
             for col in string_df.columns:
+                try:
+                    string_df[col].str.lower()
+                except AttributeError as e:
+                    logger.info(
+                        f"""Found what looked like a string column: {name}, but cant use the .str accessor here?
+                                Maybe its an object column with mixed dtypes in the cells? Dont use the object dtype?: Error: {e}""",
+                    )
+                    continue
                 error_text = f"""{col} in {name} has strings, that look like NAs / empty cells,
                 (In this list: {nans})
                 Which have been converted to literal strings.
                 Consider handeling your NAs before converting them to strings.
-                Maybe with a .fillna("") before an .astype(str) """
+                Maybe with a .fillna("") before an .astype("string[pyarrow]") """
                 nan_len = len(string_df[string_df[col].str.lower().isin(nans)])
                 if nan_len:
                     validation_errors[f"contains_string_nans_{name}_{col}"] = (
@@ -135,7 +203,7 @@ class StatbankUttrekkValidators:
                 (In this list: {nans})
                 Which have been converted to literal strings?
                 Consider handeling your NAs before converting them to strings.
-                Maybe with a .fillna("") before an .astype(str) """
+                Maybe with a .fillna("") before an .astype("string[pyarrow]") """
                 nan_cats = [
                     cat for cat in cat_df[col].cat.categories if cat.lower() in nans
                 ]
@@ -152,17 +220,16 @@ class StatbankUttrekkValidators:
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
         for name, df in data.items():
-            for col in df.columns:
-                if "float" in str(df[col].dtype).lower():
-                    error_text = f"""{col} in {name} is a float.
-                    Consider running the dict of dataframes through:
-                    data = uttrekksbeskrivelse.round_data(data),
-                    this rounds UP like SAS and Excel, not to-even as
-                    Python does otherwise."""
-                    validation_errors[f"contains_floats_{name}_{col}"] = ValueError(
-                        error_text,
-                    )
-                    logger.warning(error_text)
+            for col in df.select_dtypes("float").columns:
+                error_text = f"""{col} in {name} is a float.
+                Consider running the dict of dataframes through:
+                data = uttrekksbeskrivelse.round_data(data),
+                this rounds UP like SAS and Excel, not to-even as
+                Python does otherwise."""
+                validation_errors[f"contains_floats_{name}_{col}"] = ValueError(
+                    error_text,
+                )
+                logger.warning(error_text)
         return validation_errors
 
     def _check_time_formats(
@@ -170,6 +237,9 @@ class StatbankUttrekkValidators:
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
+
+        data_validate = self._filter_away_suppressed_values(data)
+
         # Time-columns should follow time format
         for deltabell in self.variables:
             for variabel in deltabell["variabler"]:
@@ -180,7 +250,7 @@ class StatbankUttrekkValidators:
                     validation_errors = self._check_time_columns(
                         deltabell["deltabell"],
                         variabel,
-                        data,
+                        data_validate,
                         validation_errors,
                     )
         for k in validation_errors:
@@ -195,7 +265,8 @@ class StatbankUttrekkValidators:
                 break
         else:
             logger.debug("Timeformat validation ok.")
-
+        del data_validate
+        gc.collect()
         return validation_errors
 
     def _check_time_same_values_in_deltabeller(
@@ -265,7 +336,13 @@ class StatbankUttrekkValidators:
         )
         # Check length of coloumn matches length of format
         if (
-            len(data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique())
+            len(
+                data[deltabell_name]
+                .iloc[:, col_num]
+                .astype("string[pyarrow]")
+                .str.len()
+                .unique(),
+            )
             != 1
         ):
             validation_errors[f"time_single_length_format_{col_num}"] = ValueError(
@@ -275,7 +352,11 @@ class StatbankUttrekkValidators:
             )
         if (
             len(timeformat_raw)
-            != data[deltabell_name].iloc[:, col_num].astype(str).str.len().unique()[0]
+            != data[deltabell_name]
+            .iloc[:, col_num]
+            .astype("string[pyarrow]")
+            .str.len()
+            .unique()[0]
         ):
             validation_errors[f"time_formatlength_{col_num}"] = ValueError(
                 f"""Column number {col_num} does not match
@@ -315,8 +396,12 @@ class StatbankUttrekkValidators:
         nums: list[int] = [i for i, c in enumerate(timeformat_raw) if c.islower()]
         if nums:
             for num in nums:
+                col_validate = data[deltabell_name].iloc[:, col_num]
+                col_is_str = pd.api.types.is_string_dtype(col_validate)
+                if not col_is_str:
+                    col_validate = col_validate.astype("string[pyarrow]")
                 if not all(
-                    data[deltabell_name].iloc[:, col_num].str[num].str.isdigit(),
+                    col_validate.str[num].str.isdigit(),
                 ):
                     validation_errors[f"time_non_digit_column{col_num}"] = ValueError(
                         f"Character number {num} in column {col_num} in DataFrame {deltabell_name}, does not match format {timeformat_raw}",
@@ -412,12 +497,17 @@ class StatbankUttrekkValidators:
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
+        # Remove suppressed values first
+        data_validate = self._filter_away_suppressed_values(data)
         # Get column-numbers containing categorical values per deltabell
         for deltabell in self.variables:
             category_col_nums = [
                 int(var["kolonnenummer"]) - 1 for var in deltabell["variabler"]
             ]
-            df_colcheck = data[deltabell["deltabell"]].iloc[:, category_col_nums]
+            df_colcheck = data_validate[deltabell["deltabell"]].iloc[
+                :,
+                category_col_nums,
+            ]
             if df_colcheck.duplicated().any():
                 validation_errors[
                     f"duplicate_categorical_time_groups_{deltabell['deltabell']}"
@@ -431,7 +521,8 @@ class StatbankUttrekkValidators:
             logger.debug(
                 "Found no duplicate combinations of categorical columns",
             )
-
+        del data_validate
+        gc.collect()
         return validation_errors
 
     def _get_check_codes(self) -> dict[str, dict[str, list[str]]]:
@@ -561,20 +652,27 @@ class StatbankUttrekkValidators:
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
+
+        # Remove suppressed values first
+        data_to_validate = self._filter_away_suppressed_values(data)
+
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
             for variabel in deltabell["statistikkvariabler"]:
                 col_num = int(variabel["kolonnenummer"]) - 1
-                col = data[deltabell_name].iloc[:, col_num].copy()
+                col = data_to_validate[deltabell_name].iloc[:, col_num].copy()
                 # Check if can be converted to float and int
                 try:
                     if pd.api.types.is_string_dtype(col):
                         col = col.str.replace(",", ".", regex=False)
+                    logger.warning(col)
                     col.astype("Float64")
                 except ValueError as e:
                     validation_errors[
                         f"statistikkvar_not_numerical_column{col_num}"
-                    ] = ValueError(e)
+                    ] = e
+        del data_to_validate
+        gc.collect()
         return validation_errors
 
     def _check_rounding(
@@ -594,25 +692,26 @@ class StatbankUttrekkValidators:
                 )
         return validation_errors
 
-    @staticmethod
     def _check_rounding_per_variable(
+        self,
         variabel: KolonneStatistikkvariabelType,
         data: dict[str, pd.DataFrame],
         deltabell_name: str,
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
+        data_to_validate = self._filter_away_suppressed_values(data)
         col_num = int(variabel["kolonnenummer"]) - 1
         decimal_num = int(variabel["Antall_lagrede_desimaler"])
         error = False
         column = (
-            data[deltabell_name]
+            data_to_validate[deltabell_name]
             .iloc[:, col_num]
             .copy()
-            .astype(str)
+            .astype("string[pyarrow]")
             .str.replace(".", ",", regex=False)
         )
         # Compensate for na / empty cells
-        column = column[column != ""]
+        column = column[(column != "") & (pd.notna(column))]
         # If there are no rows left after removing empty, skip checking more
         if not len(column):
             return validation_errors
@@ -642,4 +741,6 @@ class StatbankUttrekkValidators:
                 ValueError(error_text)
             )
             logger.warning(error_text)
+        del data_to_validate
+        gc.collect()
         return validation_errors

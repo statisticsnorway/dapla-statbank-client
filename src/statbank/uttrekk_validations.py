@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import gc
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -155,7 +154,7 @@ class StatbankUttrekkValidators:
                 validation_errors,
             )
         del data_validate
-        gc.collect()
+
         return validation_errors
 
     @staticmethod
@@ -266,7 +265,7 @@ class StatbankUttrekkValidators:
         else:
             logger.debug("Timeformat validation ok.")
         del data_validate
-        gc.collect()
+
         return validation_errors
 
     def _check_time_same_values_in_deltabeller(
@@ -522,7 +521,7 @@ class StatbankUttrekkValidators:
                 "Found no duplicate combinations of categorical columns",
             )
         del data_validate
-        gc.collect()
+
         return validation_errors
 
     def _get_check_codes(self) -> dict[str, dict[str, list[str]]]:
@@ -672,7 +671,7 @@ class StatbankUttrekkValidators:
                         f"statistikkvar_not_numerical_column{col_num}"
                     ] = e
         del data_to_validate
-        gc.collect()
+
         return validation_errors
 
     def _check_rounding(
@@ -742,5 +741,5 @@ class StatbankUttrekkValidators:
             )
             logger.warning(error_text)
         del data_to_validate
-        gc.collect()
+
         return validation_errors

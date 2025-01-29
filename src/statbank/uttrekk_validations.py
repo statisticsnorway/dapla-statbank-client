@@ -664,7 +664,6 @@ class StatbankUttrekkValidators:
                 try:
                     if pd.api.types.is_string_dtype(col):
                         col = col.str.replace(",", ".", regex=False)
-                    logger.warning(col)
                     col.astype("Float64")
                 except ValueError as e:
                     validation_errors[

@@ -19,7 +19,7 @@ jobs:
           - { python: "3.11", os: "ubuntu-latest", session: "mypy"}
           - { python: "3.12", os: "ubuntu-latest", session: "mypy"}
           - { python: "3.13", os: "ubuntu-latest", session: "mypy"}
-          
+
           - { python: "3.11", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.12", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}
           - { python: "3.13", os: "ubuntu-latest", session: "tests", m: "not_integration_dapla"}

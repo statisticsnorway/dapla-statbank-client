@@ -88,14 +88,15 @@ class StatbankAuth:
         return getpass.getpass("Lastebruker:")
 
     def _use_test_url(self, test_env: str, prod_env: str) -> str:
-        use_test = self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
+        use_test = (
+            self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
+        )
         if use_test:
             env = test_env
         else:
             env = prod_env
         return os.environ.get(env, f"Cant find {env} in environ.")
-        
-    
+
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()
         try:

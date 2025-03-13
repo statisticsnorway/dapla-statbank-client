@@ -94,7 +94,6 @@ module = [
 ignore_missing_imports = true
 
 [tool.ruff]
-show_error_context = true
 force-exclude = true  # Apply excludes to pre-commit
 show-fixes = true
 src = ["src", "tests"]

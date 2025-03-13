@@ -365,7 +365,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             self.tableid,
             str(filbeskrivelse["Uttaksbeskrivelse_lagd"]),
         )
-
+        if self.use_test_db:
+            err_msg = "Metadata i TEST-databasen kan være veldig utdatert. Kan hende du bør hente filbeskrivelsen / description fra PROD-databasen?"
+            logger.warning(err_msg)
+        
         # reset tableid and hovedkode after content of request
         self.filbeskrivelse = filbeskrivelse
 

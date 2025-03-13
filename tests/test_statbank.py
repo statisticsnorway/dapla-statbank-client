@@ -562,7 +562,7 @@ def test_client_get_uttrekk(
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_get_user")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
-def test_client_validate_no_errors(  # noqa: PLR0913
+def test_client_validate_no_errors(
     test_build_user_agent: Callable,
     test_get_user: Callable,
     test_encrypt: Callable,

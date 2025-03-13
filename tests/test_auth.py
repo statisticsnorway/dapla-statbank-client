@@ -61,6 +61,7 @@ def test_build_auth(
 ) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
 
     # Call the _build_auth method
     auth_header = statbank_auth._build_auth()  # noqa: SLF001
@@ -80,6 +81,7 @@ def test_encrypt_request_success(
 ) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
 
     # Call the _encrypt_request method
     response = statbank_auth._encrypt_request()  # noqa: SLF001
@@ -98,6 +100,7 @@ def test_encrypt_request_no_token(
     with patch("dapla.AuthClient.fetch_personal_token", side_effect=AuthError):
         # Instantiate the class
         statbank_auth = StatbankAuth()
+        statbank_auth.use_test_db = False
 
         # Call the _encrypt_request method
         response = statbank_auth._encrypt_request()  # noqa: SLF001
@@ -115,6 +118,7 @@ def test_build_headers(
 ) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
 
     # Call the _build_headers method
     headers = statbank_auth._build_headers()  # noqa: SLF001
@@ -134,6 +138,7 @@ def test_build_headers(
 def test_build_user_agent(mock_environ: Callable[[], None]) -> None:  # noqa: ARG001
     # Instantiate the class
     statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
 
     # Call the _build_user_agent method
     user_agent = statbank_auth._build_user_agent()  # noqa: SLF001
@@ -146,6 +151,7 @@ def test_build_user_agent(mock_environ: Callable[[], None]) -> None:  # noqa: AR
 def test_build_urls(mock_environ: Callable[[], None]) -> None:  # noqa: ARG001
     # Instantiate the class
     statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
 
     # Call the _build_urls method
     urls = statbank_auth._build_urls()  # noqa: SLF001

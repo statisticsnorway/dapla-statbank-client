@@ -59,7 +59,7 @@ class StatbankAuth:
         db = "TEST"
         if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
             db = "PROD"
-        if self.use_test_db == True:
+        if self.use_test_db:  # type: ignore[attr-defined]
             db = "TEST"
         return db
 
@@ -89,12 +89,9 @@ class StatbankAuth:
 
     def _use_test_url(self, test_env: str, prod_env: str) -> str:
         use_test = (
-            self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
+            self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"  # type: ignore[attr-defined]
         )
-        if use_test:
-            env = test_env
-        else:
-            env = prod_env
+        env = test_env if use_test else prod_env
         return os.environ.get(env, f"Cant find {env} in environ.")
 
     def _encrypt_request(self) -> r.Response:

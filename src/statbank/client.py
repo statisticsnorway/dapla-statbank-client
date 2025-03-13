@@ -74,7 +74,7 @@ class StatbankClient(StatbankAuth):
             before error being raised.
     """
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         date: str | datetime.date | datetime.datetime = TOMORROW,
         shortuser: str = "",

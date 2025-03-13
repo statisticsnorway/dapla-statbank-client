@@ -94,10 +94,11 @@ module = [
 ignore_missing_imports = true
 
 [tool.ruff]
+show_error_context = true
 force-exclude = true  # Apply excludes to pre-commit
 show-fixes = true
 src = ["src", "tests"]
-target-version = "py310"  # Minimum Python version supported
+target-version = "py311"  # Minimum Python version supported
 
 # Ruff rules may be customized as desired: https://docs.astral.sh/ruff/rules/
 
@@ -119,12 +120,14 @@ ignore = [
     "ANN202", # Don't requiere return type annotation for private functions.
     "ANN401", # Allow type annotation with type Any.
     "D100",   # Supress undocumented-public-module. Only doc of public api required.
+    "FBT001", # Allow boolean positional arguments in a function.
+    "FBT002", # Allow boolean default positional arguments in a function.
     "E402",   # Supress module-import-not-at-top-of-file, needed in jupyter notebooks.
     "E501",   # Supress line-too-long warnings: trust black's judgement on this one.
     "TRY003", # Carl: Ruff wants me to subclass basic exceptions, I dont agree
     "FBT001", # Carl: Users will not want to create Enums just to run the function
     "FBT002", # Carl: Users will not want to create Enums just to run the function
-
+    "PLR2004", # Allow to compare with unnamed numerical constants.
 ]
 
 [tool.ruff.lint.isort]
@@ -135,6 +138,9 @@ max-complexity = 15
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"  # You can also use "numpy".
+
+[tool.ruff.lint.pylint]
+max-args = 8
 
 [tool.ruff.lint.pep8-naming]
 classmethod-decorators = ["classmethod", "validator", "root_validator", "pydantic.validator"]

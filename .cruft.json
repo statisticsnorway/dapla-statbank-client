@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
-  "commit": "66884cffa5aa67ed505bb121009501b51cc4d847",
-  "checkout": "2025.1.14",
+  "commit": "0d33fca0d1c29c79aef9c7053e36d9e7cdd2bd20",
+  "checkout": null,
   "context": {
     "cookiecutter": {
       "project_name": "dapla-statbank-client",
@@ -23,7 +23,8 @@
         "lstrip_blocks": true,
         "trim_blocks": true
       },
-      "_template": "https://github.com/statisticsnorway/ssb-pypitemplate.git"
+      "_template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
+      "_commit": "0d33fca0d1c29c79aef9c7053e36d9e7cdd2bd20"
     }
   },
   "directory": null

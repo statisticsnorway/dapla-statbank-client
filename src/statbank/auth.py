@@ -54,12 +54,13 @@ class StatbankAuth:
         """
         return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
 
-    @staticmethod
-    def check_database() -> str:
+    def check_database(self) -> str:
         """Checks if we are in prod environment. And which statbank-database we are sending to."""
         db = "TEST"
         if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
             db = "PROD"
+        if self.use_test_db == True:
+            db = "TEST"
         return db
 
     def _build_user_agent(self) -> str:
@@ -86,6 +87,15 @@ class StatbankAuth:
     def _get_user() -> str:
         return getpass.getpass("Lastebruker:")
 
+    def _use_test_url(self, test_env: str, prod_env: str) -> str:
+        use_test = self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
+        if use_test:
+            env = test_env
+        else:
+            env = prod_env
+        return os.environ.get(env, f"Cant find {env} in environ.")
+        
+    
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()
         try:
@@ -101,15 +111,14 @@ class StatbankAuth:
             }
 
         return r.post(
-            os.environ.get("STATBANK_ENCRYPT_URL", "Cant find url in environ."),
+            self._use_test_url("STATBANK_TEST_ENCRYPT_URL", "STATBANK_ENCRYPT_URL"),
             headers=headers,
             json={"message": getpass.getpass(f"Lastepassord ({db}):")},
             timeout=5,
         )
 
-    @staticmethod
-    def _build_urls() -> dict[str, str]:
-        base_url = os.environ.get("STATBANK_BASE_URL", "Cant find url in environ.")
+    def _build_urls(self) -> dict[str, str]:
+        base_url = self._use_test_url("STATBANK_TEST_BASE_URL", "STATBANK_BASE_URL")
         end_urls = {
             "loader": "statbank/sos/v1/DataLoader?",
             "uttak": "statbank/sos/v1/uttaksbeskrivelse?",

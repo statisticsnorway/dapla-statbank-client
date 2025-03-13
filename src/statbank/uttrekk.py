@@ -57,8 +57,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         tableid: str,
         raise_errors: bool = False,
         headers: dict[str, str] | None = None,
+        use_test_db: bool | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
+        self.use_test_db = bool(use_test_db)
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
         self.tableid = tableid

@@ -74,6 +74,7 @@ class StatbankTransfer(StatbankAuth):
         bcc: str = "",
         overwrite: bool = True,
         approve: int | str | Approve = APPROVE_DEFAULT_JIT,
+        use_test_db: bool | None = None,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -109,6 +110,7 @@ class StatbankTransfer(StatbankAuth):
         self.tableid = tableid
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
+        self.use_test_db = bool(use_test_db)  # Coerce None to False
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""

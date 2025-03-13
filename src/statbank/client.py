@@ -85,6 +85,7 @@ class StatbankClient(StatbankAuth):
             int | str | Approve
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
+        use_test_db: bool | None = None,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
         self.shortuser = shortuser
@@ -93,6 +94,7 @@ class StatbankClient(StatbankAuth):
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
         self.check_username_password = check_username_password
+        self.use_test_db = use_test_db
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log: list[str] = []
@@ -248,6 +250,7 @@ class StatbankClient(StatbankAuth):
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
             headers=self.__headers,
+            use_test_db=self.use_test_db,
         )
 
     @staticmethod
@@ -305,6 +308,7 @@ class StatbankClient(StatbankAuth):
             tableid=tableid,
             raise_errors=raise_errors,
             headers=self.__headers,
+            use_test_db=self.use_test_db,
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
@@ -342,6 +346,7 @@ class StatbankClient(StatbankAuth):
             bcc=self.bcc,
             overwrite=self.overwrite,
             approve=self.approve,
+            use_test_db=self.use_test_db,
         )
 
     @staticmethod
@@ -493,6 +498,9 @@ class StatbankClient(StatbankAuth):
         if not isinstance(self.approve, int) or self.approve not in iter(Approve):
             error_msg = "(Approve) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
             raise ValueError(error_msg)
+        if not (isinstance(self.use_test_db, bool) or self.use_test_db is None):
+            error_msg = "(Bool) Set use_test_db to either False = use statbank PROD database from dapla prod, or True = use TEST database from dapla prod"  # type: ignore[unreachable]
+            raise TypeError(error_msg)
 
     @staticmethod
     def _get_user_initials() -> str:

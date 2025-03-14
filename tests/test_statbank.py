@@ -5,6 +5,7 @@ import getpass
 import json
 import os
 import subprocess
+import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -557,6 +558,28 @@ def test_client_get_uttrekk(
     desc = client_fake.get_description("10000")
     assert desc.tableid == "10000"
 
+
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_get_user")
+@mock.patch.object(StatbankUttrekksBeskrivelse, "_build_user_agent")
+def test_client_get_uttrekk_test_db(
+    test_build_user_agent: Callable,
+    test_get_user: Callable,
+    test_encrypt: Callable,
+    test_make_request: Callable,
+    client_fake: StatbankClient,
+    caplog,
+):
+    test_make_request.return_value = fake_get_response_uttrekksbeskrivelse_successful()
+    test_encrypt.return_value = fake_post_response_key_service()
+    test_get_user.return_value = fake_user()
+    test_build_user_agent.return_value = fake_build_user_agent()
+    client_fake.use_test_db = True
+    with caplog.at_level(logging.WARNING):
+        desc = client_fake.get_description("10000")
+    assert desc.tableid == "10000"
+    assert any(("metadata" in message.lower() and "utdatert" in message.lower()) for message in caplog.messages)
 
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_make_request")
 @mock.patch.object(StatbankUttrekksBeskrivelse, "_encrypt_request")

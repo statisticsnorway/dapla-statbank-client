@@ -14,6 +14,7 @@ import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
+from statbank.auth import UseDb
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
@@ -49,8 +50,8 @@ class StatbankTransfer(StatbankAuth):
             - 0 = MANUAL approval
             - 1 = AUTOMATIC approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
-        use_test_db (bool):
-            If you are in PROD-dapla and want to send to statbank test-database, set this to True.
+        use_db (UseDb | str | None):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
             When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
             Be aware that metadata tends to be outdated in the test-database.
         validation (bool):
@@ -78,7 +79,7 @@ class StatbankTransfer(StatbankAuth):
         bcc: str = "",
         overwrite: bool = True,
         approve: int | str | Approve = APPROVE_DEFAULT_JIT,
-        use_test_db: bool | None = None,
+        use_db: UseDb | str | None = None,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -114,7 +115,7 @@ class StatbankTransfer(StatbankAuth):
         self.tableid = tableid
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
-        self.use_test_db = bool(use_test_db)  # Coerce None to False
+        StatbankAuth.__init__(self, use_db)
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""

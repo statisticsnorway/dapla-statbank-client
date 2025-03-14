@@ -65,6 +65,7 @@ def test_validate_raises_on_wrong_rounding():
 def fake_uttrekksbeskrivelse_successful():
     return StatbankClient.read_description_json(
         """{
+        "use_db": "PROD",
         "url": "https://i.test.ssb.no/statbank/sos/v1/uttaksbeskrivelse?",
         "time_retrieved": "21.01.2025 klokka 08:42",
         "tableid": "03629",

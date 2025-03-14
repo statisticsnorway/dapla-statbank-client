@@ -28,6 +28,7 @@ from statbank.apidata import apidata_all
 from statbank.apidata import apidata_rotate
 from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
+from statbank.auth import UseDb
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
@@ -72,8 +73,8 @@ class StatbankClient(StatbankAuth):
             Nice to use for appending to your own logging after you are done,
             or printing it in a try-except-block to see what the last actions were,
             before error being raised.
-        use_test_db (bool):
-            If you are in PROD-dapla and want to send to statbank test-database, set this to True.
+        use_db (UseDb | str | None):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
             When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
             Be aware that metadata tends to be outdated in the test-database.
     """
@@ -89,7 +90,7 @@ class StatbankClient(StatbankAuth):
             int | str | Approve
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
-        use_test_db: bool | None = None,
+        use_db: str | None = None,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
         self.shortuser = shortuser
@@ -98,7 +99,7 @@ class StatbankClient(StatbankAuth):
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
         self.check_username_password = check_username_password
-        self.use_test_db = use_test_db
+        StatbankAuth.__init__(self, use_db)
         self._validate_params_init()
         self.__headers = self._build_headers()
         self.log: list[str] = []
@@ -254,7 +255,7 @@ class StatbankClient(StatbankAuth):
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
             headers=self.__headers,
-            use_test_db=self.use_test_db,
+            use_db=self.use_db,
         )
 
     @staticmethod
@@ -285,6 +286,8 @@ class StatbankClient(StatbankAuth):
         new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
         for k, v in json.loads(content).items():
             setattr(new, k, v)
+        if isinstance(new.use_db, str):
+            new.use_db = UseDb[new.use_db]
         return new
 
     # Validation
@@ -312,7 +315,7 @@ class StatbankClient(StatbankAuth):
             tableid=tableid,
             raise_errors=raise_errors,
             headers=self.__headers,
-            use_test_db=self.use_test_db,
+            use_db=self.use_db,
         )
         validation_errors = validator.validate(dfs)
         self.log.append(
@@ -350,7 +353,7 @@ class StatbankClient(StatbankAuth):
             bcc=self.bcc,
             overwrite=self.overwrite,
             approve=self.approve,
-            use_test_db=self.use_test_db,
+            use_db=self.use_db,
         )
 
     @staticmethod
@@ -502,9 +505,6 @@ class StatbankClient(StatbankAuth):
         if not isinstance(self.approve, int) or self.approve not in iter(Approve):
             error_msg = "(Approve) Set approve to either 0 = manual, 1 = automatic (immediatly), or 2 = JIT-automatic (just-in-time)"
             raise ValueError(error_msg)
-        if not (isinstance(self.use_test_db, bool) or self.use_test_db is None):
-            error_msg = "(Bool) Set use_test_db to either False = use statbank PROD database from dapla prod, or True = use TEST database from dapla prod"  # type: ignore[unreachable]
-            raise TypeError(error_msg)
 
     @staticmethod
     def _get_user_initials() -> str:

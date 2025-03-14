@@ -2,6 +2,7 @@ import base64
 import getpass
 import json
 import os
+from enum import Enum
 
 import requests as r
 from dapla import AuthClient
@@ -10,14 +11,27 @@ from dapla.auth import AuthError
 from statbank.statbank_logger import logger
 
 
+class UseDb(Enum):
+    """Hold options for database choices, targetted at statbanken."""
+
+    PROD = "PROD"
+    TEST = "TEST"
+
+
 class StatbankAuth:
     """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"."""
 
-    def __init__(self) -> None:
+    def __init__(self, use_db: UseDb | str | None) -> None:
         """This init will never be used directly, as this class is always inherited from.
 
         This is for typing with Mypy.
         """
+        if use_db is None:
+            self.use_db = UseDb[self.check_env()]
+        elif isinstance(use_db, UseDb):
+            self.use_db = use_db
+        else:
+            self.use_db = UseDb[use_db]
 
     def _build_headers(self) -> dict[str, str]:
         return {
@@ -45,8 +59,8 @@ class StatbankAuth:
         db = "TEST"
         if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
             db = "PROD"
-        if self.use_test_db:  # type: ignore[attr-defined]
-            db = "TEST"
+        if self.use_db:
+            db = self.use_db.value
         return db
 
     def _build_user_agent(self) -> str:
@@ -75,7 +89,8 @@ class StatbankAuth:
 
     def _use_test_url(self, test_env: str, prod_env: str) -> str:
         use_test = (
-            self.use_test_db and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"  # type: ignore[attr-defined]
+            self.use_db == UseDb.TEST
+            and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
         )
         env = test_env if use_test else prod_env
         return os.environ.get(env, f"Cant find {env} in environ.")

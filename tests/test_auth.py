@@ -153,8 +153,8 @@ def test_build_headers(
 
 
 def test_build_user_agent(
-    mock_environ_test: Callable[[], None],
-) -> None:  # noqa: ARG001
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
+) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
     statbank_auth.use_test_db = False
@@ -167,7 +167,9 @@ def test_build_user_agent(
     assert user_agent.startswith(expected_user_agent_prefix)
 
 
-def test_build_urls(mock_environ_test: Callable[[], None]) -> None:  # noqa: ARG001
+def test_build_urls(
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
+) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
     statbank_auth.use_test_db = False
@@ -186,8 +188,8 @@ def test_build_urls(mock_environ_test: Callable[[], None]) -> None:  # noqa: ARG
 
 
 def test_build_urls_testdb_from_prod(
-    mock_environ_prod_dapla: Callable[[], None],
-) -> None:  # noqa: ARG001
+    mock_environ_prod_dapla: Callable[[], None],  # noqa: ARG001
+) -> None:
     # Instantiate the class
     statbank_auth = StatbankAuth()
     statbank_auth.use_test_db = True

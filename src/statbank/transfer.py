@@ -8,12 +8,14 @@ import re
 import urllib
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Literal
 from typing import cast
 
 import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
+from statbank.auth import UseDb
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN
@@ -49,6 +51,10 @@ class StatbankTransfer(StatbankAuth):
             - 0 = MANUAL approval
             - 1 = AUTOMATIC approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
+        use_db (UseDb | str | None):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
+            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+            Be aware that metadata tends to be outdated in the test-database.
         validation (bool):
             - True, if you want the python-validation code to run user-side.
             - False, if its slow and unnecessary.
@@ -74,6 +80,7 @@ class StatbankTransfer(StatbankAuth):
         bcc: str = "",
         overwrite: bool = True,
         approve: int | str | Approve = APPROVE_DEFAULT_JIT,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,
@@ -109,6 +116,7 @@ class StatbankTransfer(StatbankAuth):
         self.tableid = tableid
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
+        StatbankAuth.__init__(self, use_db)
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""

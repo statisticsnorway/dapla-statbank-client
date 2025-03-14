@@ -2,6 +2,8 @@ import base64
 import getpass
 import json
 import os
+from enum import Enum
+from typing import Literal
 
 import requests as r
 from dapla import AuthClient
@@ -10,28 +12,27 @@ from dapla.auth import AuthError
 from statbank.statbank_logger import logger
 
 
+class UseDb(Enum):
+    """Hold options for database choices, targetted at statbanken."""
+
+    PROD = "PROD"
+    TEST = "TEST"
+
+
 class StatbankAuth:
-    """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API".
+    """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"."""
 
-    Methods:
-        _build_headers() -> dict:
-            Creates dict of headers needed in request to talk to Statbank-API
-        _build_auth() -> str:
-            Gets key from environment and encrypts password with key, combines it with username into expected Authentication header.
-        _encrypt_request() -> str:
-            Encrypts password with key from local service, url for service should be environment variables. Password is not possible to send into function. Because safety.
-        _build_urls() -> dict:
-            Urls will differ based environment variables, returns a dict of urls.
-        __init__():
-
-            is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
-    """
-
-    def __init__(self) -> None:
+    def __init__(self, use_db: UseDb | Literal["TEST", "PROD"] | None) -> None:
         """This init will never be used directly, as this class is always inherited from.
 
         This is for typing with Mypy.
         """
+        if use_db is None:
+            self.use_db = UseDb[self.check_env()]
+        elif isinstance(use_db, UseDb):
+            self.use_db = use_db
+        else:
+            self.use_db = UseDb[use_db]
 
     def _build_headers(self) -> dict[str, str]:
         return {
@@ -54,12 +55,13 @@ class StatbankAuth:
         """
         return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
 
-    @staticmethod
-    def check_database() -> str:
+    def check_database(self) -> str:
         """Checks if we are in prod environment. And which statbank-database we are sending to."""
         db = "TEST"
         if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
             db = "PROD"
+        if self.use_db:
+            db = self.use_db.value
         return db
 
     def _build_user_agent(self) -> str:
@@ -86,6 +88,14 @@ class StatbankAuth:
     def _get_user() -> str:
         return getpass.getpass("Lastebruker:")
 
+    def _use_test_url(self, test_env: str, prod_env: str) -> str:
+        use_test = (
+            self.use_db == UseDb.TEST
+            and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
+        )
+        env = test_env if use_test else prod_env
+        return os.environ.get(env, f"Cant find {env} in environ.")
+
     def _encrypt_request(self) -> r.Response:
         db = self.check_database()
         try:
@@ -101,15 +111,14 @@ class StatbankAuth:
             }
 
         return r.post(
-            os.environ.get("STATBANK_ENCRYPT_URL", "Cant find url in environ."),
+            self._use_test_url("STATBANK_TEST_ENCRYPT_URL", "STATBANK_ENCRYPT_URL"),
             headers=headers,
             json={"message": getpass.getpass(f"Lastepassord ({db}):")},
             timeout=5,
         )
 
-    @staticmethod
-    def _build_urls() -> dict[str, str]:
-        base_url = os.environ.get("STATBANK_BASE_URL", "Cant find url in environ.")
+    def _build_urls(self) -> dict[str, str]:
+        base_url = self._use_test_url("STATBANK_TEST_BASE_URL", "STATBANK_BASE_URL")
         end_urls = {
             "loader": "statbank/sos/v1/DataLoader?",
             "uttak": "statbank/sos/v1/uttaksbeskrivelse?",

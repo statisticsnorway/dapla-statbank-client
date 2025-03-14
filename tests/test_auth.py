@@ -7,14 +7,15 @@ import pytest
 from dapla.auth import AuthError
 from requests import Response
 
-from statbank.auth import StatbankAuth  # Replace with your actual module import path
+from statbank.auth import StatbankAuth
+from statbank.auth import UseDb
 
 SUCCESS_STATUS = 200
 
 
 # Mock for os.environ.get
 @pytest.fixture
-def mock_environ():
+def mock_environ_test():
     with patch.dict(
         "os.environ",
         {
@@ -23,6 +24,23 @@ def mock_environ():
             "DAPLA_REGION": "ON_PREM",
             "STATBANK_ENCRYPT_URL": "http://fakeurl.com/encrypt",
             "STATBANK_BASE_URL": "http://fakeurl.com/",
+        },
+    ):
+        yield
+
+
+@pytest.fixture
+def mock_environ_prod_dapla():
+    with patch.dict(
+        "os.environ",
+        {
+            "DAPLA_ENVIRONMENT": "PROD",
+            "DAPLA_SERVICE": "JUPYTERLAB",
+            "DAPLA_REGION": "DAPLA",
+            "STATBANK_ENCRYPT_URL": "http://fakeurl.com/encrypt",
+            "STATBANK_TEST_ENCRYPT_URL": "http://test.fakeurl.com/encrypt",
+            "STATBANK_BASE_URL": "http://fakeurl.com/",
+            "STATBANK_TEST_BASE_URL": "http://test.fakeurl.com/",
         },
     ):
         yield
@@ -54,13 +72,13 @@ def mock_requests_post():
 
 
 def test_build_auth(
-    mock_environ: Callable[[], None],  # noqa: ARG001
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
     mock_getpass: Callable[[], None],  # noqa: ARG001
     mock_fetch_token: Callable[[], None],  # noqa: ARG001
     mock_requests_post: Callable[[], Mock],  # noqa: ARG001
 ) -> None:
     # Instantiate the class
-    statbank_auth = StatbankAuth()
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
     # Call the _build_auth method
     auth_header = statbank_auth._build_auth()  # noqa: SLF001
@@ -73,13 +91,13 @@ def test_build_auth(
 
 
 def test_encrypt_request_success(
-    mock_environ: Callable[[], None],  # noqa: ARG001
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
     mock_getpass: Callable[[], None],  # noqa: ARG001
     mock_fetch_token: Callable[[], None],  # noqa: ARG001
     mock_requests_post: Callable[[], Mock],  # noqa: ARG001
 ) -> None:
     # Instantiate the class
-    statbank_auth = StatbankAuth()
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
     # Call the _encrypt_request method
     response = statbank_auth._encrypt_request()  # noqa: SLF001
@@ -90,14 +108,14 @@ def test_encrypt_request_success(
 
 
 def test_encrypt_request_no_token(
-    mock_environ: Callable[[], None],  # noqa: ARG001
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
     mock_getpass: Callable[[], None],  # noqa: ARG001
     mock_requests_post: Callable[[], Mock],  # noqa: ARG001
 ) -> None:
     # Mock the AuthError exception
     with patch("dapla.AuthClient.fetch_personal_token", side_effect=AuthError):
         # Instantiate the class
-        statbank_auth = StatbankAuth()
+        statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
         # Call the _encrypt_request method
         response = statbank_auth._encrypt_request()  # noqa: SLF001
@@ -108,13 +126,13 @@ def test_encrypt_request_no_token(
 
 
 def test_build_headers(
-    mock_environ: Callable[[], None],  # noqa: ARG001
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
     mock_getpass: Callable[[], None],  # noqa: ARG001
     mock_fetch_token: Callable[[], None],  # noqa: ARG001
     mock_requests_post: Callable[[], Mock],  # noqa: ARG001
 ) -> None:
     # Instantiate the class
-    statbank_auth = StatbankAuth()
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
     # Call the _build_headers method
     headers = statbank_auth._build_headers()  # noqa: SLF001
@@ -131,9 +149,11 @@ def test_build_headers(
     assert headers == expected_headers
 
 
-def test_build_user_agent(mock_environ: Callable[[], None]) -> None:  # noqa: ARG001
+def test_build_user_agent(
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
+) -> None:
     # Instantiate the class
-    statbank_auth = StatbankAuth()
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
     # Call the _build_user_agent method
     user_agent = statbank_auth._build_user_agent()  # noqa: SLF001
@@ -143,9 +163,11 @@ def test_build_user_agent(mock_environ: Callable[[], None]) -> None:  # noqa: AR
     assert user_agent.startswith(expected_user_agent_prefix)
 
 
-def test_build_urls(mock_environ: Callable[[], None]) -> None:  # noqa: ARG001
+def test_build_urls(
+    mock_environ_test: Callable[[], None],  # noqa: ARG001
+) -> None:
     # Instantiate the class
-    statbank_auth = StatbankAuth()
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 
     # Call the _build_urls method
     urls = statbank_auth._build_urls()  # noqa: SLF001
@@ -158,3 +180,31 @@ def test_build_urls(mock_environ: Callable[[], None]) -> None:  # noqa: ARG001
         "api": "http://fakeurl.com/lastelogg/api/",
     }
     assert urls == expected_urls
+
+
+def test_build_urls_testdb_from_prod(
+    mock_environ_prod_dapla: Callable[[], None],  # noqa: ARG001
+) -> None:
+    # Instantiate the class
+    statbank_auth = StatbankAuth(use_db=UseDb.TEST)
+
+    # Call the _build_urls method
+    urls = statbank_auth._build_urls()  # noqa: SLF001
+
+    # Verify the expected URLs
+    expected_urls = {
+        "loader": "http://test.fakeurl.com/statbank/sos/v1/DataLoader?",
+        "uttak": "http://test.fakeurl.com/statbank/sos/v1/uttaksbeskrivelse?",
+        "gui": "http://test.fakeurl.com/lastelogg/gui/",
+        "api": "http://test.fakeurl.com/lastelogg/api/",
+    }
+    assert urls == expected_urls
+
+
+def test_check_databases_from_prod(
+    mock_environ_prod_dapla: Callable[[], None],  # noqa: ARG001
+) -> None:
+    statbank_auth = StatbankAuth(use_db=UseDb.PROD)
+    assert statbank_auth.check_database() == "PROD"
+    statbank_auth.use_db = UseDb.TEST
+    assert statbank_auth.check_database() == "TEST"

@@ -6,8 +6,10 @@ import math
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
+from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Literal
 
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
@@ -23,6 +25,7 @@ import pandas as pd
 import requests as r
 
 from statbank.auth import StatbankAuth
+from statbank.auth import UseDb
 from statbank.statbank_logger import logger
 from statbank.uttrekk_validations import StatbankUttrekkValidators
 from statbank.uttrekk_validations import StatbankValidateError
@@ -49,6 +52,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         suppression (dict): Details around extra columns which describe main column's "prikking", meaning their suppression-type.
         headers (dict): The headers for the request, might be sent in from a StatbankTransfer-object.
         filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
+        use_db (UseDb | str | None):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
+            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+            Be aware that metadata tends to be outdated in the test-database.
 
     """
 
@@ -57,8 +64,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         tableid: str,
         raise_errors: bool = False,
         headers: dict[str, str] | None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
+        StatbankAuth.__init__(self, use_db)
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
         self.tableid = tableid
@@ -188,7 +197,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 If path is not provided, returns the json-string for you to handle as you wish.
         """
         # Need to this because im stupidly adding methods from other class as attributes
-        content = {k: v for k, v in self.__dict__.items() if not callable(v)}
+        content = {
+            k: v
+            for k, v in self.__dict__.items()
+            if not callable(v) and not isinstance(v, Enum)
+        }
+        content["use_db"] = self.use_db.value
 
         if path:
             logger.info("Writing to %s", path)
@@ -363,6 +377,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             self.tableid,
             str(filbeskrivelse["Uttaksbeskrivelse_lagd"]),
         )
+        if self.use_db == UseDb.TEST:
+            err_msg = "Metadata i TEST-databasen kan være veldig utdatert. Kan hende du bør hente filbeskrivelsen / description fra PROD-databasen?"
+            logger.warning(err_msg)
 
         # reset tableid and hovedkode after content of request
         self.filbeskrivelse = filbeskrivelse

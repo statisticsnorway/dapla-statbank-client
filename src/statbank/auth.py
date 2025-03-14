@@ -21,7 +21,7 @@ class UseDb(Enum):
 class StatbankAuth:
     """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"."""
 
-    def __init__(self, use_db: UseDb | str | None) -> None:
+    def __init__(self, use_db: UseDb | Literal["TEST", "PROD"] | None) -> None:
         """This init will never be used directly, as this class is always inherited from.
 
         This is for typing with Mypy.

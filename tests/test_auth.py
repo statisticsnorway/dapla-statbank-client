@@ -205,3 +205,13 @@ def test_build_urls_testdb_from_prod(
         "api": "http://test.fakeurl.com/lastelogg/api/",
     }
     assert urls == expected_urls
+
+
+def test_check_databases_from_prod(
+    mock_environ_prod_dapla: Callable[[], None],  # noqa: ARG001
+) -> None:
+    statbank_auth = StatbankAuth()
+    statbank_auth.use_test_db = False
+    assert statbank_auth.check_database() == "PROD"
+    statbank_auth.use_test_db = True
+    assert statbank_auth.check_database() == "TEST"

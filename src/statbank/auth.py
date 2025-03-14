@@ -11,21 +11,7 @@ from statbank.statbank_logger import logger
 
 
 class StatbankAuth:
-    """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API".
-
-    Methods:
-        _build_headers() -> dict:
-            Creates dict of headers needed in request to talk to Statbank-API
-        _build_auth() -> str:
-            Gets key from environment and encrypts password with key, combines it with username into expected Authentication header.
-        _encrypt_request() -> str:
-            Encrypts password with key from local service, url for service should be environment variables. Password is not possible to send into function. Because safety.
-        _build_urls() -> dict:
-            Urls will differ based environment variables, returns a dict of urls.
-        __init__():
-
-            is not implemented, as Transfer and UttrekksBeskrivelse both add their own.
-    """
+    """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"."""
 
     def __init__(self) -> None:
         """This init will never be used directly, as this class is always inherited from.

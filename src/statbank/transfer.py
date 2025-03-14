@@ -49,6 +49,10 @@ class StatbankTransfer(StatbankAuth):
             - 0 = MANUAL approval
             - 1 = AUTOMATIC approval at transfer-time (immediately)
             - 2 = JIT (Just In Time), approval right before publishing time
+        use_test_db (bool):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to True.
+            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+            Be aware that metadata tends to be outdated in the test-database.
         validation (bool):
             - True, if you want the python-validation code to run user-side.
             - False, if its slow and unnecessary.

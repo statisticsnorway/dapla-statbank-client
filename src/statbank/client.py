@@ -72,6 +72,10 @@ class StatbankClient(StatbankAuth):
             Nice to use for appending to your own logging after you are done,
             or printing it in a try-except-block to see what the last actions were,
             before error being raised.
+        use_test_db (bool):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to True.
+            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+            Be aware that metadata tends to be outdated in the test-database.
     """
 
     def __init__(

@@ -49,6 +49,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         suppression (dict): Details around extra columns which describe main column's "prikking", meaning their suppression-type.
         headers (dict): The headers for the request, might be sent in from a StatbankTransfer-object.
         filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
+        use_test_db (bool):
+            If you are in PROD-dapla and want to send to statbank test-database, set this to True.
+            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+            Be aware that metadata tends to be outdated in the test-database.
 
     """
 

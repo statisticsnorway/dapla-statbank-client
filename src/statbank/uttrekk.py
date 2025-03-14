@@ -9,6 +9,7 @@ from decimal import localcontext
 from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Literal
 
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
@@ -63,7 +64,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         tableid: str,
         raise_errors: bool = False,
         headers: dict[str, str] | None = None,
-        use_db: UseDb | str | None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
         StatbankAuth.__init__(self, use_db)

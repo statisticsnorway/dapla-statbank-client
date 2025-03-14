@@ -8,6 +8,7 @@ import re
 import urllib
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Literal
 from typing import cast
 
 import pandas as pd
@@ -79,7 +80,7 @@ class StatbankTransfer(StatbankAuth):
         bcc: str = "",
         overwrite: bool = True,
         approve: int | str | Approve = APPROVE_DEFAULT_JIT,
-        use_db: UseDb | str | None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,

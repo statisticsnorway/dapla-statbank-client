@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Literal
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -90,7 +91,7 @@ class StatbankClient(StatbankAuth):
             int | str | Approve
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
-        use_db: str | None = None,
+        use_db: Literal["TEST", "PROD"] | None = None,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
         self.shortuser = shortuser

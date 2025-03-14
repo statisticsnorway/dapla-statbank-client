@@ -3,6 +3,7 @@ import getpass
 import json
 import os
 from enum import Enum
+from typing import Literal
 
 import requests as r
 from dapla import AuthClient

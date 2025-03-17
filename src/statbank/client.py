@@ -13,6 +13,7 @@ import datetime
 import getpass
 import json
 import os
+import shutil
 import subprocess
 from functools import partial
 from pathlib import Path
@@ -209,7 +210,7 @@ class StatbankClient(StatbankAuth):
         """
         match date:
             case widgets.DatePicker():
-                self.date = cast(datetime.date, date.value)
+                self.date = cast("datetime.date", date.value)
             case datetime.datetime():
                 self.date = date.date()
             case datetime.date():
@@ -509,17 +510,26 @@ class StatbankClient(StatbankAuth):
 
     @staticmethod
     def _get_user_initials() -> str:
-        attempts: tuple[Callable[[], str] | partial[str | None], ...] = (
+        attempts: list[Callable[[], str] | partial[str | None]] = [
             partial(os.environ.get, "DAPLA_USER"),
             partial(os.environ.get, "JUPYTERHUB_USER"),
-            lambda: subprocess.check_output(  # noqa: S603
-                "git config user.email".split(" "),
-            )
-            .decode("utf8")
-            .strip(),
+        ]
+
+        # This is to satisfy Ruff and mypy, git might not be installed (it is), and not qualifying gits full path is a security risk (its probably not)
+        git_path = shutil.which("git")
+        if isinstance(git_path, str):
+            attempts += [
+                (lambda: subprocess.check_output(  # noqa: S603
+                    [git_path, "config", "user.email"],
+                )
+                .decode("utf8")
+                .strip())
+            ]
+
+        attempts += [
             getpass.getuser,
             partial(input, "Brukerinitialer (tre bokstaver): "),
-        )
+        ]
 
         for func in attempts:
             initials_or_email: str | None = func()

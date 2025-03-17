@@ -868,13 +868,14 @@ def test_get_user_initials(
     assert StatbankClient._get_user_initials() == "jup"  # noqa: SLF001
 
     # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config
-    mock_environ_get.side_effect = lambda _, default="": default
-    mock_check_output.return_value = b"tba@ssb.no"
-    assert StatbankClient._get_user_initials() == "tba"  # noqa: SLF001
-
-    # Test when os.environ.get and git config fail, fallback to getpass.getuser
     git_path = shutil.which("git")
-    if isinstance(git_path, str):
+    if isinstance(
+        git_path, str
+    ):  # Only test with git, if git is installed on the system? (windows on github doesnt?)
+        mock_environ_get.side_effect = lambda _, default="": default
+        mock_check_output.return_value = b"tba@ssb.no"
+        assert StatbankClient._get_user_initials() == "tba"  # noqa: SLF001
+        # Test when os.environ.get and git config fail, fallback to getpass.getuser
         mock_check_output.side_effect = subprocess.CalledProcessError(
             1,
             f"{git_path} config user.email",

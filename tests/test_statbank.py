@@ -866,6 +866,9 @@ def test_get_user_initials(
         "jup@ssb.no" if key == "JUPYTERHUB_USER" else default
     )
     assert StatbankClient._get_user_initials() == "jup"  # noqa: SLF001
+    mock_environ_get.side_effect = (
+        lambda _, default="": default
+    )  # Reset  env var to not existing
 
     # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config
     git_path = shutil.which("git")
@@ -873,7 +876,6 @@ def test_get_user_initials(
         git_path,
         str,
     ):  # Only test with git, if git is installed on the system? (windows on github doesnt?)
-        mock_environ_get.side_effect = lambda _, default="": default
         mock_check_output.return_value = b"tba@ssb.no"
         assert StatbankClient._get_user_initials() == "tba"  # noqa: SLF001
         # Test when os.environ.get and git config fail, fallback to getpass.getuser
@@ -881,7 +883,7 @@ def test_get_user_initials(
             1,
             f"{git_path} config user.email",
         )
-        mock_check_output.return_value = b""
+        mock_check_output.return_value = b""  # Reset after git
     mock_getuser.return_value = "tbb@ssb.no"
     # Reset mock_check_output to avoid the error persisting into this test
     mock_check_output.side_effect = None

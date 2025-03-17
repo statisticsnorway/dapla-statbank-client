@@ -870,7 +870,8 @@ def test_get_user_initials(
     # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config
     git_path = shutil.which("git")
     if isinstance(
-        git_path, str
+        git_path,
+        str,
     ):  # Only test with git, if git is installed on the system? (windows on github doesnt?)
         mock_environ_get.side_effect = lambda _, default="": default
         mock_check_output.return_value = b"tba@ssb.no"

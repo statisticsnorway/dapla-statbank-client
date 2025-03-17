@@ -317,15 +317,15 @@ class StatbankTransfer(StatbankAuth):
         resp_json: TransferResultType = self.response.json()
         response_msg = resp_json["TotalResult"]["Message"]
         match_oppdragsnummer = cast(
-            re.Match[str],
+            "re.Match[str]",
             pattern_work_number.search(response_msg),
         )
         match_publish_date = cast(
-            re.Match[str],
+            "re.Match[str]",
             pattern_publish_date.search(response_msg),
         )
         match_publish_time = cast(
-            re.Match[str],
+            "re.Match[str]",
             pattern_publish_time.search(response_msg),
         )
 

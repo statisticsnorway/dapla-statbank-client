@@ -519,11 +519,13 @@ class StatbankClient(StatbankAuth):
         git_path = shutil.which("git")
         if isinstance(git_path, str):
             attempts += [
-                (lambda: subprocess.check_output(  # noqa: S603
-                    [git_path, "config", "user.email"],
-                )
-                .decode("utf8")
-                .strip())
+                (
+                    lambda: subprocess.check_output(  # noqa: S603
+                        [git_path, "config", "user.email"],
+                    )
+                    .decode("utf8")
+                    .strip()
+                ),
             ]
 
         attempts += [

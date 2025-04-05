@@ -475,6 +475,10 @@ class StatbankClient(StatbankAuth):
         if not (isinstance(self.date, datetime.date)):
             error_msg = "Date must be a datetime.datetime"  # type: ignore[unreachable]
             raise TypeError(error_msg)
+        if self.date < datetime.date.now():
+            logger.warning(
+                "Publishing date usually should be in the future, not in the past.",
+            )
         # Date should not be on a weekend
         if self.date.weekday() in [5, 6]:
             logger.warning(

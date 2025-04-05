@@ -224,7 +224,9 @@ class StatbankTransfer(StatbankAuth):
         # If path provided write to it, otherwise return the string-content
         if path:
             logger.info("Writing to %s", path)
-            with Path(path).open(mode="w") as json_file:
+            path_path = Path(path)
+            path_path.parent.mkdir(parents=True, exist_ok=True)
+            with path_path.open(mode="w") as json_file:
                 json_file.write(json_content)
         else:
             return json.dumps(json_content)

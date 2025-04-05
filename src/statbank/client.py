@@ -475,7 +475,7 @@ class StatbankClient(StatbankAuth):
         if not (isinstance(self.date, datetime.date)):
             error_msg = "Date must be a datetime.datetime"  # type: ignore[unreachable]
             raise TypeError(error_msg)
-        if self.date < datetime.date.now():
+        if self.date < datetime.datetime.now().astimezone(OSLO_TIMEZONE):
             logger.warning(
                 "Publishing date usually should be in the future, not in the past.",
             )

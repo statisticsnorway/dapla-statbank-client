@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import NotRequired
 from typing import TypedDict
+
+from typing_extensions import NotRequired  # noqa: UP035
 
 #################################
 # Statbank get public data type #

@@ -24,13 +24,13 @@ from IPython.display import display
 
 if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
-from statbank.apidata import apicodelist
-from statbank.apidata import apidata
-from statbank.apidata import apidata_all
-from statbank.apidata import apidata_rotate
-from statbank.apidata import apimetadata
 from statbank.auth import StatbankAuth
 from statbank.auth import UseDb
+from statbank.get_apidata import apicodelist
+from statbank.get_apidata import apidata
+from statbank.get_apidata import apidata_all
+from statbank.get_apidata import apidata_rotate
+from statbank.get_apidata import apimetadata
 from statbank.globals import APPROVE_DEFAULT_JIT
 from statbank.globals import OSLO_TIMEZONE
 from statbank.globals import SSB_TBF_LEN

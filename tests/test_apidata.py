@@ -13,13 +13,13 @@ from statbank import StatbankClient
 from statbank.api_exceptions import StatbankParameterError
 from statbank.api_exceptions import StatbankVariableSelectionError
 from statbank.api_exceptions import TooBigRequestError
-from statbank.apidata import _check_selection
-from statbank.apidata import apicodelist
-from statbank.apidata import apidata
-from statbank.apidata import apidata_all
-from statbank.apidata import apidata_query_all
-from statbank.apidata import apidata_rotate
-from statbank.apidata import apimetadata
+from statbank.get_apidata import _check_selection
+from statbank.get_apidata import apicodelist
+from statbank.get_apidata import apidata
+from statbank.get_apidata import apidata_all
+from statbank.get_apidata import apidata_query_all
+from statbank.get_apidata import apidata_rotate
+from statbank.get_apidata import apimetadata
 
 if TYPE_CHECKING:
     from statbank.api_types import QueryWholeType
@@ -199,7 +199,7 @@ def test_query_all_raises_500(fake_get: Callable) -> None:
         apidata_query_all("https://data.ssb.no/api/v0/no/table/05300")
 
 
-@mock.patch("statbank.apidata.apidata")
+@mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_apidata_all_05300(
     fake_meta_get: Callable,
@@ -213,7 +213,7 @@ def test_apidata_all_05300(
     assert len(df_all)
 
 
-@mock.patch("statbank.apidata.apidata")
+@mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_apidata_rotate_05300(
     fake_meta_get: Callable,
@@ -266,7 +266,7 @@ def test_client_apidata_no_query(fake_post: Callable, client_fake: Callable) -> 
     assert len(tabledata)
 
 
-@mock.patch("statbank.apidata.apidata")
+@mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_client_apidata_all(
     fake_meta_get: Callable,
@@ -281,7 +281,7 @@ def test_client_apidata_all(
     assert len(tabledata)
 
 
-@mock.patch("statbank.apidata.apidata")
+@mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_client_apidata_rotate_05300(
     fake_meta_get: Callable,
@@ -356,7 +356,7 @@ def test_apidata_raises_wrong_id(
         apidata("0", query_all_05300, include_id=True)
 
 
-@mock.patch("statbank.apidata.apidata")
+@mock.patch("statbank.get_apidata.apidata")
 def test_apidata_all_raises_wrong_id(
     fake_apidata: Callable,
     apidata_05300: pd.DataFrame,
@@ -366,7 +366,7 @@ def test_apidata_all_raises_wrong_id(
         apidata_all("0", include_id=True)
 
 
-@mock.patch("statbank.apidata.apimetadata")
+@mock.patch("statbank.get_apidata.apimetadata")
 def test_check_duplicates_in_selection(fake_metadata_dict: Callable):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"
@@ -388,7 +388,7 @@ def test_check_duplicates_in_selection(fake_metadata_dict: Callable):
     assert message == expected
 
 
-@mock.patch("statbank.apidata.apimetadata")
+@mock.patch("statbank.get_apidata.apimetadata")
 def test_check_invalid_in_selection(fake_metadata_dict: Callable):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"
@@ -411,7 +411,7 @@ def test_check_invalid_in_selection(fake_metadata_dict: Callable):
     assert message == expected
 
 
-@mock.patch("statbank.apidata.apimetadata")
+@mock.patch("statbank.get_apidata.apimetadata")
 def test_check_with_wildcard(fake_metadata_dict: Callable):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"

@@ -1,3 +1,5 @@
+from typing import Any
+
 import pytest
 from _pytest.fixtures import FixtureRequest
 from _pytest.monkeypatch import MonkeyPatch
@@ -13,7 +15,7 @@ def block_requests(request: FixtureRequest, monkeypatch: MonkeyPatch) -> None:
         # Test is marked with @pytest.mark.integration_dapla, allow real HTTP when integration testing
         return
 
-    def fake_request():
+    def fake_request(*_: Any, **__: Any):
         err = "Attempted to make external HTTP request during testing!"
         raise RuntimeError(err)
 

@@ -14,7 +14,7 @@ class StatbankDataBuildError(Exception):
     """Custom exception for errors that occur during the building of Statbank data."""
 
 
-def stack_categories(varcodes: dict[str, list[Any]]) -> pd.DataFrame:
+def stack_categories(varcodes: dict[str, list[str]]) -> pd.DataFrame:
     """Stacks the categories of the variables (in the correct order) from the response into a DataFrame.
 
     Args:
@@ -29,6 +29,10 @@ def stack_categories(varcodes: dict[str, list[Any]]) -> pd.DataFrame:
     ntiles: int = 1
 
     data_dict: dict[str, NDArray[Any]] = {}
+
+    var: str
+    codes: list[str]
+
     for var, codes in varcodes.items():
         ncat: int = len(codes)
 
@@ -66,7 +70,10 @@ def response_to_pandas(
 
     varnames: dict[str, str] = {}
     codes: dict[str, list[str]] = {}
-    labels: dict[str, list[str]] = {}
+    labels: dict[str, dict[str, str]] = {}
+
+    var: str
+    var_info: dict[str, Any]
 
     for var, var_info in dimension.items():
         varnames[var] = var_info["label"]
@@ -83,6 +90,10 @@ def response_to_pandas(
         raise StatbankDataBuildError(message)
 
     data["value"] = value
+
+    id_col: str
+    id_col2: str
+    codes2labels: dict[str, str]
 
     for id_col, codes2labels in labels.items():
         label_col: str = varnames[id_col]

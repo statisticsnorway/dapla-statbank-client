@@ -289,7 +289,7 @@ class StatbankTransfer(StatbankAuth):
         self,
         url_params: str,
     ) -> r.Response:
-        result = r.post(url_params, headers=self.headers, data=self.body, timeout=15)
+        result = r.post(url_params, headers=self.headers, data=self.body, timeout=100)
         # Trying to clean all auth etc out of response
         try:
             result.raise_for_status()

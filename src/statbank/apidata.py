@@ -73,7 +73,7 @@ def apidata(
     if not resultat.ok:
         _read_error(id_or_url, payload_now, resultat)
 
-    # Putt teksten i resultatet inn i ett pyjstat-datasett-objekt
+    # Få pd.DataFrame fra resultatet
     table_data = response_to_pandas(resultat, include_id=include_id)
 
     return table_data.convert_dtypes()

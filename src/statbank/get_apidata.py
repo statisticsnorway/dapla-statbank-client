@@ -9,7 +9,6 @@ from typing import Any
 from typing import TypeVar
 
 import requests as r
-from pyjstat import pyjstat
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
 from .api_exceptions import StatbankParameterError
 from .api_exceptions import StatbankVariableSelectionError
 from .api_exceptions import TooBigRequestError
+from .response_to_pandas import response_to_pandas
 from .statbank_logger import logger
 
 # Getting data from Statbank
@@ -73,26 +73,9 @@ def apidata(
     if not resultat.ok:
         _read_error(id_or_url, payload_now, resultat)
 
-    # Putt teksten i resultatet inn i ett pyjstat-datasett-objekt
-    dataset_pyjstat = pyjstat.Dataset.read(resultat.text)
-    # Skriv pyjstat-objektet ut som en pandas dataframe
-    table_data: pd.DataFrame = dataset_pyjstat.write("dataframe")
-    # Om man ønsker IDen påført dataframen, så er vi fancy
-    if include_id:
-        table_data_ids = dataset_pyjstat.write("dataframe", naming="id")
-        skip = 0
-        for i, col in enumerate(table_data_ids.columns):
-            insert_at = (i + 1) * 2 - 1 - skip
-            df_col_tocompare = table_data.iloc[:, insert_at - 1]
-            # Sett inn kolonne på rett sted, avhengig av at navnet ikke er brukt
-            # og at nabokolonnen ikke har samme verdier.
-            if col not in table_data.columns and not table_data_ids[col].equals(
-                df_col_tocompare,
-            ):
-                table_data.insert(insert_at, col, table_data_ids[col])
-            # Indexen må justeres, om vi lar være å skrive inn kolonnen
-            else:
-                skip += 1
+    # Få pd.DataFrame fra resultatet
+    table_data = response_to_pandas(resultat, include_id=include_id)
+
     return table_data.convert_dtypes()
 
 

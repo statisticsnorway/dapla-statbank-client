@@ -571,10 +571,10 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
-        ignore_klasscodes_not_in_data: bool = False,
+        ignore_codes_not_in_data: bool = False,
     ) -> dict[str, ValueError]:
 
-        if not ignore_klasscodes_not_in_data:
+        if not ignore_codes_not_in_data:
             validation_errors = self._check_category_code_usage_missing(
                 data,
                 validation_errors,

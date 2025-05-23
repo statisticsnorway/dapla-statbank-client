@@ -218,7 +218,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self,
         data: dict[str, pd.DataFrame],
         raise_errors: bool = False,
-        ignore_klasscodes_not_in_data: bool = False,
+        ignore_codes_not_in_data: bool = False,
     ) -> dict[str, ValueError]:
         """Uses the contents of itself to validate the data against.
 
@@ -228,7 +228,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         Args:
             data (dict[str, pd.DataFrame]): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
             raise_errors (bool): True/False based on if you want the method to raise its own errors or not.
-            ignore_klasscodes_not_in_data (bool): If set to True, will hide messages about codes in klass that are missing from the data.
+            ignore_codes_not_in_data (bool): If set to True, will hide messages about codes in klass that are missing from the data.
 
         Returns:
             dict[str, ValueError]: A dictionary of the errors the validation wants to raise.
@@ -251,7 +251,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         validation_errors = self._category_code_usage(
             data,
             validation_errors,
-            ignore_klasscodes_not_in_data,
+            ignore_codes_not_in_data,
         )
         validation_errors = self._check_for_floats(data, validation_errors)
         validation_errors = self._check_for_literal_nans_in_strings(

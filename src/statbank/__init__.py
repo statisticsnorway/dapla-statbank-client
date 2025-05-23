@@ -11,12 +11,12 @@ import importlib.metadata  # Needed even with whole import over
 
 import toml
 
-from statbank.apidata import apicodelist
-from statbank.apidata import apidata
-from statbank.apidata import apidata_all
-from statbank.apidata import apidata_rotate
-from statbank.apidata import apimetadata
 from statbank.client import StatbankClient
+from statbank.get_apidata import apicodelist
+from statbank.get_apidata import apidata
+from statbank.get_apidata import apidata_all
+from statbank.get_apidata import apidata_rotate
+from statbank.get_apidata import apimetadata
 from statbank.statbank_logger import logger
 
 __all__ = [

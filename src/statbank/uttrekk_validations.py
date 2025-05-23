@@ -571,13 +571,15 @@ class StatbankUttrekkValidators:
         self,
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
+        ignore_klasscodes_not_in_data: bool = False,
     ) -> dict[str, ValueError]:
 
-        validation_errors = self._check_category_code_usage_outside(
-            data,
-            validation_errors,
-        )
-        return self._check_category_code_usage_missing(
+        if not ignore_klasscodes_not_in_data:
+            validation_errors = self._check_category_code_usage_missing(
+                data,
+                validation_errors,
+            )
+        return self._check_category_code_usage_outside(
             data,
             validation_errors,
         )
@@ -663,7 +665,10 @@ class StatbankUttrekkValidators:
                 # Check if can be converted to float and int
                 try:
                     if pd.api.types.is_string_dtype(col):
-                        col = col.str.replace(",", ".", regex=False)
+                        col = col.str.replace(",", ".", regex=False).replace(
+                            "",
+                            "0",
+                        )  # Empty cells is ok, because Statbanken allows it?
                     col.astype("Float64")
                 except ValueError as e:
                     validation_errors[

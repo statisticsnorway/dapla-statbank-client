@@ -265,7 +265,7 @@ class StatbankTransfer(StatbankAuth):
         body = ""
         for filename, elem in self.data.items():
             # Replace all nans in data
-            elem_fillna = elem.copy().fillna("")
+            elem_fillna = elem.copy().astype("string").fillna("")
             body += f"--{self.boundary}"
             body += f"\nContent-Disposition:form-data; filename={filename}"
             body += "\nContent-type:text/plain\n\n"

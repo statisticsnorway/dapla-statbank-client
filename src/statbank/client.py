@@ -298,6 +298,7 @@ class StatbankClient(StatbankAuth):
         dfs: dict[str, pd.DataFrame],
         tableid: str = "00000",
         raise_errors: bool = False,
+        ignore_codes_not_in_data: bool = False,
     ) -> dict[str, ValueError]:
         """Gets an "uttrekksbeskrivelse" and validates the data against this.
 
@@ -308,6 +309,7 @@ class StatbankClient(StatbankAuth):
             dfs (dict[str, pd.DataFrame): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
             tableid (str): The tableid of the "hovedtabell" in statbanken, a 5 digit string. Defaults to "00000".
             raise_errors (bool): True/False based on if you want the method to raise its own errors or not. Defaults to False.
+            ignore_codes_not_in_data (bool): If set to True, will hide messages about codes in klass that are missing from the data.
 
         Returns:
             dict[str, str]: A dictionary of the errors the validation wants to raise.
@@ -319,7 +321,10 @@ class StatbankClient(StatbankAuth):
             headers=self.__headers,
             use_db=self.use_db,
         )
-        validation_errors = validator.validate(dfs)
+        validation_errors = validator.validate(
+            dfs,
+            ignore_codes_not_in_data=ignore_codes_not_in_data,
+        )
         self.log.append(
             f"Validated data for tableid {tableid} at {datetime.datetime.now(tz=OSLO_TIMEZONE).isoformat('T', 'seconds')}",
         )

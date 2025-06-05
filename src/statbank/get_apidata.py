@@ -73,7 +73,7 @@ def apidata(
     # Spør APIet om å få resultatet med requests-biblioteket
     with r.Session() as s:
         retries = Retry(total=5, backoff_factor=0.1)
-        s.mount("http://", HTTPAdapter(max_retries=retries))
+        s.mount("https://", HTTPAdapter(max_retries=retries))
         resultat = s.post(url, json=payload_now, timeout=20)
 
     if not resultat.ok:

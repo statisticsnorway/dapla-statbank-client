@@ -302,7 +302,7 @@ def test_client_apidata_rotate_05300(
         assert ind.isdigit()
 
 
-@mock.patch.object(requests, "post")
+@mock.patch.object(requests.Session, "post")
 def test_apidata_raises_parameter_error(
     fake_post: Callable,
     query_all_05300: pd.DataFrame,
@@ -313,7 +313,7 @@ def test_apidata_raises_parameter_error(
         apidata("05300", query_all_05300, include_id=True)
 
 
-@mock.patch.object(requests, "post")
+@mock.patch.object(requests.Session, "post")
 @mock.patch.object(requests, "get")
 def test_apidata_raises_variable_error(
     fake_meta_get: Callable,
@@ -327,7 +327,7 @@ def test_apidata_raises_variable_error(
         apidata("05300", query_all_05300, include_id=True)
 
 
-@mock.patch.object(requests, "post")
+@mock.patch.object(requests.Session, "post")
 def test_apidata_raises_too_big_error(
     fake_post: Callable,
     query_all_05300: pd.DataFrame,
@@ -338,7 +338,7 @@ def test_apidata_raises_too_big_error(
         apidata("05300", query_all_05300, include_id=True)
 
 
-@mock.patch.object(requests, "post")
+@mock.patch.object(requests.Session, "post")
 def test_apidata_raises_500(
     fake_post: Callable,
     query_all_05300: pd.DataFrame,

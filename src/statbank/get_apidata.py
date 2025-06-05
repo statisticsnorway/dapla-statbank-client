@@ -9,6 +9,8 @@ from typing import Any
 from typing import TypeVar
 
 import requests as r
+from requests.adapters import HTTPAdapter
+from requests.adapters import Retry
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -69,7 +71,11 @@ def apidata(
 
     logger.info(url)
     # Spør APIet om å få resultatet med requests-biblioteket
-    resultat = r.post(url, json=payload_now, timeout=10)
+    with r.Session() as s:
+        retries = Retry(total=5, backoff_factor=0.1)
+        s.mount("http://", HTTPAdapter(max_retries=retries))
+        resultat = s.post(url, json=payload_now, timeout=20)
+
     if not resultat.ok:
         _read_error(id_or_url, payload_now, resultat)
 

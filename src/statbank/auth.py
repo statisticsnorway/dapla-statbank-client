@@ -6,8 +6,7 @@ from enum import Enum
 from typing import Literal
 
 import requests as r
-from dapla import AuthClient
-from dapla.auth import AuthError
+from dapla_auth_client import AuthClient
 
 from statbank.statbank_logger import logger
 
@@ -104,7 +103,7 @@ class StatbankAuth:
             }
             if os.environ.get("DAPLA_REGION", "TEST") != "ON_PREM":
                 headers["Authorization"] = f"Bearer {AuthClient.fetch_personal_token()}"
-        except AuthError as err:
+        except RuntimeError as err:
             logger.warning(str(err))
             headers = {
                 "Content-type": "application/json",

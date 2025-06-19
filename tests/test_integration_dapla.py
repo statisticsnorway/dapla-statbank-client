@@ -1,6 +1,7 @@
 import os
 from collections.abc import Callable
 
+from _pytest.monkeypatch import MonkeyPatch
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,8 +12,6 @@ from statbank import StatbankClient
 
 @pytest.fixture(scope="module")
 def monkeymodule():
-    from _pytest.monkeypatch import MonkeyPatch
-
     mpatch = MonkeyPatch()
     yield mpatch
     mpatch.undo()

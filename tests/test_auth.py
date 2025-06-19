@@ -4,7 +4,6 @@ from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
-from dapla.auth import AuthError
 from requests import Response
 
 from statbank.auth import StatbankAuth
@@ -56,7 +55,9 @@ def mock_getpass():
 # Mock for AuthClient.fetch_personal_token
 @pytest.fixture
 def mock_fetch_token():
-    with patch("dapla.AuthClient.fetch_personal_token", return_value="fake_token"):
+    with patch(
+        "dapla_auth_client.AuthClient.fetch_personal_token", return_value="fake_token"
+    ):
         yield
 
 
@@ -112,8 +113,10 @@ def test_encrypt_request_no_token(
     mock_getpass: Callable[[], None],  # noqa: ARG001
     mock_requests_post: Callable[[], Mock],  # noqa: ARG001
 ) -> None:
-    # Mock the AuthError exception
-    with patch("dapla.AuthClient.fetch_personal_token", side_effect=AuthError):
+    # Mock the exception
+    with patch(
+        "dapla_auth_client.AuthClient.fetch_personal_token", side_effect=RuntimeError
+    ):
         # Instantiate the class
         statbank_auth = StatbankAuth(use_db=UseDb.PROD)
 

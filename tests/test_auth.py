@@ -56,7 +56,8 @@ def mock_getpass():
 @pytest.fixture
 def mock_fetch_token():
     with patch(
-        "dapla_auth_client.AuthClient.fetch_personal_token", return_value="fake_token"
+        "dapla_auth_client.AuthClient.fetch_personal_token",
+        return_value="fake_token",
     ):
         yield
 
@@ -115,7 +116,8 @@ def test_encrypt_request_no_token(
 ) -> None:
     # Mock the exception
     with patch(
-        "dapla_auth_client.AuthClient.fetch_personal_token", side_effect=RuntimeError
+        "dapla_auth_client.AuthClient.fetch_personal_token",
+        side_effect=RuntimeError,
     ):
         # Instantiate the class
         statbank_auth = StatbankAuth(use_db=UseDb.PROD)

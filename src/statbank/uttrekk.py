@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import math
+import sys
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
@@ -10,25 +11,40 @@ from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
-
-if TYPE_CHECKING:
-    from statbank.api_types import DelTabellType
-    from statbank.api_types import FilBeskrivelseType
-    from statbank.api_types import KodelisteTypeParsed
-    from statbank.api_types import KolonneInternasjonalRapporteringType
-    from statbank.api_types import KolonneStatistikkvariabelType
-    from statbank.api_types import KolonneVariabelType
-    from statbank.api_types import SuppressionCodeListType
-    from statbank.api_types import SuppressionDeltabellCodeListType
+from typing import overload
 
 import pandas as pd
 import requests as r
+import requests.auth
 
-from statbank.auth import StatbankAuth
-from statbank.auth import UseDb
-from statbank.statbank_logger import logger
-from statbank.uttrekk_validations import StatbankUttrekkValidators
-from statbank.uttrekk_validations import StatbankValidateError
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
+
+if TYPE_CHECKING:
+    from furl import furl
+
+    from .api_types import DelTabellType
+    from .api_types import FilBeskrivelseType
+    from .api_types import KodelisteTypeParsed
+    from .api_types import KolonneInternasjonalRapporteringType
+    from .api_types import KolonneStatistikkvariabelType
+    from .api_types import KolonneVariabelType
+    from .api_types import SuppressionCodeListType
+    from .api_types import SuppressionDeltabellCodeListType
+
+from .auth import StatbankAuth
+from .auth import StatbankConfig
+from .globals import UseDb
+from .statbank_logger import logger
+from .uttrekk_validations import StatbankUttrekkValidators
+from .uttrekk_validations import StatbankValidateError
 
 
 class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
@@ -50,7 +66,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         variables (dict): Metadata about the columns in the different table-parts.
         codelists (dict): Metadata about column-contents, like formatting on time, or possible values ("codes").
         suppression (dict): Details around extra columns which describe main column's "prikking", meaning their suppression-type.
-        headers (dict): The headers for the request, might be sent in from a StatbankTransfer-object.
+        headers (dict): Deprecated attribute. Authinfo not stored here anymore.
         filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
         use_db (UseDb | str | None):
             If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
@@ -59,15 +75,40 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     """
 
+    @overload
     def __init__(
-        self,
+        self: Self,
+        tableid: str,
+        raise_errors: bool = ...,
+        headers: None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    @overload
+    @deprecated("Headers parameter not used, use auth attribute to pass in auth")
+    def __init__(
+        self: Self,
+        tableid: str,
+        raise_errors: bool = ...,
+        headers: dict[str, str] = ...,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    def __init__(
+        self: Self,
         tableid: str,
         raise_errors: bool = False,
-        headers: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,  # noqa: ARG002
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        config: StatbankConfig | None = None,
+        auth: requests.auth.AuthBase | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
-        StatbankAuth.__init__(self, use_db)
+        super().__init__(use_db, config, auth)
         self.url = self._build_urls()["uttak"]
         self.time_retrieved = ""
         self.tableid = tableid
@@ -82,16 +123,13 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         self.variables: list[DelTabellType] = []
         self.codelists: dict[str, KodelisteTypeParsed] = {}
         self.suppression: None | list[SuppressionCodeListType] = None
-        if headers:
-            self.headers = headers
-        else:
-            self.headers = self._build_headers()
-        try:
-            self._get_uttrekksbeskrivelse()
-        finally:
-            if hasattr(self, "headers"):
-                del self.headers
+        self._get_uttrekksbeskrivelse()
         self._split_attributes()
+
+    @property
+    @deprecated("Always none. Authinfo is not stored here anymore")
+    def headers(self: Self) -> None:
+        """Deprecated attribute, Authinfo is not stored here anymore."""
 
     def __str__(self) -> str:
         """Returns a string representation of the object, which is the Uttrekksbeskrivelse."""
@@ -349,7 +387,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     @staticmethod
     def _round(
-        n: float | str | pd._libs.missing.NAType,
+        n: float | str | pd.api.typing.NAType,
         decimals: int = 0,
         round_up: bool = True,
     ) -> str:
@@ -368,12 +406,10 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         return result
 
     def _get_uttrekksbeskrivelse(self) -> None:
-        filbeskrivelse_url = self.url + "tableId=" + self.tableid
-        try:
-            filbeskrivelse_response = self._make_request(filbeskrivelse_url)
-        finally:
-            if hasattr(self, "headers"):
-                del self.headers
+        filbeskrivelse_response = self._make_request(
+            self.url,
+            {"tableId": self.tableid},
+        )
 
         # Rakel encountered an error with a tab-character in the json, should we just strip this?
         filbeskrivelse_json = filbeskrivelse_response.text.replace("\t", "")
@@ -392,8 +428,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         # reset tableid and hovedkode after content of request
         self.filbeskrivelse = filbeskrivelse
 
-    def _make_request(self, url: str) -> r.Response:
-        response = r.get(url, headers=self.headers, timeout=10)
+    def _make_request(self, url: furl, params: dict[str, str]) -> r.Response:
+        response = r.get(
+            url.url,
+            params=params,
+            headers=self._build_headers(),
+            auth=self._auth,
+            timeout=10,
+        )
         try:
             response.raise_for_status()
         except r.HTTPError:

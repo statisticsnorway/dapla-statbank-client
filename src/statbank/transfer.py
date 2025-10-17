@@ -5,27 +5,43 @@ import gc
 import json
 import os
 import re
-import urllib
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
 from typing import cast
+from typing import overload
 
 import pandas as pd
 import requests as r
+import requests.auth
 
-from statbank.auth import StatbankAuth
-from statbank.auth import UseDb
-from statbank.globals import APPROVE_DEFAULT_JIT
-from statbank.globals import OSLO_TIMEZONE
-from statbank.globals import SSB_TBF_LEN
-from statbank.globals import TOMORROW
-from statbank.globals import Approve
-from statbank.globals import _approve_type_check
-from statbank.statbank_logger import logger
+from .auth import StatbankAuth
+from .auth import StatbankConfig
+from .globals import APPROVE_DEFAULT_JIT
+from .globals import OSLO_TIMEZONE
+from .globals import SSB_TBF_LEN
+from .globals import TOMORROW
+from .globals import Approve
+from .globals import UseDb
+from .globals import _approve_type_check
+from .statbank_logger import logger
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
+
 
 if TYPE_CHECKING:
-    from statbank.api_types import TransferResultType
+    from furl import furl
+
+    from .api_types import TransferResultType
 
 
 class StatbankTransfer(StatbankAuth):
@@ -62,13 +78,51 @@ class StatbankTransfer(StatbankAuth):
             Kept here for uniform choice through the class.
         urls (dict[str, str]): Urls for transfer, observing the result etc.,
             built from environment variables.
-        headers (dict[str, str]): Might be deleted without warning.
-            Temporarily holds the Authentication for the request.
+        headers (dict[str, str]): Deprecated attribute. Authinfo not stored here anymore.
         params (dict[str, str]): This dict will be built into the post request.
             Keep it in this nice shape for later introspection.
         body (str): The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
         response (requests.Response): The resulting response from the transfer-request. Headers might be deleted without warning.
     """
+
+    @overload
+    def __init__(
+        self,
+        data: dict[str, pd.DataFrame],
+        tableid: str = ...,
+        shortuser: str = ...,
+        date: str | datetime.date | datetime.datetime = ...,
+        cc: str = ...,
+        bcc: str = ...,
+        overwrite: bool = ...,
+        approve: int | str | Approve = ...,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        validation: bool = ...,
+        delay: bool = ...,
+        headers: None = None,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    @overload
+    @deprecated("Headers parameter not used, use auth attribute to pass in auth")
+    def __init__(
+        self,
+        data: dict[str, pd.DataFrame],
+        tableid: str = ...,
+        shortuser: str = ...,
+        date: str | datetime.date | datetime.datetime = ...,
+        cc: str = ...,
+        bcc: str = ...,
+        overwrite: bool = ...,
+        approve: int | str | Approve = ...,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        validation: bool = ...,
+        delay: bool = ...,
+        headers: dict[str, str] = ...,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
 
     def __init__(  # noqa: PLR0913
         self,
@@ -83,12 +137,15 @@ class StatbankTransfer(StatbankAuth):
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
         validation: bool = True,
         delay: bool = False,
-        headers: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,  # noqa: ARG002
+        config: StatbankConfig | None = None,
+        auth: requests.auth.AuthBase | None = None,
     ) -> None:
         """Make the transfer to statbanken at the end of initializing the object.
 
         May run the validations from the StatbankValidation class before the transfer.
         """
+        super().__init__(use_db=use_db, config=config, auth=auth)
         self._set_user_attrs(shortuser=shortuser, cc=cc, bcc=bcc)
         self.date: datetime.date
         if isinstance(date, str):
@@ -116,7 +173,7 @@ class StatbankTransfer(StatbankAuth):
         self.tableid = tableid
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
-        StatbankAuth.__init__(self, use_db)
+
         self.validation = validation
         self.__delay = delay
         self.oppdragsnummer: str = ""
@@ -125,13 +182,25 @@ class StatbankTransfer(StatbankAuth):
             self._validate_original_parameters()
 
         self.urls = self._build_urls()
-        if not self.delay:
-            if headers:
-                self.transfer(headers)
-            else:
-                self.transfer()
 
-    def transfer(self, headers: dict[str, str] | None = None) -> None:
+        if not self.delay:
+            self.transfer()
+
+    @property
+    @deprecated("Always none. Authinfo is not stored here anymore")
+    def headers(self: Self) -> None:
+        """Deprecated attribute, Authinfo is not stored here anymore."""
+
+    @overload
+    def transfer(self, headers: None = None) -> None: ...
+
+    @overload
+    @deprecated(
+        "Headers parameter not used, authinfo is passed with the auth parameter",
+    )
+    def transfer(self, headers: dict[str, str] = ...) -> None: ...
+
+    def transfer(self, headers: dict[str, str] | None = None) -> None:  # noqa: ARG002
         """Transfers your data to Statbanken.
 
         Make sure you've set the publish-date correctly before sending.
@@ -146,23 +215,16 @@ class StatbankTransfer(StatbankAuth):
         """
         # In case transfer has already happened, don't transfer again
         if self.oppdragsnummer:
-            error_msg = f"Already transferred? {self.urls['gui'] + self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
+            error_msg = f"Already transferred? {self.urls['gui'] / self.oppdragsnummer} Remake the StatbankTransfer-object if intentional."
             raise ValueError(error_msg)
-        if headers is None:
-            self.headers = self._build_headers()
-        else:
-            self.headers = headers
         try:
-            self.params = self._build_params()
+            params = self._build_params()
             self._validate_datatype()
             self.body = self._body_from_data()
-
-            url_load_params = self.urls["loader"] + urllib.parse.urlencode(self.params)
-            urllib.parse.urlparse(url_load_params)  # Test to see if url is valid format
-            self.response = self._make_transfer_request(url_load_params)
+            url = self.urls["loader"]
+            self.response = self._make_transfer_request(url, params)
             self._cleanup_response()
         finally:
-            del self.headers  # Cleaning up auth-storing
             self.__delay = False
         self._handle_response()
 
@@ -172,7 +234,7 @@ class StatbankTransfer(StatbankAuth):
         if self.delay:
             result = f"""{first_line}Ikke overført enda."""
         else:
-            result = f"""{first_line}Publisering: {self.date.strftime('%d-%m-%Y,')}.\nLastelogg: {self.urls['gui'] + self.oppdragsnummer}"""
+            result = f"""{first_line}Publisering: {self.date.strftime("%d-%m-%Y,")}.\nLastelogg: {self.urls["gui"] / self.oppdragsnummer}"""
         return result
 
     def __repr__(self) -> str:
@@ -286,10 +348,18 @@ class StatbankTransfer(StatbankAuth):
         }
 
     def _make_transfer_request(
-        self,
-        url_params: str,
+        self: Self,
+        url: furl,
+        params: dict[str, str],
     ) -> r.Response:
-        result = r.post(url_params, headers=self.headers, data=self.body, timeout=100)
+        result = r.post(
+            url.url,
+            params=params,
+            headers=self._build_headers(),
+            data=self.body,
+            timeout=100,
+            auth=self._auth,
+        )
         # Trying to clean all auth etc out of response
         try:
             result.raise_for_status()
@@ -345,6 +415,6 @@ class StatbankTransfer(StatbankAuth):
         logger.info("Publisering satt til: %s", publish_date.isoformat("T", "seconds"))
         logger.info(
             "Følg med på lasteloggen (tar noen minutter): %s",
-            {self.urls["gui"] + self.oppdragsnummer},
+            self.urls["gui"] / self.oppdragsnummer,
         )
         self.resp_json = resp_json

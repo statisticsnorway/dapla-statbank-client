@@ -1,5 +1,6 @@
 """Nox sessions."""
 
+from collections.abc import Iterable
 import os
 import shlex
 import shutil
@@ -39,6 +40,22 @@ nox.options.sessions = (
     "xdoctest",
     "docs-build",
 )
+
+
+def install_poetry_groups(session: Session, groups: Iterable[str]) -> None:
+    """Manually parse the pyproject file to find group(s) of dependencies, then install."""
+    pyproject_path = Path("pyproject.toml")
+    data = nox.project.load_toml(pyproject_path)
+    group_data = data["tool"]["poetry"]["group"]
+    all_dependencies = []
+    for group in groups:
+        dependencies = group_data[group]["dependencies"]
+        for dependency, spec in dependencies.items():
+            if isinstance(spec, dict) and "extras" in spec:
+                dependency += "[{}]".format(",".join(spec["extras"]))
+            all_dependencies.append(dependency)
+    all_dependencies = list(set(all_dependencies))
+    session.install(*all_dependencies)
 
 
 def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
@@ -149,8 +166,8 @@ def precommit(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or ["src"]
-    session.install(".")
-    session.install("mypy", "pytest")
+    session.poetry.installroot()
+    install_poetry_groups(session, ["dev", "typing"])
     session.run("mypy", *args)
     if not session.posargs:
         session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
@@ -159,7 +176,7 @@ def mypy(session: Session) -> None:
 @session(python=python_versions)
 def tests(session: Session) -> None:
     """Run the test suite."""
-    session.install(".")
+    session.poetry.installroot()
     session.install("coverage[toml]", "pytest", "pygments", "typeguard")
     try:
         session.run(
@@ -195,7 +212,7 @@ def coverage(session: Session) -> None:
 @session(python="3.11")
 def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
-    session.install(".")
+    session.poetry.installroot()
     session.install("pytest", "typeguard", "pygments")
     session.run(
         "pytest",
@@ -216,7 +233,7 @@ def xdoctest(session: Session) -> None:
         if "FORCE_COLOR" in os.environ:
             args.append("--colored=1")
 
-    session.install(".")
+    session.poetry.installroot()
     session.install("xdoctest[colors]")
     session.run("python", "-m", "xdoctest", *args)
 
@@ -228,10 +245,8 @@ def docs_build(session: Session) -> None:
     if not session.posargs and "FORCE_COLOR" in os.environ:
         args.insert(0, "--color")
 
-    session.install(".")
-    session.install(
-        "sphinx", "sphinx-autodoc-typehints", "sphinx-click", "furo", "myst-parser"
-    )
+    session.poetry.installroot()
+    install_poetry_groups(session, ["docs"])
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():
@@ -244,15 +259,8 @@ def docs_build(session: Session) -> None:
 def docs(session: Session) -> None:
     """Build and serve the documentation with live reloading on file changes."""
     args = session.posargs or ["--open-browser", "docs", "docs/_build"]
-    session.install(".")
-    session.install(
-        "sphinx",
-        "sphinx-autobuild",
-        "sphinx-autodoc-typehints",
-        "sphinx-click",
-        "furo",
-        "myst-parser",
-    )
+    session.poetry.installroot()
+    install_poetry_groups(session, ["docs"])
 
     build_dir = Path("docs", "_build")
     if build_dir.exists():

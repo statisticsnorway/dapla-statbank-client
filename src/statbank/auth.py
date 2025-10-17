@@ -1,127 +1,179 @@
-import base64
 import getpass
-import json
 import os
-from enum import Enum
+import sys
+from importlib.metadata import version
 from typing import Literal
+from typing import cast
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 import requests as r
+import requests.auth
 from dapla_auth_client import AuthClient
+from furl import furl
 
-from statbank.statbank_logger import logger
+from .globals import DaplaEnvironment
+from .globals import DaplaRegion
+from .globals import UseDb
+from .statbank_logger import logger
 
 
-class UseDb(Enum):
-    """Hold options for database choices, targetted at statbanken."""
+class TokenAuth(requests.auth.AuthBase):
+    """Token based authorization."""
 
-    PROD = "PROD"
-    TEST = "TEST"
+    def __init__(  # noqa: D107
+        self: Self,
+        token: str,
+        auth_scheme: str = "Bearer",
+    ) -> None:
+        self.token = token
+        self.auth_scheme = auth_scheme
+
+    def __call__(  # noqa: D102
+        self: Self, request: r.PreparedRequest,
+    ) -> r.PreparedRequest:
+        request.headers["Authorization"] = f"{self.auth_scheme} {self.token}"
+        return request
+
+
+class StatbankConfig:
+    """Holds config for Transfer-API" and "Uttaksbeskrivelse-API."""
+
+    def __init__(
+        self,
+        endpoint_base: furl,
+        encrypt_url: furl,
+        useragent: str,
+        environment: DaplaEnvironment,
+        region: DaplaRegion,
+    ) -> None:
+        self.endpoint_base = endpoint_base
+        self.encrypt_url = encrypt_url
+        self.useragent = useragent
+        self.environment: DaplaEnvironment = environment
+        self.region: DaplaRegion = region
+
+    @classmethod
+    def from_environ(cls: type[Self], use_db: UseDb | None) -> Self:
+        """Load config from enviroment variables."""
+        environment = DaplaEnvironment(os.environ.get("DAPLA_ENVIRONMENT", "TEST"))
+        region = DaplaRegion(os.environ.get("DAPLA_REGION", "ON_PREM"))
+        service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
+
+        if use_db == UseDb.TEST and environment == DaplaEnvironment.PROD:
+            env_key_endpoint_base = "STATBANK_TEST_BASE_URL"
+            env_key_encrypt_url = "STATBANK_TEST_ENCRYPT_URL"
+
+        else:
+            env_key_endpoint_base = "STATBANK_BASE_URL"
+            env_key_encrypt_url = "STATBANK_ENCRYPT_URL"
+
+        try:
+            endpoint_base = furl(os.environ[env_key_endpoint_base])
+            encrypt_url = furl(os.environ[env_key_encrypt_url])
+        except KeyError as e:
+            error_message = "Kunne ikke finne miljøvariabel"
+            raise ValueError(error_message) from e
+
+        useragent = f"dapla-statbank-client:{version('dapla-statbank-client')}-{environment.value.lower()}-{region.value.lower()}-{service.lower()}"
+
+        return cls(endpoint_base, encrypt_url, useragent, environment, region)
 
 
 class StatbankAuth:
     """Parent class for shared behavior between Statbankens "Transfer-API" and "Uttaksbeskrivelse-API"."""
 
-    def __init__(self, use_db: UseDb | Literal["TEST", "PROD"] | None) -> None:
-        """This init will never be used directly, as this class is always inherited from.
+    def __init__(
+        self: Self,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        config: StatbankConfig | None = None,
+        auth: requests.auth.AuthBase | None = None,
+    ) -> None:
+        """"""
+        if isinstance(use_db, str):
+            use_db = UseDb(use_db)
 
-        This is for typing with Mypy.
-        """
+        if config is None:
+            config = StatbankConfig.from_environ(use_db)
+
         if use_db is None:
-            self.use_db = UseDb[self.check_env()]
-        elif isinstance(use_db, UseDb):
-            self.use_db = use_db
-        else:
-            self.use_db = UseDb[use_db]
+            use_db = (
+                UseDb.PROD
+                if config.environment is DaplaEnvironment.PROD
+                else UseDb.TEST
+            )
 
-    def _build_headers(self) -> dict[str, str]:
-        return {
-            "Authorization": self._build_auth(),
-            "Content-Type": "multipart/form-data; boundary=12345",
-            "Connection": "keep-alive",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Accept": r"*/*",
-            "User-Agent": self._build_user_agent(),
-        }
+        self._config: StatbankConfig = config
+        self.use_db: UseDb = use_db
 
-    @staticmethod
-    def check_env() -> str:
+        if auth is None:
+            auth = self._get_auth()
+
+        self._auth: requests.auth.AuthBase = auth
+
+    def check_env(self) -> str:
         """Check if you are on Dapla or in prodsone.
 
         Simplified terribly by the addition of env vars for this, keeping this method for legacy reasons.
 
         Returns:
-            str: "DAPLA" if on dapla, "PROD" if you are in prodsone.
+            "DAPLA" if on dapla, "PROD" if you are in prodsone.
         """
-        return os.environ.get("DAPLA_ENVIRONMENT", "TEST")
+        return "DAPLA" if self._config.region == DaplaRegion.DAPLA_LAB else "PROD"
 
-    def check_database(self) -> str:
+    def check_database(self: Self) -> str:
         """Checks if we are in prod environment. And which statbank-database we are sending to."""
-        db = "TEST"
-        if os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD":
-            db = "PROD"
-        if self.use_db:
-            db = self.use_db.value
-        return db
+        return self.use_db.value
 
-    def _build_user_agent(self) -> str:
-        envir = os.environ.get("DAPLA_ENVIRONMENT", "TEST")
-        service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
-        region = os.environ.get("DAPLA_REGION", "ON_PREM")
-
-        user_agent = f"{envir}-{region}-{service}-"
-
-        return user_agent + r.utils.default_headers()["User-agent"]
-
-    def _build_auth(self) -> str:
-        username_encryptedpassword = (
-            bytes(
-                self._get_user(),
-                "UTF-8",
-            )
-            + bytes(":", "UTF-8")
-            + bytes(json.loads(self._encrypt_request().text)["message"], "UTF-8")
-        )
-        return "Basic " + base64.b64encode(username_encryptedpassword).decode("utf8")
-
-    @staticmethod
-    def _get_user() -> str:
-        return getpass.getpass("Lastebruker:")
-
-    def _use_test_url(self, test_env: str, prod_env: str) -> str:
-        use_test = (
-            self.use_db == UseDb.TEST
-            and os.environ.get("DAPLA_ENVIRONMENT", "TEST") == "PROD"
-        )
-        env = test_env if use_test else prod_env
-        return os.environ.get(env, f"Cant find {env} in environ.")
-
-    def _encrypt_request(self) -> r.Response:
-        db = self.check_database()
-        try:
-            headers = {
-                "Content-type": "application/json",
-            }
-            if os.environ.get("DAPLA_REGION", "TEST") != "ON_PREM":
-                headers["Authorization"] = f"Bearer {AuthClient.fetch_personal_token()}"
-        except RuntimeError as err:
-            logger.warning(str(err))
-            headers = {
-                "Content-type": "application/json",
-            }
-
-        return r.post(
-            self._use_test_url("STATBANK_TEST_ENCRYPT_URL", "STATBANK_ENCRYPT_URL"),
-            headers=headers,
-            json={"message": getpass.getpass(f"Lastepassord ({db}):")},
-            timeout=5,
-        )
-
-    def _build_urls(self) -> dict[str, str]:
-        base_url = self._use_test_url("STATBANK_TEST_BASE_URL", "STATBANK_BASE_URL")
-        end_urls = {
-            "loader": "statbank/sos/v1/DataLoader?",
-            "uttak": "statbank/sos/v1/uttaksbeskrivelse?",
-            "gui": "lastelogg/gui/",
-            "api": "lastelogg/api/",
+    def _build_headers(self: Self) -> dict[str, str]:
+        return {
+            "Content-Type": "multipart/form-data; boundary=12345",
+            "Connection": "keep-alive",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Accept": r"*/*",
+            "User-Agent": self._config.useragent,
         }
-        return {k: base_url + v for k, v in end_urls.items()}
+
+    def _get_auth(self) -> requests.auth.AuthBase:
+        username = getpass.getpass("Lastebruker:")
+        password = self._encrypt_password()
+        return requests.auth.HTTPBasicAuth(username, password)
+
+    def _encrypt_password(self: Self) -> str:
+        db = self.use_db.value
+        password = getpass.getpass(f"Lastepassord ({db}):")
+
+        pat = None
+
+        if self._config.region != DaplaRegion.ON_PREM:
+            try:
+                pat = AuthClient.fetch_personal_token()
+            except RuntimeError as err:
+                logger.warning(str(err))
+
+        auth = TokenAuth(pat) if pat is not None else None
+
+        repsonse = r.post(
+            self._config.encrypt_url.url,
+            auth=auth,
+            json={"message": password},
+            timeout=30,
+        )
+
+        repsonse.raise_for_status()
+
+        data = cast("dict[Literal['message'], str]", repsonse.json())
+
+        return data["message"]
+
+    def _build_urls(self: Self) -> dict[str, furl]:
+        end_urls = {
+            "loader": "statbank/sos/v1/DataLoader",
+            "uttak": "statbank/sos/v1/uttaksbeskrivelse",
+            "gui": "lastelogg/gui",
+            "api": "lastelogg/api",
+        }
+        return {k: self._config.endpoint_base / v for k, v in end_urls.items()}

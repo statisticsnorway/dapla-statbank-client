@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+import sys
+from abc import ABCMeta
+from abc import abstractmethod
 from typing import TYPE_CHECKING
+
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
 
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
@@ -20,18 +28,28 @@ class StatbankValidateError(Exception):
     """Use when raising errors stemming from the validators not running cleanly."""
 
 
-class StatbankUttrekkValidators:
+class StatbankUttrekkValidators(metaclass=ABCMeta):
     """Split out from the main Uttrekk-class, this class contains all the validator-methods."""
 
-    def __init__(self) -> None:
-        """This init will never be used directly, as this class is always inherited from.
+    @property
+    @abstractmethod
+    def subtables(self: Self) -> dict[str, str]:
+        """Names and descriptions of the individual "table-parts" that needs to be sent in as different DataFrames."""
 
-        So, these attribute-settings are for type-checking with mypy.
-        """
-        self.subtables: dict[str, str] = {}
-        self.variables: list[DelTabellType] = []
-        self.codelists: dict[str, KodelisteTypeParsed] = {}
-        self.suppression: None | list[SuppressionCodeListType] = None
+    @property
+    @abstractmethod
+    def variables(self: Self) -> list[DelTabellType]:
+        """Metadata about the columns in the different table-parts."""
+
+    @property
+    @abstractmethod
+    def codelists(self: Self) -> dict[str, KodelisteTypeParsed]:
+        """Metadata about column-contents, like formatting on time, or possible values ("codes")."""
+
+    @property
+    @abstractmethod
+    def suppression(self: Self) -> list[SuppressionCodeListType] | None:
+        """Details around extra columns which describe main column's "prikking", meaning their suppression-type."""
 
     def _validate_number_dataframes(self, data: dict[str, pd.DataFrame]) -> None:
         # Number subtables should match length of data-iterable
@@ -164,7 +182,6 @@ class StatbankUttrekkValidators:
         nans: list[str],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
-
         if len(string_df.columns):
             for col in string_df.columns:
                 try:
@@ -236,7 +253,6 @@ class StatbankUttrekkValidators:
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
-
         data_validate = self._filter_away_suppressed_values(data)
 
         # Time-columns should follow time format
@@ -312,13 +328,13 @@ class StatbankUttrekkValidators:
                     validation_errors[
                         f"time_missing_in_deltabell_{deltabell['deltabell']}"
                     ] = ValueError(
-                        f"""Time(s) {times_missing} missing in deltabell {deltabell['deltabell']}""",
+                        f"""Time(s) {times_missing} missing in deltabell {deltabell["deltabell"]}""",
                     )
                 if times_extra:
                     validation_errors[
                         f"time_extra_in_deltabell_{deltabell['deltabell']}"
                     ] = ValueError(
-                        f"""Time(s) {times_extra} extra in deltabell {deltabell['deltabell']}""",
+                        f"""Time(s) {times_extra} extra in deltabell {deltabell["deltabell"]}""",
                     )
         return validation_errors
 
@@ -573,7 +589,6 @@ class StatbankUttrekkValidators:
         validation_errors: dict[str, ValueError],
         ignore_codes_not_in_data: bool = False,
     ) -> dict[str, ValueError]:
-
         if not ignore_codes_not_in_data:
             validation_errors = self._check_category_code_usage_missing(
                 data,
@@ -653,7 +668,6 @@ class StatbankUttrekkValidators:
         data: dict[str, pd.DataFrame],
         validation_errors: dict[str, ValueError],
     ) -> dict[str, ValueError]:
-
         # Remove suppressed values first
         data_to_validate = self._filter_away_suppressed_values(data)
 

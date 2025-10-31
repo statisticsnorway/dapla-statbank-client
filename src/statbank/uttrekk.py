@@ -122,20 +122,19 @@ class UttrekksBeskrivelseData:
         }
         variables = filbeskrivelse["deltabller"]
 
-        codelists = {}
+        codelists: dict[str, KodelisteTypeParsed] = {}
         kodelister = filbeskrivelse.get("kodelister", [])
         irkodelister = filbeskrivelse.get("IRkodelister", [])
         alle_kodelister = itertools.chain(kodelister, irkodelister)
 
         for kodeliste in alle_kodelister:
-            codelist = {}
-            for kode in kodeliste["koder"]:
-                codelist[kode["kode"]] = kode["text"]
-            codelists[kodeliste["kodeliste"]] = {"koder": codelist}
+            codelist: KodelisteTypeParsed = {
+                "koder": {kode["kode"]: kode["text"] for kode in kodeliste["koder"]},
+            }
             if "SumIALtTotalKode" in kodeliste:
-                codelists[kodeliste["kodeliste"]]["SumIALtTotalKode"] = kodeliste[
-                    "SumIALtTotalKode"
-                ]
+                codelist["SumIALtTotalKode"] = kodeliste["SumIALtTotalKode"]
+
+            codelists[kodeliste["kodeliste"]] = codelist
 
         if "null_prikk_missing_kodeliste" in filbeskrivelse:
             suppression = filbeskrivelse["null_prikk_missing_kodeliste"]

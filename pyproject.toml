@@ -96,6 +96,8 @@ exclude = ["tests", "docs", "noxfile.py"]
 [[tool.mypy.overrides]]
 module = [
     "ipywidgets.*",
+    "furl.*",
+    "pathlib_abc.*",
 ]
 ignore_missing_imports = true
 

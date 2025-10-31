@@ -265,7 +265,12 @@ class StatbankTransfer(StatbankAuth):
         else:
             self.bcc = self.cc
 
-    def to_json(self, path: str = "") -> str | None:
+    @overload
+    def to_json(self, path: None = None) -> str: ...
+    @overload
+    def to_json(self, path: str = ...) -> None: ...
+
+    def to_json(self, path: str | None = None) -> str | None:
         """Store a copy of the current state of the transfer-object as a json.
 
         If path is provided, tries to write to it,

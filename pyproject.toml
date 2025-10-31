@@ -18,6 +18,7 @@ dependencies = [
     "colorama (>=0.4.6,<1.0.0)",
     "dapla-auth-client (>=1.0.1,<2.0.0)",
     "furl (>=2.1.4,<3.0.0)",
+    "pathlib-abc (>=0.5.2,<0.6.0)",
 ]
 
 [project.urls]
@@ -44,6 +45,7 @@ pytest = ">=6.2.5"
 typeguard = ">=2.13.3"
 xdoctest = { extras = ["colors"], version = ">=0.15.10" }
 ipykernel = ">=6.0.0"
+pytest-cov = "^7.0.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = ">=6.2.1"

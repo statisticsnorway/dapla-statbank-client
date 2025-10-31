@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import datetime
 import getpass
 import json
@@ -15,6 +16,7 @@ from typing import cast
 
 import ipywidgets as widgets
 from IPython.display import display
+from pathlib_abc import ReadablePath
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -93,7 +95,7 @@ class StatbankClient(StatbankAuth):
             int | str | Approve
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
-        use_db: Literal["TEST", "PROD"] | None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:
@@ -264,7 +266,9 @@ class StatbankClient(StatbankAuth):
         )
 
     @staticmethod
-    def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+    def read_description_json(
+        json_path_or_str: str | Path | ReadablePath,
+    ) -> StatbankUttrekksBeskrivelse:
         """Re-initializes a StatbankUttrekksBeskrivelse from a stored json file/string.
 
         Checks if provided string exists on disk, if it does, tries to load it as json.
@@ -277,23 +281,24 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
         """
-        content = json_path_or_str
-        try:
-            try_path = json_path_or_str
-            if Path(try_path).exists():
-                with Path(try_path).open("r") as json_file:
-                    content = json_file.read()
-        except OSError as e:
-            logger.debug(
-                "Assuming you sent a json-string to open as description, cause that path does not exist. %s",
-                str(e),
-            )
-        new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
-        for k, v in json.loads(content).items():
-            setattr(new, k, v)
-        if isinstance(new.use_db, str):
-            new.use_db = UseDb[new.use_db]
-        return new
+        path: Path | ReadablePath | None = None
+
+        if isinstance(json_path_or_str, (Path, ReadablePath)):
+            path = json_path_or_str
+        else:
+            try_path = Path(json_path_or_str)
+            with contextlib.suppress(OSError):
+                if try_path.exists():
+                    path = try_path
+
+        content = cast(
+            "str",
+            path.read_text() if path else json_path_or_str,
+        )
+
+        json_object = json.loads(content)
+
+        return StatbankUttrekksBeskrivelse.from_mapping(json_object)
 
     # Validation
     def validate(

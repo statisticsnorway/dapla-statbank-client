@@ -43,8 +43,8 @@ class TokenAuth(requests.auth.AuthBase):
 class StatbankConfig:
     """Holds config for Transfer-API" and "Uttaksbeskrivelse-API."""
 
-    def __init__(
-        self,
+    def __init__(  # noqa: D107
+        self: Self,
         endpoint_base: furl,
         encrypt_url: furl,
         useragent: str,

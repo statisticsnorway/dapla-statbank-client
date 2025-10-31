@@ -19,17 +19,17 @@ import requests.auth
 from furl import furl
 from typeguard import suppress_type_checks
 
+from statbank import StatbankClient
+from statbank.globals import OSLO_TIMEZONE
+from statbank.transfer import StatbankTransfer
+from statbank.uttrekk import StatbankUttrekksBeskrivelse
+from statbank.uttrekk import UttrekksBeskrivelseData
 from statbank.uttrekk_validations import StatbankValidateError
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-from statbank import StatbankClient
-from statbank.auth import StatbankConfig
-from statbank.globals import OSLO_TIMEZONE
-from statbank.transfer import StatbankTransfer
-from statbank.uttrekk import StatbankUttrekksBeskrivelse
-from statbank.uttrekk import UttrekksBeskrivelseData
+    from statbank.auth import StatbankConfig
 
 
 def test_round_up_zero():
@@ -227,7 +227,7 @@ def test_transfer_request_raises_error(transfer_fixture: StatbankTransfer):
 
         # Now, assert that the _make_transfer_request method raises an HTTPError
         with pytest.raises(requests.HTTPError):
-            transfer_fixture._make_transfer_request(
+            transfer_fixture._make_transfer_request(  # noqa: SLF001
                 furl("mock_url_params"),
                 {},
             )

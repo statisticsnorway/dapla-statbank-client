@@ -18,7 +18,6 @@ from typing import overload
 import pandas as pd
 import requests as r
 import requests.auth
-from pathlib_abc import WritablePath
 
 if sys.version_info >= (3, 11):
     from typing import Self
@@ -32,6 +31,7 @@ else:
 
 if TYPE_CHECKING:
     from furl import furl
+    from pathlib_abc import WritablePath
 
     from .api_types import DelTabellType
     from .api_types import FilBeskrivelseType
@@ -106,7 +106,10 @@ class UttrekksBeskrivelseData:
         self.suppression: list[SuppressionCodeListType] | None = suppression
 
     @classmethod
-    def from_filbeskrivelse(cls: type[Self], filbeskrivelse: FilBeskrivelseType):
+    def from_filbeskrivelse(
+        cls: type[Self],
+        filbeskrivelse: FilBeskrivelseType,
+    ) -> Self:
         """Parses "filbeskrivelse" from Statbank API."""
         time_retrieved = datetime.datetime.strptime(  # noqa: DTZ007
             filbeskrivelse["Uttaksbeskrivelse_lagd"],

@@ -16,7 +16,7 @@ from statbank.globals import DaplaRegion
 from statbank.transfer import StatbankTransfer
 
 
-def pytest_runtest_setup(item):
+def pytest_runtest_setup(item: pytest.Item):
     markers = (mark.name for mark in item.iter_markers())
     if (
         markers

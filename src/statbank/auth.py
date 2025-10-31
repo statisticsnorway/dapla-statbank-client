@@ -33,7 +33,8 @@ class TokenAuth(requests.auth.AuthBase):
         self.auth_scheme = auth_scheme
 
     def __call__(  # noqa: D102
-        self: Self, request: r.PreparedRequest,
+        self: Self,
+        request: r.PreparedRequest,
     ) -> r.PreparedRequest:
         request.headers["Authorization"] = f"{self.auth_scheme} {self.token}"
         return request
@@ -50,15 +51,15 @@ class StatbankConfig:
         environment: DaplaEnvironment,
         region: DaplaRegion,
     ) -> None:
-        self.endpoint_base = endpoint_base
-        self.encrypt_url = encrypt_url
-        self.useragent = useragent
+        self.endpoint_base: furl = endpoint_base
+        self.encrypt_url: furl = encrypt_url
+        self.useragent: str = useragent
         self.environment: DaplaEnvironment = environment
         self.region: DaplaRegion = region
 
     @classmethod
     def from_environ(cls: type[Self], use_db: UseDb | None) -> Self:
-        """Load config from enviroment variables."""
+        """Load config from environment variables."""
         environment = DaplaEnvironment(os.environ.get("DAPLA_ENVIRONMENT", "TEST"))
         region = DaplaRegion(os.environ.get("DAPLA_REGION", "ON_PREM"))
         service = os.environ.get("DAPLA_SERVICE", "JUPYTERLAB")
@@ -77,8 +78,11 @@ class StatbankConfig:
         except KeyError as e:
             error_message = "Kunne ikke finne miljøvariabel"
             raise ValueError(error_message) from e
+        except ValueError as e:
+            error_message = "Miljøvariabelene innholder en url som ikke er gyldig"
+            raise ValueError(error_message) from e
 
-        useragent = f"dapla-statbank-client:{version('dapla-statbank-client')}-{environment.value.lower()}-{region.value.lower()}-{service.lower()}"
+        useragent = f"dapla-statbank-client:{version('dapla-statbank-client')}:{environment.value.lower()}-{region.value.lower()}-{service.lower()}"
 
         return cls(endpoint_base, encrypt_url, useragent, environment, region)
 
@@ -92,7 +96,7 @@ class StatbankAuth:
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:
-        """"""
+        """Initialize auth and config."""
         if isinstance(use_db, str):
             use_db = UseDb(use_db)
 

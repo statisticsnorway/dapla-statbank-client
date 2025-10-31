@@ -89,6 +89,7 @@ class UttrekksBeskrivelseData:
 
     def __init__(  # noqa: D107
         self: Self,
+        *,
         tableid: int,
         tablename: str,
         time_retrieved: datetime.datetime,
@@ -142,13 +143,13 @@ class UttrekksBeskrivelseData:
             suppression = None
 
         return cls(
-            tableid,
-            tablename,
-            time_retrieved,
-            subtables,
-            variables,
-            codelists,
-            suppression,
+            tableid=tableid,
+            tablename=tablename,
+            time_retrieved=time_retrieved,
+            subtables=subtables,
+            variables=variables,
+            codelists=codelists,
+            suppression=suppression,
         )
 
     @classmethod
@@ -193,6 +194,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         raise_errors: bool = ...,
         headers: None = None,
         use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
         data: None = None,
         config: StatbankConfig | None = ...,
         auth: requests.auth.AuthBase | None = ...,
@@ -205,6 +207,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         raise_errors: bool = ...,
         headers: None = None,
         use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
         data: UttrekksBeskrivelseData = ...,
         config: StatbankConfig | None = ...,
         auth: requests.auth.AuthBase | None = ...,
@@ -218,6 +221,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         raise_errors: bool = ...,
         headers: dict[str, str] = ...,
         use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
         data: UttrekksBeskrivelseData | None = ...,
         config: StatbankConfig | None = ...,
         auth: requests.auth.AuthBase | None = ...,
@@ -229,12 +233,13 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         raise_errors: bool = False,
         headers: dict[str, str] | None = None,  # noqa: ARG002
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        *,
         data: UttrekksBeskrivelseData | None = None,
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
-        super().__init__(use_db, config, auth)
+        super().__init__(use_db, config=config, auth=auth)
         self.url = self._build_urls()["uttak"]
         self.raise_errors = raise_errors
         if data is None:

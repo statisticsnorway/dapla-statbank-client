@@ -47,8 +47,8 @@ def uttrekksbeskrivelse_success(
     auth_fixture: requests.auth.AuthBase,
 ):
     bdata = UttrekksBeskrivelseData(
-        10000,
-        "HovedTabellNavn",
+        tableid=10000,
+        tablename="HovedTabellNavn",
         time_retrieved=datetime.datetime(  # noqa: DTZ001
             day=29,
             month=9,

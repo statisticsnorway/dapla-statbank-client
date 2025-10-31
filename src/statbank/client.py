@@ -96,6 +96,7 @@ class StatbankClient(StatbankAuth):
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        *,
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:

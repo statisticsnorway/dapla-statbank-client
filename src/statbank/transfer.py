@@ -100,6 +100,7 @@ class StatbankTransfer(StatbankAuth):
         validation: bool = ...,
         delay: bool = ...,
         headers: None = None,
+        *,
         config: StatbankConfig | None = ...,
         auth: requests.auth.AuthBase | None = ...,
     ) -> None: ...

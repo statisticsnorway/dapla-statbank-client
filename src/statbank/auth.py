@@ -45,6 +45,7 @@ class StatbankConfig:
 
     def __init__(  # noqa: D107
         self: Self,
+        *,
         endpoint_base: furl,
         encrypt_url: furl,
         useragent: str,
@@ -84,7 +85,13 @@ class StatbankConfig:
 
         useragent = f"dapla-statbank-client:{version('dapla-statbank-client')}:{environment.value.lower()}-{region.value.lower()}-{service.lower()}"
 
-        return cls(endpoint_base, encrypt_url, useragent, environment, region)
+        return cls(
+            endpoint_base=endpoint_base,
+            encrypt_url=encrypt_url,
+            useragent=useragent,
+            environment=environment,
+            region=region,
+        )
 
 
 class StatbankAuth:
@@ -93,6 +100,7 @@ class StatbankAuth:
     def __init__(
         self: Self,
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        *,
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:

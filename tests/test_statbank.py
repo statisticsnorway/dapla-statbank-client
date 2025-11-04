@@ -461,7 +461,7 @@ def test_client_set_date_str(client_fixture: StatbankClient):
 def test_client_set_date_int_raises(client_fixture: StatbankClient):
     with pytest.raises(
         TypeError,
-        match="must be a string, datetime, or ipywidgets.DatePicker",
+        match=r"must be a string, datetime, or ipywidgets.DatePicker",
     ) as _:
         client_fixture.set_publish_date(1)
 
@@ -744,6 +744,6 @@ def test_get_user_initials(
     mock_input.return_value = ""
     with pytest.raises(
         ValueError,
-        match="Can't find the users email or initials in the system.",
+        match=r"Can't find the users email or initials in the system.",
     ):
         StatbankClient._get_user_initials()  # noqa: SLF001

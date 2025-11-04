@@ -216,7 +216,11 @@ def test_transfer_approve_wrong_format(
         )
 
 
-def test_transfer_request_raises_error(transfer_fixture: StatbankTransfer):
+def test_transfer_request_raises_error(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    transfer_data_fixture: dict[str, pd.DataFrame],
+):
     # Mock the r.post method
     with mock.patch("statbank.transfer.r.post") as mock_post:
         # Create a mock response object
@@ -225,9 +229,19 @@ def test_transfer_request_raises_error(transfer_fixture: StatbankTransfer):
         mock_response.raise_for_status.side_effect = requests.HTTPError()
         mock_post.return_value = mock_response
 
+        transfer = StatbankTransfer(
+            transfer_data_fixture,
+            tableid="10000",
+            config=config_fixture,
+            auth=auth_fixture,
+            delay=True,
+        )
+
+        transfer.body = transfer._body_from_data()
+
         # Now, assert that the _make_transfer_request method raises an HTTPError
         with pytest.raises(requests.HTTPError):
-            transfer_fixture._make_transfer_request(  # noqa: SLF001
+            transfer._make_transfer_request(  # noqa: SLF001
                 furl("mock_url_params"),
                 {},
             )

@@ -1,4 +1,5 @@
 import os
+from collections.abc import Generator
 from typing import Any
 from unittest import mock
 
@@ -99,22 +100,24 @@ def client_fixture(
 
 
 @pytest.fixture
-@mock.patch.object(StatbankTransfer, "_make_transfer_request")
 def transfer_fixture(
-    mock_transfer_make_request: mock.Mock,
     config_fixture: StatbankConfig,
     auth_fixture: requests.auth.AuthBase,
     transfer_data_fixture: dict[str, pd.DataFrame],
     fake_post_response_transfer_successful: requests.Response,
-) -> StatbankTransfer:
-    mock_transfer_make_request.return_value = fake_post_response_transfer_successful
+) -> Generator[StatbankTransfer, None, None]:
+    with mock.patch.object(
+        StatbankTransfer,
+        "_make_transfer_request",
+    ) as mock_transfer_make_request:
+        mock_transfer_make_request.return_value = fake_post_response_transfer_successful
 
-    return StatbankTransfer(
-        transfer_data_fixture,
-        tableid="10000",
-        config=config_fixture,
-        auth=auth_fixture,
-    )
+        yield StatbankTransfer(
+            transfer_data_fixture,
+            tableid="10000",
+            config=config_fixture,
+            auth=auth_fixture,
+        )
 
 
 @pytest.fixture

@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 
 from .auth import StatbankAuth
 from .auth import StatbankConfig
+from .globals import DATETIME_FORMAT
 from .globals import UseDb
 from .statbank_logger import logger
 from .uttrekk_validations import StatbankUttrekkValidators
@@ -114,7 +115,7 @@ class UttrekksBeskrivelseData:
         """Parses "filbeskrivelse" from Statbank API."""
         time_retrieved = datetime.datetime.strptime(  # noqa: DTZ007
             filbeskrivelse["Uttaksbeskrivelse_lagd"],
-            "%d.%m.%Y klokka %H:%M",
+            DATETIME_FORMAT,
         )
         tableid = int(filbeskrivelse["TabellId"])
         tablename = filbeskrivelse["Huvudtabell"]
@@ -157,7 +158,7 @@ class UttrekksBeskrivelseData:
         """Reads a mapping to recreate a instance of this class."""
         time_retrieved = datetime.datetime.strptime(  # noqa: DTZ007
             json_object["time_retrieved"],
-            "%d.%m.%Y klokka %H:%M",
+            DATETIME_FORMAT,
         )
 
         return cls(
@@ -260,7 +261,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     @property
     def time_retrieved(self: Self) -> str:
         """Time of getting the Uttrekksbeskrivelse."""
-        return self._data.time_retrieved.strftime("%d.%m.%Y klokka %H:%M")
+        return self._data.time_retrieved.strftime(DATETIME_FORMAT)
 
     @property
     def tablename(self: Self) -> str:

@@ -46,6 +46,16 @@ class TokenAuth(requests.auth.AuthBase):
         request.headers["Authorization"] = f"{self.auth_scheme} {self.token}"
         return request
 
+    def __eq__(self: Self, other: object) -> bool:  # noqa: D105
+        return (
+            isinstance(other, TokenAuth)
+            and self.token == other.token
+            and self.auth_scheme == other.auth_scheme
+        )
+
+    def __hash__(self: Self) -> int:  # noqa: D105
+        return hash((self.auth_scheme, self.token))
+
 
 class StatbankConfig:
     """Holds config for Transfer-API" and "Uttaksbeskrivelse-API."""

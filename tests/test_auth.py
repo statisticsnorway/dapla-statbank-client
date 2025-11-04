@@ -119,7 +119,7 @@ def test_auth_without_authfile_dapla_lab(
     assert auth.password == fake_auth
 
 
-@pytest.mark.usefixtures("fake_encrypt_response", "patch_dapla_auth")
+@pytest.mark.usefixtures("fake_encrypt_response", "patch_getpass", "patch_dapla_auth")
 def test_auth_persisted(empty_netrc_file: Path, fake_auth: str):
     config = StatbankConfig(
         environment=DaplaEnvironment.PROD,

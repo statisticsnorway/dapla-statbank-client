@@ -88,6 +88,12 @@ class StatbankConfig:
             env_key_endpoint_base = "STATBANK_TEST_BASE_URL"
             env_key_encrypt_url = "STATBANK_TEST_ENCRYPT_URL"
 
+        elif use_db == UseDb.PROD and environment == DaplaEnvironment.TEST:
+            error_message = (
+                "Statbankens produksjonsmiljø ikke tilgjengelig fra Daplas testmiljø"
+            )
+            raise RuntimeError(error_message)
+
         else:
             env_key_endpoint_base = "STATBANK_BASE_URL"
             env_key_encrypt_url = "STATBANK_ENCRYPT_URL"

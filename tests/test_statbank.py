@@ -237,7 +237,7 @@ def test_transfer_request_raises_error(
             delay=True,
         )
 
-        transfer.body = transfer._body_from_data()
+        transfer.body = transfer._body_from_data()  # noqa: SLF001
 
         # Now, assert that the _make_transfer_request method raises an HTTPError
         with pytest.raises(requests.HTTPError):

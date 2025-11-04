@@ -78,7 +78,6 @@ class StatbankTransfer(StatbankAuth):
             Kept here for uniform choice through the class.
         urls (dict[str, str]): Urls for transfer, observing the result etc.,
             built from environment variables.
-        headers (dict[str, str]): Deprecated attribute. Authinfo not stored here anymore.
         params (dict[str, str]): This dict will be built into the post request.
             Keep it in this nice shape for later introspection.
         body (str): The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
@@ -121,6 +120,7 @@ class StatbankTransfer(StatbankAuth):
         validation: bool = ...,
         delay: bool = ...,
         headers: dict[str, str] = ...,
+        *,
         config: StatbankConfig | None = ...,
         auth: requests.auth.AuthBase | None = ...,
     ) -> None: ...
@@ -139,6 +139,7 @@ class StatbankTransfer(StatbankAuth):
         validation: bool = True,
         delay: bool = False,
         headers: dict[str, str] | None = None,  # noqa: ARG002
+        *,
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:

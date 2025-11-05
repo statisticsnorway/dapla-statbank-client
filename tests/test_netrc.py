@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from statbank.netrc import Netrc
+from statbank.writable_netrc import Netrc
 
 
 def test_write_empty_netrc(empty_netrc_file: Path):

@@ -21,8 +21,8 @@ from furl import furl
 from .globals import DaplaEnvironment
 from .globals import DaplaRegion
 from .globals import UseDb
-from .netrc import Netrc
 from .statbank_logger import logger
+from .writable_netrc import Netrc
 
 if TYPE_CHECKING:
     from pathlib import Path

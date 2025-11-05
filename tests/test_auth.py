@@ -13,7 +13,7 @@ from statbank.auth import StatbankConfig
 from statbank.auth import UseDb
 from statbank.globals import DaplaEnvironment
 from statbank.globals import DaplaRegion
-from statbank.netrc import Netrc
+from statbank.writable_netrc import Netrc
 
 
 # Mock for os.environ.get

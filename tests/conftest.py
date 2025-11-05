@@ -51,19 +51,56 @@ def block_requests(request: FixtureRequest, monkeypatch: MonkeyPatch) -> None:
 
 
 @pytest.fixture(autouse=True)
-def modify_env():
-    os.environ["JUPYTERHUB_USER"] = "ssb@ssb.no"
-    os.environ["DAPLA_USER"] = "usr@ssb.no"
-    os.environ["DAPLA_ENVIRONMENT"] = "DEV"
+def modify_env(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("JUPYTERHUB_USER", "ssb@ssb.no")
+    monkeypatch.setenv("DAPLA_USER", "usr@ssb.no")
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "DEV")
 
-    os.environ["STATBANK_BASE_URL"] = os.environ.get(
+    monkeypatch.setenv(
         "STATBANK_BASE_URL",
-        "https://test_fake_url/",
+        os.environ.get(
+            "STATBANK_BASE_URL",
+            "https://test_fake_url/",
+        ),
     )
-    os.environ["STATBANK_ENCRYPT_URL"] = os.environ.get(
+    monkeypatch.setenv(
         "STATBANK_ENCRYPT_URL",
-        "https://fake_url2/",
+        os.environ.get(
+            "STATBANK_ENCRYPT_URL",
+            "https://fake_url2/",
+        ),
     )
+
+
+@pytest.fixture
+def mock_environ_dapla_lab_prod(monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "PROD")
+    monkeypatch.setenv("DAPLA_SERVICE", "VS_CODE")
+    monkeypatch.setenv("DAPLA_REGION", "DAPLA_LAB")
+    monkeypatch.setenv("STATBANK_ENCRYPT_URL", "https://fakeurl.com/encrypt")
+    monkeypatch.setenv("STATBANK_TEST_ENCRYPT_URL", "https://test.fakeurl.com/encrypt")
+    monkeypatch.setenv("STATBANK_BASE_URL", "https://fakeurl.com")
+    monkeypatch.setenv("STATBANK_TEST_BASE_URL", "https://test.fakeurl.com")
+
+
+@pytest.fixture
+def mock_environ_dapla_lab_test(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "TEST")
+    monkeypatch.setenv("DAPLA_SERVICE", "VS_CODE")
+    monkeypatch.setenv("DAPLA_REGION", "DAPLA_LAB")
+    monkeypatch.setenv("STATBANK_ENCRYPT_URL", "https://test.fakeurl.com/encrypt")
+    monkeypatch.setenv("STATBANK_BASE_URL", "https://test.fakeurl.com")
+
+
+@pytest.fixture
+def mock_environ_on_prem_prod(monkeypatch: MonkeyPatch):
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "PROD")
+    monkeypatch.setenv("DAPLA_SERVICE", "JUPYTERHUB")
+    monkeypatch.setenv("DAPLA_REGION", "ON_PREM")
+    monkeypatch.setenv("STATBANK_ENCRYPT_URL", "https://fakeurl.com/encrypt")
+    monkeypatch.setenv("STATBANK_TEST_ENCRYPT_URL", "https://test.fakeurl.com/encrypt")
+    monkeypatch.setenv("STATBANK_BASE_URL", "https://fakeurl.com")
+    monkeypatch.setenv("STATBANK_TEST_BASE_URL", "https://test.fakeurl.com")
 
 
 @pytest.fixture

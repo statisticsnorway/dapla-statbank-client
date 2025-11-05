@@ -46,6 +46,16 @@ class TokenAuth(requests.auth.AuthBase):
         request.headers["Authorization"] = f"{self.auth_scheme} {self.token}"
         return request
 
+    def __eq__(self: Self, other: object) -> bool:  # noqa: D105
+        return (
+            isinstance(other, TokenAuth)
+            and self.token == other.token
+            and self.auth_scheme == other.auth_scheme
+        )
+
+    def __hash__(self: Self) -> int:  # noqa: D105
+        return hash((self.auth_scheme, self.token))
+
 
 class StatbankConfig:
     """Holds config for Transfer-API" and "Uttaksbeskrivelse-API."""
@@ -77,6 +87,12 @@ class StatbankConfig:
         if use_db == UseDb.TEST and environment == DaplaEnvironment.PROD:
             env_key_endpoint_base = "STATBANK_TEST_BASE_URL"
             env_key_encrypt_url = "STATBANK_TEST_ENCRYPT_URL"
+
+        elif use_db == UseDb.PROD and environment == DaplaEnvironment.TEST:
+            error_message = (
+                "Statbankens produksjonsmiljø ikke tilgjengelig fra Daplas testmiljø"
+            )
+            raise RuntimeError(error_message)
 
         else:
             env_key_endpoint_base = "STATBANK_BASE_URL"

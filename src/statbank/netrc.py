@@ -21,7 +21,7 @@ if sys.version_info >= (3, 11):
 
     @dataclass
     class NetrcRecord:
-        """Dataclass store login info."""
+        """Dataclass to store login info."""
 
         login: str
         account: str
@@ -70,9 +70,19 @@ def _to_tuple(machines: Mapping[str, NetrcRecord]) -> dict[str, _NetrcTuple]:
 
 
 class Netrc(MutableMapping[str, NetrcRecord]):
-    """A mapping of a .netrc file, that can be used as a context manager, and save changes to disk."""
+    """A mapping of a .netrc file, that can be used as a context manager, and save changes to disk.
 
-    def __init__(self: Self, filepath: Path | None = None) -> None:  # noqa: D107
+    Attributes:
+        filepath: Path where .netrc is stored.
+        machines: A dict storing netrc records.
+    """
+
+    def __init__(self: Self, filepath: Path | None = None) -> None:
+        """Reads .netrc, or create one if none exists.
+
+        Parameters:
+            filepath: Path where .netrc is stored, or ~/.netrc if no path is given
+        """
         if filepath is None:
             filepath = Path.home() / ".netrc"
         if not filepath.exists():
@@ -80,15 +90,6 @@ class Netrc(MutableMapping[str, NetrcRecord]):
         self.filepath: Path = filepath
         self._netrc = netrc.netrc(filepath)
         self.machines: defaultdict[str, NetrcRecord] = _to_record(self._netrc.hosts)
-
-    def authenticators(self: Self, host: str) -> _NetrcTuple | None:
-        """Return a (user, account, password) tuple for given host."""
-        return self._netrc.authenticators(host)
-
-    @property
-    def hosts(self: Self) -> dict[str, _NetrcTuple]:
-        """Return a dict with hosts as keys and a (user, account, password) tuple as value."""
-        return self._netrc.hosts
 
     def __getitem__(self: Self, key: str) -> NetrcRecord:  # noqa: D105
         return self.machines[key]

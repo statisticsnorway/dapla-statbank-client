@@ -1,5 +1,6 @@
 import os
 from collections.abc import Generator
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -165,3 +166,20 @@ def fake_post_response_transfer_successful(fake_auth: str) -> requests.Response:
         "Content-Type": "multipart/form-data; boundary=12345",
     }
     return response
+
+
+@pytest.fixture
+def empty_netrc_file(tmp_path: Path) -> Generator[Path]:
+    netrc_path = tmp_path / "empty.netrc"
+    yield netrc_path
+    netrc_path.unlink(missing_ok=True)
+
+
+@pytest.fixture
+def existing_netrc_file(tmp_path: Path, fake_auth: str) -> Generator[Path]:
+    netrc_path = tmp_path / "existing.netrc"
+    netrc_path.write_text(
+        f'machine fakeurl.com login ola password {fake_auth}\nmacdef init\n\techo "foobar"\n\n',
+    )
+    yield netrc_path
+    netrc_path.unlink()

@@ -173,7 +173,12 @@ class StatbankAuth:
                 auth_record.login = username
                 auth_record.password = token
 
-        return requests.auth.HTTPBasicAuth(auth_record.login, auth_record.password)
+        return requests.auth.HTTPBasicAuth(
+            auth_record.login,
+            (
+                auth_record.password if auth_record.password is not None else ""
+            ),  # Can be None in Python 3.10
+        )
 
     def _encrypt_password(self: Self, password: str) -> str:
         pat = None

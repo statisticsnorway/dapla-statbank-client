@@ -44,7 +44,7 @@ else:
         account: str | None
         password: str | None
 
-        def __bool__(self):
+        def __bool__(self: Self) -> bool:  # noqa: D105
             return self.login != ""
 
     if TYPE_CHECKING:

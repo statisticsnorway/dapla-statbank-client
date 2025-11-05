@@ -15,7 +15,7 @@ def test_write_empty_netrc(empty_netrc_file: Path):
     assert result == expected
 
 
-def test_write_existing_netrc(existing_netrc_file: Path, fake_auth:str):
+def test_write_existing_netrc(existing_netrc_file: Path, fake_auth: str):
     with Netrc(existing_netrc_file) as authfile:
         authfile["test.com"].login = "foo"
         authfile["test.com"].password = "bar"  # noqa: S105

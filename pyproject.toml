@@ -8,17 +8,17 @@ authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics
 requires-python = ">=3.10,<4"
 
 dependencies = [
-    "pandas (>=2.2.0,<3.0.0)",
-    "pyarrow (>=10.0.1)",
-    "requests (>=2.28.2,<3.0.0)",
-    "ipywidgets (>=8.0.4,<9.0.0)",
-    "IPython (>=8.11.0,<9.0.0)",
-    "toml (>=0.10.2,<1.0.0)",
-    "python-dotenv (>=1.0.1,<2.0.0)",
-    "colorama (>=0.4.6,<1.0.0)",
-    "dapla-auth-client (>=1.0.1,<2.0.0)",
-    "furl (>=2.1.4,<3.0.0)",
-    "pathlib-abc (>=0.5.2,<0.6.0)",
+    "pandas >=2.2.0",
+    "pyarrow >=10.0.1",
+    "requests >=2.28.2",
+    "ipywidgets >=8.0.4",
+    "IPython >=8.11.0",
+    "toml >=0.10.2",
+    "python-dotenv >=1.0.1",
+    "colorama >=0.4.6",
+    "dapla-auth-client >=1.0.1",
+    "furl >=2.1.4",
+    "pathlib-abc >=0.5.2",
 ]
 
 [project.urls]
@@ -45,7 +45,7 @@ pytest = ">=6.2.5"
 typeguard = ">=2.13.3"
 xdoctest = { extras = ["colors"], version = ">=0.15.10" }
 ipykernel = ">=6.0.0"
-pytest-cov = "^7.0.0"
+pytest-cov = ">=7.0.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = ">=6.2.1"
@@ -57,11 +57,11 @@ myst-parser = { version = ">=0.16.1" }
 
 # Stubs for Pylance og Mypy
 [tool.poetry.group.typing.dependencies]
-pandas-stubs = "^2.2.0"
-types-requests = "^2.28.2"
-types-colorama = "^0.4.6"
-types-toml = "^0.10.2"
-pyarrow-stubs = "^10.0.1"
+pandas-stubs = ">=2.2.0"
+types-requests = ">=2.28.2"
+types-colorama = ">=0.4.6"
+types-toml = ">=0.10.2"
+pyarrow-stubs = ">=10.0.1"
 
 
 [tool.pytest.ini_options]

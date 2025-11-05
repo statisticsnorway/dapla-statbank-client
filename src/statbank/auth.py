@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import getpass
 import os
 import sys
 from importlib.metadata import version
+from typing import TYPE_CHECKING
 from typing import Literal
 from typing import cast
 
@@ -18,7 +21,11 @@ from furl import furl
 from .globals import DaplaEnvironment
 from .globals import DaplaRegion
 from .globals import UseDb
+from .netrc import Netrc
 from .statbank_logger import logger
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class TokenAuth(requests.auth.AuthBase):
@@ -51,12 +58,14 @@ class StatbankConfig:
         useragent: str,
         environment: DaplaEnvironment,
         region: DaplaRegion,
+        netrc_path: Path | None = None,
     ) -> None:
         self.endpoint_base: furl = endpoint_base
         self.encrypt_url: furl = encrypt_url
         self.useragent: str = useragent
         self.environment: DaplaEnvironment = environment
         self.region: DaplaRegion = region
+        self.netrc_path: Path | None = netrc_path
 
     @classmethod
     def from_environ(cls: type[Self], use_db: UseDb | None) -> Self:
@@ -150,14 +159,23 @@ class StatbankAuth:
         }
 
     def _get_auth(self) -> requests.auth.AuthBase:
-        username = getpass.getpass("Lastebruker:")
-        password = self._encrypt_password()
-        return requests.auth.HTTPBasicAuth(username, password)
+        host = cast(str, self._config.endpoint_base.host)  # noqa: TC006
 
-    def _encrypt_password(self: Self) -> str:
-        db = self.use_db.value
-        password = getpass.getpass(f"Lastepassord ({db}):")
+        with Netrc(self._config.netrc_path) as authfile:
+            auth_record = authfile[host]
 
+            if not auth_record:
+                db = self.use_db.value
+                username = getpass.getpass("Lastebruker:")
+                password = getpass.getpass(f"Lastepassord ({db}):")
+                token = self._encrypt_password(password)
+
+                auth_record.login = username
+                auth_record.password = token
+
+        return requests.auth.HTTPBasicAuth(auth_record.login, auth_record.password)
+
+    def _encrypt_password(self: Self, password: str) -> str:
         pat = None
 
         if self._config.region != DaplaRegion.ON_PREM:
@@ -177,7 +195,7 @@ class StatbankAuth:
 
         repsonse.raise_for_status()
 
-        data = cast("dict[Literal['message'], str]", repsonse.json())
+        data = cast(dict[Literal["message"], str], repsonse.json())  # noqa: TC006
 
         return data["message"]
 

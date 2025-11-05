@@ -13,11 +13,32 @@ delete the .rst file afterwards.
 
 ```{eval-rst}
 statbank package
-=============================================================================
-
-
-statbank package
 ================
+
+
+statbank.api\_exceptions module
+-------------------------------
+
+.. automodule:: statbank.api_exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.api\_types module
+--------------------------
+
+.. automodule:: statbank.api_types
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.auth module
+--------------------
+
+.. automodule:: statbank.auth
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 statbank.client module
 ----------------------
@@ -27,14 +48,45 @@ statbank.client module
    :undoc-members:
    :show-inheritance:
 
-statbank.apidata module
------------------------
+statbank.get\_apidata module
+----------------------------
 
-.. automodule:: statbank.apidata
+.. automodule:: statbank.get_apidata
    :members:
    :undoc-members:
    :show-inheritance:
 
+statbank.globals module
+-----------------------
+
+.. automodule:: statbank.globals
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.netrc module
+---------------------
+
+.. automodule:: statbank.netrc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.response\_to\_pandas module
+------------------------------------
+
+.. automodule:: statbank.response_to_pandas
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.statbank\_logger module
+--------------------------------
+
+.. automodule:: statbank.statbank_logger
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 statbank.transfer module
 ------------------------
@@ -48,6 +100,14 @@ statbank.uttrekk module
 -----------------------
 
 .. automodule:: statbank.uttrekk
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+statbank.uttrekk\_validations module
+------------------------------------
+
+.. automodule:: statbank.uttrekk_validations
    :members:
    :undoc-members:
    :show-inheritance:

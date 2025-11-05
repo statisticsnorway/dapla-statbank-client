@@ -74,6 +74,7 @@ def fake_uttrekksbeskrivelse_successful():
         "subtables": {
         "konflikt1.dat": "03629: Arbeidskonfliktar"
         },
+        "codelists" : [],
         "variables": [
         {
             "deltabell": "konflikt1.dat",

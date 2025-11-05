@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 from typing import Any
 from unittest import mock
@@ -9,10 +8,10 @@ import requests
 from dotenv import load_dotenv
 from requests.exceptions import HTTPError
 
-from statbank import StatbankClient
 from statbank.api_exceptions import StatbankParameterError
 from statbank.api_exceptions import StatbankVariableSelectionError
 from statbank.api_exceptions import TooBigRequestError
+from statbank.client import StatbankClient
 from statbank.get_apidata import _check_selection
 from statbank.get_apidata import apicodelist
 from statbank.get_apidata import apidata
@@ -27,28 +26,6 @@ if TYPE_CHECKING:
 load_dotenv()
 
 DIGITS_IN_YEAR = 4
-
-
-def fake_user() -> str:
-    return "tbf"
-
-
-def fake_auth() -> str:
-    return "SoCipherVerySecure"
-
-
-def fake_build_user_agent() -> str:
-    return "TestEnvPytestDB" + requests.utils.default_headers()["User-agent"]
-
-
-def fake_post_response_key_service() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 200
-    response._content = bytes(  # noqa: SLF001
-        '{"message":"' + fake_auth() + '"}',
-        "utf8",
-    )
-    return response
 
 
 VAR_NUM = 4
@@ -122,38 +99,20 @@ def fake_metadata() -> dict[str, Any]:
     }
 
 
-@pytest.fixture
-@mock.patch.object(StatbankClient, "_encrypt_request")
-@mock.patch.object(StatbankClient, "_get_user")
-@mock.patch.object(StatbankClient, "_get_user_initials")
-@mock.patch.object(StatbankClient, "_build_user_agent")
-def client_fake(
-    test_build_user_agent: Callable,
-    test_get_user_initials: Callable,
-    test_get_user: Callable,
-    encrypt_fake: Callable,
-) -> StatbankClient:
-    encrypt_fake.return_value = fake_post_response_key_service()
-    test_get_user.return_value = fake_user()
-    test_get_user_initials.return_value = fake_user()
-    test_build_user_agent.return_value = fake_build_user_agent()
-    return StatbankClient(check_username_password=False)
-
-
 @mock.patch.object(requests, "get")
-def test_apimetadata(fake_get: Callable) -> None:
+def test_apimetadata(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     assert len(apimetadata("05300").get("title"))
 
 
 @mock.patch.object(requests, "get")
-def test_apicodelist_all(fake_get: Callable) -> None:
+def test_apicodelist_all(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     assert len(apicodelist("05300")) == VAR_NUM
 
 
 @mock.patch.object(requests, "get")
-def test_apicodelist_specific(fake_get: Callable) -> None:
+def test_apicodelist_specific(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     result = apicodelist("05300", "Avstand1")
     assert len(result)
@@ -162,7 +121,7 @@ def test_apicodelist_specific(fake_get: Callable) -> None:
 
 
 @mock.patch.object(requests, "get")
-def test_apicodelist_specific_text(fake_get: Callable) -> None:
+def test_apicodelist_specific_text(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     result = apicodelist("05300", "avstand")
     assert len(result)
@@ -171,7 +130,7 @@ def test_apicodelist_specific_text(fake_get: Callable) -> None:
 
 
 @mock.patch.object(requests, "get")
-def test_apicodelist_specific_missing_raises(fake_get: Callable) -> None:
+def test_apicodelist_specific_missing_raises(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     with pytest.raises(ValueError, match="Cant find") as _:
         apicodelist("05300", "missing")
@@ -179,20 +138,20 @@ def test_apicodelist_specific_missing_raises(fake_get: Callable) -> None:
 
 @pytest.fixture
 @mock.patch.object(requests, "get")
-def query_all_05300(fake_get: Callable) -> pd.DataFrame:
+def query_all_05300(fake_get: mock.Mock) -> pd.DataFrame:
     fake_get.return_value = fake_get_table_meta()
     return apidata_query_all("05300")
 
 
 @pytest.fixture
 @mock.patch.object(requests, "post")
-def apidata_05300(fake_post: Callable, query_all_05300: pd.DataFrame) -> pd.DataFrame:
+def apidata_05300(fake_post: mock.Mock, query_all_05300: pd.DataFrame) -> pd.DataFrame:
     fake_post.return_value = fake_post_apidata()
     return apidata("05300", query_all_05300, include_id=True)
 
 
 @mock.patch.object(requests, "get")
-def test_query_all_raises_500(fake_get: Callable) -> None:
+def test_query_all_raises_500(fake_get: mock.Mock) -> None:
     fake_get.return_value = fake_get_table_meta()
     fake_get.return_value.status_code = 500
     with pytest.raises(expected_exception=HTTPError) as _:
@@ -202,8 +161,8 @@ def test_query_all_raises_500(fake_get: Callable) -> None:
 @mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_apidata_all_05300(
-    fake_meta_get: Callable,
-    fake_apidata: Callable,
+    fake_meta_get: mock.Mock,
+    fake_apidata: mock.Mock,
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_meta_get.return_value = fake_get_table_meta()
@@ -216,8 +175,8 @@ def test_apidata_all_05300(
 @mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_apidata_rotate_05300(
-    fake_meta_get: Callable,
-    fake_apidata: Callable,
+    fake_meta_get: mock.Mock,
+    fake_apidata: mock.Mock,
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_meta_get.return_value = fake_get_table_meta()
@@ -231,16 +190,22 @@ def test_apidata_rotate_05300(
 
 
 @mock.patch.object(requests, "get")
-def test_client_apimetadata(fake_get: Callable, client_fake: Callable) -> None:
+def test_client_apimetadata(
+    fake_get: mock.Mock,
+    client_fixture: StatbankClient,
+) -> None:
     fake_get.return_value = fake_get_table_meta()
-    metadata = client_fake.apimetadata("05300")
+    metadata = client_fixture.apimetadata("05300")
     assert len(metadata.get("title"))
 
 
 @mock.patch.object(requests, "get")
-def test_client_apicodelist(fake_get: Callable, client_fake: Callable) -> None:
+def test_client_apicodelist(
+    fake_get: mock.Mock,
+    client_fixture: StatbankClient,
+) -> None:
     fake_get.return_value = fake_get_table_meta()
-    metadata = client_fake.apicodelist("05300", "Avstand1")
+    metadata = client_fixture.apicodelist("05300", "Avstand1")
     assert len(metadata)
     assert isinstance(metadata, dict)
     assert all(isinstance(x, str) for x in metadata.values())
@@ -248,20 +213,23 @@ def test_client_apicodelist(fake_get: Callable, client_fake: Callable) -> None:
 
 @mock.patch.object(requests, "post")
 def test_client_apidata(
-    fake_post: Callable,
-    client_fake: Callable,
+    fake_post: mock.Mock,
+    client_fixture: StatbankClient,
     query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_apidata()
-    tabledata = client_fake.apidata("05300", query_all_05300)
+    tabledata = client_fixture.apidata("05300", query_all_05300)
     assert isinstance(tabledata, pd.DataFrame)
     assert len(tabledata)
 
 
 @mock.patch.object(requests, "post")
-def test_client_apidata_no_query(fake_post: Callable, client_fake: Callable) -> None:
+def test_client_apidata_no_query(
+    fake_post: mock.Mock,
+    client_fixture: StatbankClient,
+) -> None:
     fake_post.return_value = fake_post_apidata()
-    tabledata = client_fake.apidata("05300")
+    tabledata = client_fixture.apidata("05300")
     assert isinstance(tabledata, pd.DataFrame)
     assert len(tabledata)
 
@@ -269,14 +237,14 @@ def test_client_apidata_no_query(fake_post: Callable, client_fake: Callable) -> 
 @mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_client_apidata_all(
-    fake_meta_get: Callable,
-    fake_apidata: Callable,
-    client_fake: Callable,
+    fake_meta_get: mock.Mock,
+    fake_apidata: mock.Mock,
+    client_fixture: StatbankClient,
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_meta_get.return_value = fake_get_table_meta()
     fake_apidata.return_value = apidata_05300
-    tabledata = client_fake.apidata_all("https://data.ssb.no/api/v0/no/table/05300")
+    tabledata = client_fixture.apidata_all("https://data.ssb.no/api/v0/no/table/05300")
     assert isinstance(tabledata, pd.DataFrame)
     assert len(tabledata)
 
@@ -284,18 +252,18 @@ def test_client_apidata_all(
 @mock.patch("statbank.get_apidata.apidata")
 @mock.patch.object(requests, "get")
 def test_client_apidata_rotate_05300(
-    fake_meta_get: Callable,
-    fake_apidata: Callable,
-    client_fake: Callable,
+    fake_meta_get: mock.Mock,
+    fake_apidata: mock.Mock,
+    client_fixture: StatbankClient,
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_meta_get.return_value = fake_get_table_meta()
     fake_apidata.return_value = apidata_05300
-    df_all = client_fake.apidata_all(
+    df_all = client_fixture.apidata_all(
         "https://data.ssb.no/api/v0/no/table/05300/",
         include_id=True,
     )
-    df_rotate = client_fake.apidata_rotate(df_all, ind="år", val="value")
+    df_rotate = client_fixture.apidata_rotate(df_all, ind="år", val="value")
     # After rotating index should be 4-digit years
     for ind in df_rotate.index:
         assert len(ind) == DIGITS_IN_YEAR
@@ -304,7 +272,7 @@ def test_client_apidata_rotate_05300(
 
 @mock.patch.object(requests.Session, "post")
 def test_apidata_raises_parameter_error(
-    fake_post: Callable,
+    fake_post: mock.Mock,
     query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_parameter_error()
@@ -316,8 +284,8 @@ def test_apidata_raises_parameter_error(
 @mock.patch.object(requests.Session, "post")
 @mock.patch.object(requests, "get")
 def test_apidata_raises_variable_error(
-    fake_meta_get: Callable,
-    fake_post: Callable,
+    fake_meta_get: mock.Mock,
+    fake_post: mock.Mock,
     query_all_05300: pd.DataFrame,
 ) -> None:
     fake_meta_get.return_value = fake_get_table_meta()
@@ -329,7 +297,7 @@ def test_apidata_raises_variable_error(
 
 @mock.patch.object(requests.Session, "post")
 def test_apidata_raises_too_big_error(
-    fake_post: Callable,
+    fake_post: mock.Mock,
     query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_too_many_values_selected()
@@ -340,7 +308,7 @@ def test_apidata_raises_too_big_error(
 
 @mock.patch.object(requests.Session, "post")
 def test_apidata_raises_500(
-    fake_post: Callable,
+    fake_post: mock.Mock,
     query_all_05300: pd.DataFrame,
 ) -> None:
     fake_post.return_value = fake_post_apidata()
@@ -358,7 +326,7 @@ def test_apidata_raises_wrong_id(
 
 @mock.patch("statbank.get_apidata.apidata")
 def test_apidata_all_raises_wrong_id(
-    fake_apidata: Callable,
+    fake_apidata: mock.Mock,
     apidata_05300: pd.DataFrame,
 ) -> None:
     fake_apidata.return_value = apidata_05300
@@ -367,7 +335,7 @@ def test_apidata_all_raises_wrong_id(
 
 
 @mock.patch("statbank.get_apidata.apimetadata")
-def test_check_duplicates_in_selection(fake_metadata_dict: Callable):
+def test_check_duplicates_in_selection(fake_metadata_dict: mock.Mock):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"
     request: QueryWholeType = {
@@ -389,7 +357,7 @@ def test_check_duplicates_in_selection(fake_metadata_dict: Callable):
 
 
 @mock.patch("statbank.get_apidata.apimetadata")
-def test_check_invalid_in_selection(fake_metadata_dict: Callable):
+def test_check_invalid_in_selection(fake_metadata_dict: mock.Mock):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"
     request: QueryWholeType = {
@@ -412,7 +380,7 @@ def test_check_invalid_in_selection(fake_metadata_dict: Callable):
 
 
 @mock.patch("statbank.get_apidata.apimetadata")
-def test_check_with_wildcard(fake_metadata_dict: Callable):
+def test_check_with_wildcard(fake_metadata_dict: mock.Mock):
     fake_metadata_dict.return_value = fake_metadata()
     variable = "Avstand1"
     request: QueryWholeType = {

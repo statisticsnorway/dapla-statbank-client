@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import sys
 from typing import TypedDict
 
-from typing_extensions import NotRequired  # noqa: UP035
+if sys.version_info >= (3, 11):
+    from typing import NotRequired
+else:
+    from typing_extensions import NotRequired
 
 #################################
 # Statbank get public data type #

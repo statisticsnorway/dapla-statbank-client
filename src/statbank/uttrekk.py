@@ -1,34 +1,175 @@
 from __future__ import annotations
 
 import copy
+import datetime
+import itertools
 import json
 import math
+import sys
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
-
-if TYPE_CHECKING:
-    from statbank.api_types import DelTabellType
-    from statbank.api_types import FilBeskrivelseType
-    from statbank.api_types import KodelisteTypeParsed
-    from statbank.api_types import KolonneInternasjonalRapporteringType
-    from statbank.api_types import KolonneStatistikkvariabelType
-    from statbank.api_types import KolonneVariabelType
-    from statbank.api_types import SuppressionCodeListType
-    from statbank.api_types import SuppressionDeltabellCodeListType
+from typing import TypedDict
+from typing import overload
 
 import pandas as pd
 import requests as r
+import requests.auth
 
-from statbank.auth import StatbankAuth
-from statbank.auth import UseDb
-from statbank.statbank_logger import logger
-from statbank.uttrekk_validations import StatbankUttrekkValidators
-from statbank.uttrekk_validations import StatbankValidateError
+if sys.version_info >= (3, 11):
+    from typing import Self
+else:
+    from typing_extensions import Self
+
+if sys.version_info >= (3, 13):
+    from warnings import deprecated
+else:
+    from typing_extensions import deprecated
+
+if TYPE_CHECKING:
+    from furl import furl
+    from pathlib_abc import WritablePath
+
+    from .api_types import DelTabellType
+    from .api_types import FilBeskrivelseType
+    from .api_types import KodelisteTypeParsed
+    from .api_types import KolonneInternasjonalRapporteringType
+    from .api_types import KolonneStatistikkvariabelType
+    from .api_types import KolonneVariabelType
+    from .api_types import SuppressionCodeListType
+    from .api_types import SuppressionDeltabellCodeListType
+
+from .auth import StatbankAuth
+from .auth import StatbankConfig
+from .globals import DATETIME_FORMAT
+from .globals import UseDb
+from .statbank_logger import logger
+from .uttrekk_validations import StatbankUttrekkValidators
+from .uttrekk_validations import StatbankValidateError
+
+
+class _UttrekksBeskrivelseDump(TypedDict):
+    use_db: Literal["TEST", "PROD"]
+    time_retrieved: str
+    tableid: str
+    tablename: str
+    raise_errors: bool
+    subtables: dict[str, str]
+    variables: list[DelTabellType]
+    codelists: dict[str, KodelisteTypeParsed]
+    suppression: list[SuppressionCodeListType] | None
+
+
+class UttrekksBeskrivelseData:
+    """Holds parsed data for StatbankUttrekksBeskrivelse.
+
+    Attributes:
+        time_retrieved: Time of getting the Uttrekksbeskrivelse
+        tableid: The ID of the main table.
+        tablename: The name of the main table in Statbanken.
+        subtables: Names and descriptions of the individual "table-parts"
+          that needs to be sent in as different DataFrames.
+        variables: Metadata about the columns in the different table-parts.
+        codelists: Metadata about column-contents, like formatting on time, or possible values ("codes").
+        suppression: Details around extra columns which describe main column's "prikking", meaning their suppression-type.
+        headers: Deprecated attribute. Authinfo not stored here anymore.
+    """
+
+    __slots__ = (
+        "codelists",
+        "subtables",
+        "suppression",
+        "tableid",
+        "tablename",
+        "time_retrieved",
+        "variables",
+    )
+
+    def __init__(  # noqa: D107
+        self: Self,
+        *,
+        tableid: int,
+        tablename: str,
+        time_retrieved: datetime.datetime,
+        subtables: dict[str, str],
+        variables: list[DelTabellType],
+        codelists: dict[str, KodelisteTypeParsed],
+        suppression: list[SuppressionCodeListType] | None,
+    ) -> None:
+        self.tableid: int = tableid
+        self.tablename: str = tablename
+        self.time_retrieved: datetime.datetime = time_retrieved
+        self.subtables: dict[str, str] = subtables
+        self.variables: list[DelTabellType] = variables
+        self.codelists: dict[str, KodelisteTypeParsed] = codelists
+        self.suppression: list[SuppressionCodeListType] | None = suppression
+
+    @classmethod
+    def from_filbeskrivelse(
+        cls: type[Self],
+        filbeskrivelse: FilBeskrivelseType,
+    ) -> Self:
+        """Parses "filbeskrivelse" from Statbank API."""
+        time_retrieved = datetime.datetime.strptime(  # noqa: DTZ007
+            filbeskrivelse["Uttaksbeskrivelse_lagd"],
+            DATETIME_FORMAT,
+        )
+        tableid = int(filbeskrivelse["TabellId"])
+        tablename = filbeskrivelse["Huvudtabell"]
+        subtables = {
+            x["Filnavn"]: x["Filtext"] for x in filbeskrivelse["DeltabellTitler"]
+        }
+        variables = filbeskrivelse["deltabller"]
+
+        codelists: dict[str, KodelisteTypeParsed] = {}
+        kodelister = filbeskrivelse.get("kodelister", [])
+        irkodelister = filbeskrivelse.get("IRkodelister", [])
+        alle_kodelister = itertools.chain(kodelister, irkodelister)
+
+        for kodeliste in alle_kodelister:
+            codelist: KodelisteTypeParsed = {
+                "koder": {kode["kode"]: kode["text"] for kode in kodeliste["koder"]},
+            }
+            if "SumIALtTotalKode" in kodeliste:
+                codelist["SumIALtTotalKode"] = kodeliste["SumIALtTotalKode"]
+
+            codelists[kodeliste["kodeliste"]] = codelist
+
+        if "null_prikk_missing_kodeliste" in filbeskrivelse:
+            suppression = filbeskrivelse["null_prikk_missing_kodeliste"]
+        else:
+            suppression = None
+
+        return cls(
+            tableid=tableid,
+            tablename=tablename,
+            time_retrieved=time_retrieved,
+            subtables=subtables,
+            variables=variables,
+            codelists=codelists,
+            suppression=suppression,
+        )
+
+    @classmethod
+    def from_mapping(cls: type[Self], json_object: _UttrekksBeskrivelseDump) -> Self:
+        """Reads a mapping to recreate a instance of this class."""
+        time_retrieved = datetime.datetime.strptime(  # noqa: DTZ007
+            json_object["time_retrieved"],
+            DATETIME_FORMAT,
+        )
+
+        return cls(
+            tableid=int(json_object["tableid"]),
+            tablename=json_object["tablename"],
+            time_retrieved=time_retrieved,
+            subtables=json_object["subtables"],
+            variables=json_object["variables"],
+            codelists=json_object["codelists"],
+            suppression=json_object.get("suppression", None),
+        )
 
 
 class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
@@ -37,20 +178,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     And metadata about the table itself in Statbankens system,
     like ID, name of codelists etc.
 
-
     Attributes:
         url (str): Main url for transfer
-        time_retrieved  (str): Time of getting the Uttrekksbeskrivelse
-        tableid (str): Originally the ID of the main table, which to get the
-            Uttrekksbeskrivelse on, but is reset based on the info in the Uttrekksbeskrivelse.
-            To compansate for the possibility of the user sending in "tablename"-name as tableid.
-        tablename (str): The name of the main table in Statbanken, not numbers, like the ID is.
-        subtables (dict): Names and descriptions of the individual "table-parts"
-            that needs to be sent in as different DataFrames.
-        variables (dict): Metadata about the columns in the different table-parts.
-        codelists (dict): Metadata about column-contents, like formatting on time, or possible values ("codes").
-        suppression (dict): Details around extra columns which describe main column's "prikking", meaning their suppression-type.
-        headers (dict): The headers for the request, might be sent in from a StatbankTransfer-object.
         filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
         use_db (UseDb | str | None):
             If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
@@ -59,45 +188,116 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     """
 
+    @overload
     def __init__(
-        self,
+        self: Self,
         tableid: str,
+        raise_errors: bool = ...,
+        headers: None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
+        data: None = None,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self: Self,
+        tableid: None = None,
+        raise_errors: bool = ...,
+        headers: None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
+        data: UttrekksBeskrivelseData = ...,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    @overload
+    @deprecated("Headers parameter not used, use auth attribute to pass in auth")
+    def __init__(
+        self: Self,
+        tableid: str,
+        raise_errors: bool = ...,
+        headers: dict[str, str] = ...,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = ...,
+        *,
+        data: UttrekksBeskrivelseData | None = ...,
+        config: StatbankConfig | None = ...,
+        auth: requests.auth.AuthBase | None = ...,
+    ) -> None: ...
+
+    def __init__(
+        self: Self,
+        tableid: str | int | None = None,
         raise_errors: bool = False,
-        headers: dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,  # noqa: ARG002
         use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        *,
+        data: UttrekksBeskrivelseData | None = None,
+        config: StatbankConfig | None = None,
+        auth: requests.auth.AuthBase | None = None,
     ) -> None:
         """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
-        StatbankAuth.__init__(self, use_db)
+        super().__init__(use_db, config=config, auth=auth)
         self.url = self._build_urls()["uttak"]
-        self.time_retrieved = ""
-        self.tableid = tableid
-        if not isinstance(raise_errors, bool):
-            error_msg = (  # type: ignore[unreachable]
-                "raise_errors must be a bool, the loaduser parameter has been removed."
-            )
-            raise TypeError(error_msg)
         self.raise_errors = raise_errors
-        self.tablename = ""
-        self.subtables: dict[str, str] = {}
-        self.variables: list[DelTabellType] = []
-        self.codelists: dict[str, KodelisteTypeParsed] = {}
-        self.suppression: None | list[SuppressionCodeListType] = None
-        if headers:
-            self.headers = headers
-        else:
-            self.headers = self._build_headers()
-        try:
-            self._get_uttrekksbeskrivelse()
-        finally:
-            if hasattr(self, "headers"):
-                del self.headers
-        self._split_attributes()
+        if data is None:
+            if tableid is None:
+                error_message = "Må inialiseres med tabellnummer, tabellnavn, eller UttrekksBeskrivelseData"
+                raise ValueError(error_message)
+            filbeskrivelse = self._get_uttrekksbeskrivelse(tableid)
+            self.filbeskrivelse = filbeskrivelse
+            data = UttrekksBeskrivelseData.from_filbeskrivelse(filbeskrivelse)
+
+        self._data: UttrekksBeskrivelseData = data
+
+    @property
+    def tableid(self: Self) -> str:
+        """Originally the ID of the main table, which to get the Uttrekksbeskrivelse on."""
+        return str(self._data.tableid)
+
+    @property
+    def time_retrieved(self: Self) -> str:
+        """Time of getting the Uttrekksbeskrivelse."""
+        return self._data.time_retrieved.strftime(DATETIME_FORMAT)
+
+    @property
+    def tablename(self: Self) -> str:
+        """The name of the main table in Statbanken, not numbers, like the ID is."""
+        return self._data.tablename
+
+    @property
+    def subtables(self: Self) -> dict[str, str]:
+        """Names and descriptions of the individual "table-parts" that needs to be sent in as different DataFrames."""
+        return self._data.subtables
+
+    @property
+    def variables(self: Self) -> list[DelTabellType]:
+        """Metadata about the columns in the different table-parts."""
+        return self._data.variables
+
+    @property
+    def codelists(self: Self) -> dict[str, KodelisteTypeParsed]:
+        """Metadata about column-contents, like formatting on time, or possible values ("codes")."""
+        return self._data.codelists
+
+    @property
+    def suppression(self: Self) -> list[SuppressionCodeListType] | None:
+        """Details around extra columns which describe main column's "prikking", meaning their suppression-type."""
+        return self._data.suppression
+
+    @property
+    @deprecated("Always none. Authinfo is not stored here anymore")
+    def headers(self: Self) -> None:
+        """Deprecated attribute, Authinfo is not stored here anymore."""
 
     def __str__(self) -> str:
         """Returns a string representation of the object, which is the Uttrekksbeskrivelse."""
         variabel_text = ""
         for i, deltabell in enumerate(self.variables):
-            variabel_text += f"""\nDeltabell (DataFrame) nummer {i+1}:
+            variabel_text += f"""\nDeltabell (DataFrame) nummer {i + 1}:
                 {deltabell["deltabell"]}
                 """
             variables: list[
@@ -113,13 +313,13 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
             variabel_text += f"Antall kolonner: {len(variables)}"
             for j, variabel in enumerate(variables):
-                variabel_text += f"\n\tKolonne {j+1}: "
+                variabel_text += f"\n\tKolonne {j + 1}: "
                 variabel_text += str(variabel.get("Kodeliste_text", ""))
                 variabel_text += str(variabel.get("Text", ""))
                 supp = variabel.get("gjelder_for_text", "")
                 if supp:
                     variabel_text += f"Suppressionfo column {variabel.get('gjelder_for__kolonner_nummer')}: {supp}"
-            variabel_text += f'\nEksempellinje: {deltabell["eksempel_linje"]}'
+            variabel_text += f"\nEksempellinje: {deltabell['eksempel_linje']}"
 
         mult_codelists = math.prod([len(x["koder"]) for x in self.codelists.values()])
         variabel_text += f'\n"Ekspandert matrise/antall koder i kodelistene ganget med hverandre er: {mult_codelists}'
@@ -183,7 +383,13 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         )
         return non_df_template
 
-    def to_json(self, path: str = "") -> None | str:
+    @overload
+    def to_json(self, path: str | Path | WritablePath) -> None: ...
+
+    @overload
+    def to_json(self, path: None) -> str: ...
+
+    def to_json(self, path: str | Path | WritablePath | None = None) -> None | str:
         """Store a copy of the current state of the uttrekk-object as a json.
 
         If path is provided, tries to write to it,
@@ -196,23 +402,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             None | str: If path is provided, tries to write a json to a file and returns nothing.
                 If path is not provided, returns the json-string for you to handle as you wish.
         """
-        # Need to this because im stupidly adding methods from other class as attributes
-        content = {
-            k: v
-            for k, v in self.__dict__.items()
-            if not callable(v) and not isinstance(v, Enum)
-        }
-        content["use_db"] = self.use_db.value
+        content = self.to_mapping()
 
         if path:
+            if isinstance(path, str):
+                path = Path(path)
+
             logger.info("Writing to %s", path)
-            path_path = Path(path)
-            path_path.parent.mkdir(parents=True, exist_ok=True)
-            with path_path.open(mode="w") as json_file:
-                json_file.write(json.dumps(content))
-        else:
-            return json.dumps(content)
-        return None
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(content))
+            return None
+
+        return json.dumps(content)
 
     def validate(
         self,
@@ -349,7 +550,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     @staticmethod
     def _round(
-        n: float | str | pd._libs.missing.NAType,
+        n: float | str | pd.api.typing.NAType,
         decimals: int = 0,
         round_up: bool = True,
     ) -> str:
@@ -367,13 +568,14 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             result = str(n)
         return result
 
-    def _get_uttrekksbeskrivelse(self) -> None:
-        filbeskrivelse_url = self.url + "tableId=" + self.tableid
-        try:
-            filbeskrivelse_response = self._make_request(filbeskrivelse_url)
-        finally:
-            if hasattr(self, "headers"):
-                del self.headers
+    def _get_uttrekksbeskrivelse(
+        self: Self,
+        tableid_or_number: str | int,
+    ) -> FilBeskrivelseType:
+        filbeskrivelse_response = self._make_request(
+            self.url,
+            {"tableId": tableid_or_number},
+        )
 
         # Rakel encountered an error with a tab-character in the json, should we just strip this?
         filbeskrivelse_json = filbeskrivelse_response.text.replace("\t", "")
@@ -382,18 +584,23 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         logger.info(
             "Hentet uttaksbeskrivelsen for %s, med tableid: %s den %s",
             filbeskrivelse["Huvudtabell"],
-            self.tableid,
+            tableid_or_number,
             str(filbeskrivelse["Uttaksbeskrivelse_lagd"]),
         )
         if self.use_db == UseDb.TEST:
             err_msg = "Metadata i TEST-databasen kan være veldig utdatert. Kan hende du bør hente filbeskrivelsen / description fra PROD-databasen?"
             logger.warning(err_msg)
 
-        # reset tableid and hovedkode after content of request
-        self.filbeskrivelse = filbeskrivelse
+        return filbeskrivelse
 
-    def _make_request(self, url: str) -> r.Response:
-        response = r.get(url, headers=self.headers, timeout=10)
+    def _make_request(self, url: furl, params: dict[str, str | int]) -> r.Response:
+        response = r.get(
+            url.url,
+            params=params,
+            headers=self._build_headers(),
+            auth=self._auth,
+            timeout=10,
+        )
         try:
             response.raise_for_status()
         except r.HTTPError:
@@ -401,29 +608,27 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             raise
         return response
 
-    def _split_attributes(self) -> None:
-        # tableid might have been "hovedkode" up to this point, as both are valid in the URI
-        self.time_retrieved = self.filbeskrivelse["Uttaksbeskrivelse_lagd"]
-        self.tableid = self.filbeskrivelse["TabellId"]
-        self.tablename = self.filbeskrivelse["Huvudtabell"]
-        self.subtables = {
-            x["Filnavn"]: x["Filtext"] for x in self.filbeskrivelse["DeltabellTitler"]
-        }
-        self.variables = self.filbeskrivelse["deltabller"]
-        self.codelists = {}
-        if "kodelister" in self.filbeskrivelse:
-            kodelister = self.filbeskrivelse["kodelister"]
-            if "IRkodelister" in self.filbeskrivelse:
-                kodelister = [*kodelister, *self.filbeskrivelse["IRkodelister"]]
-            for kodeliste in kodelister:
-                new_kodeliste = {}
-                for kode in kodeliste["koder"]:
-                    new_kodeliste[kode["kode"]] = kode["text"]
-                self.codelists[kodeliste["kodeliste"]] = {"koder": new_kodeliste}
-                if "SumIALtTotalKode" in kodeliste:
-                    self.codelists[kodeliste["kodeliste"]]["SumIALtTotalKode"] = (
-                        kodeliste["SumIALtTotalKode"]
-                    )
+    @classmethod
+    def from_mapping(cls: type[Self], json_object: _UttrekksBeskrivelseDump) -> Self:
+        """Reads a mapping to recreate a instance of this class."""
+        auth = requests.auth.AuthBase()
+        use_db = json_object["use_db"]
+        raise_errors = json_object["raise_errors"]
+        data = UttrekksBeskrivelseData.from_mapping(json_object)
+        return cls(raise_errors=raise_errors, data=data, use_db=use_db, auth=auth)
 
-        if "null_prikk_missing_kodeliste" in self.filbeskrivelse:
-            self.suppression = self.filbeskrivelse["null_prikk_missing_kodeliste"]
+    def to_mapping(self: Self) -> _UttrekksBeskrivelseDump:
+        """Create a mapping of this object that can be written as JSON."""
+        json_object: _UttrekksBeskrivelseDump = {
+            "tableid": self.tableid,
+            "tablename": self.tablename,
+            "use_db": self.use_db.value,
+            "raise_errors": self.raise_errors,
+            "time_retrieved": self.time_retrieved,
+            "codelists": self.codelists,
+            "variables": self.variables,
+            "subtables": self.subtables,
+            "suppression": self.suppression,
+        }
+
+        return json_object

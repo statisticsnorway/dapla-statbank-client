@@ -1,14 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-from typing import Any
-from typing import Literal
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    import pandas as pd
-
+import contextlib
 import datetime
 import getpass
 import json
@@ -17,30 +9,41 @@ import shutil
 import subprocess
 from functools import partial
 from pathlib import Path
+from typing import TYPE_CHECKING
+from typing import Any
+from typing import Literal
 from typing import cast
 
 import ipywidgets as widgets
 from IPython.display import display
+from pathlib_abc import ReadablePath
 
 if TYPE_CHECKING:
-    from statbank.api_types import QueryWholeType
-from statbank.auth import StatbankAuth
-from statbank.auth import UseDb
-from statbank.get_apidata import apicodelist
-from statbank.get_apidata import apidata
-from statbank.get_apidata import apidata_all
-from statbank.get_apidata import apidata_rotate
-from statbank.get_apidata import apimetadata
-from statbank.globals import APPROVE_DEFAULT_JIT
-from statbank.globals import OSLO_TIMEZONE
-from statbank.globals import SSB_TBF_LEN
-from statbank.globals import STATBANK_TABLE_ID_LEN
-from statbank.globals import TOMORROW
-from statbank.globals import Approve
-from statbank.globals import _approve_type_check
-from statbank.statbank_logger import logger
-from statbank.transfer import StatbankTransfer
-from statbank.uttrekk import StatbankUttrekksBeskrivelse
+    from collections.abc import Callable
+
+    import pandas as pd
+    import requests.auth
+
+    from .api_types import QueryWholeType
+
+from .auth import StatbankAuth
+from .auth import StatbankConfig
+from .get_apidata import apicodelist
+from .get_apidata import apidata
+from .get_apidata import apidata_all
+from .get_apidata import apidata_rotate
+from .get_apidata import apimetadata
+from .globals import APPROVE_DEFAULT_JIT
+from .globals import OSLO_TIMEZONE
+from .globals import SSB_TBF_LEN
+from .globals import STATBANK_TABLE_ID_LEN
+from .globals import TOMORROW
+from .globals import Approve
+from .globals import UseDb
+from .globals import _approve_type_check
+from .statbank_logger import logger
+from .transfer import StatbankTransfer
+from .uttrekk import StatbankUttrekksBeskrivelse
 
 
 class StatbankClient(StatbankAuth):
@@ -81,7 +84,7 @@ class StatbankClient(StatbankAuth):
             Be aware that metadata tends to be outdated in the test-database.
     """
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         date: str | datetime.date | datetime.datetime = TOMORROW,
         shortuser: str = "",
@@ -92,18 +95,20 @@ class StatbankClient(StatbankAuth):
             int | str | Approve
         ) = APPROVE_DEFAULT_JIT,  # Changing back to 2, after wish from Rakel Gading
         check_username_password: bool = True,
-        use_db: Literal["TEST", "PROD"] | None = None,
+        use_db: UseDb | Literal["TEST", "PROD"] | None = None,
+        *,
+        config: StatbankConfig | None = None,
+        auth: requests.auth.AuthBase | None = None,
     ) -> None:
         """Initialize the client, storing password etc. on the client."""
+        super().__init__(use_db=use_db, config=config, auth=auth)
         self.shortuser = shortuser
         self.cc = cc
         self.bcc = bcc
         self.overwrite = overwrite
         self.approve = _approve_type_check(approve)
         self.check_username_password = check_username_password
-        StatbankAuth.__init__(self, use_db)
         self._validate_params_init()
-        self.__headers = self._build_headers()
         self.log: list[str] = []
         self.date: datetime.date
         if isinstance(date, str):
@@ -256,12 +261,15 @@ class StatbankClient(StatbankAuth):
         )
         return StatbankUttrekksBeskrivelse(
             tableid=tableid,
-            headers=self.__headers,
             use_db=self.use_db,
+            auth=self._auth,
+            config=self._config,
         )
 
     @staticmethod
-    def read_description_json(json_path_or_str: str) -> StatbankUttrekksBeskrivelse:
+    def read_description_json(
+        json_path_or_str: str | Path | ReadablePath,
+    ) -> StatbankUttrekksBeskrivelse:
         """Re-initializes a StatbankUttrekksBeskrivelse from a stored json file/string.
 
         Checks if provided string exists on disk, if it does, tries to load it as json.
@@ -274,23 +282,24 @@ class StatbankClient(StatbankAuth):
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
         """
-        content = json_path_or_str
-        try:
-            try_path = json_path_or_str
-            if Path(try_path).exists():
-                with Path(try_path).open("r") as json_file:
-                    content = json_file.read()
-        except OSError as e:
-            logger.debug(
-                "Assuming you sent a json-string to open as description, cause that path does not exist. %s",
-                str(e),
-            )
-        new = StatbankUttrekksBeskrivelse.__new__(StatbankUttrekksBeskrivelse)
-        for k, v in json.loads(content).items():
-            setattr(new, k, v)
-        if isinstance(new.use_db, str):
-            new.use_db = UseDb[new.use_db]
-        return new
+        path: Path | ReadablePath | None = None
+
+        if isinstance(json_path_or_str, (Path, ReadablePath)):
+            path = json_path_or_str
+        else:
+            try_path = Path(json_path_or_str)
+            with contextlib.suppress(OSError):
+                if try_path.exists():
+                    path = try_path
+
+        content = cast(
+            "str",
+            path.read_text() if path else json_path_or_str,
+        )
+
+        json_object = json.loads(content)
+
+        return StatbankUttrekksBeskrivelse.from_mapping(json_object)
 
     # Validation
     def validate(
@@ -318,8 +327,9 @@ class StatbankClient(StatbankAuth):
         validator = StatbankUttrekksBeskrivelse(
             tableid=tableid,
             raise_errors=raise_errors,
-            headers=self.__headers,
             use_db=self.use_db,
+            auth=self._auth,
+            config=self._config,
         )
         validation_errors = validator.validate(
             dfs,
@@ -353,7 +363,6 @@ class StatbankClient(StatbankAuth):
         return StatbankTransfer(
             dfs,
             tableid=tableid,
-            headers=self.__headers,
             shortuser=self.shortuser,
             date=self.date,
             cc=self.cc,
@@ -361,6 +370,8 @@ class StatbankClient(StatbankAuth):
             overwrite=self.overwrite,
             approve=self.approve,
             use_db=self.use_db,
+            config=self._config,
+            auth=self._auth,
         )
 
     @staticmethod

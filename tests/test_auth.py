@@ -1,6 +1,7 @@
-from collections.abc import Callable
-from unittest.mock import Mock
-from unittest.mock import patch
+from pathlib import Path
+from typing import Any
+from typing import cast
+from unittest import mock
 
 import pytest
 import requests.auth
@@ -8,13 +9,17 @@ from furl import furl
 from requests import Response
 
 from statbank.auth import StatbankAuth
+from statbank.auth import StatbankConfig
 from statbank.auth import UseDb
+from statbank.globals import DaplaEnvironment
+from statbank.globals import DaplaRegion
+from statbank.netrc import Netrc
 
 
 # Mock for os.environ.get
 @pytest.fixture
 def mock_environ_test():
-    with patch.dict(
+    with mock.patch.dict(
         "os.environ",
         {
             "DAPLA_ENVIRONMENT": "TEST",
@@ -29,7 +34,7 @@ def mock_environ_test():
 
 @pytest.fixture
 def mock_environ_prod_dapla():
-    with patch.dict(
+    with mock.patch.dict(
         "os.environ",
         {
             "DAPLA_ENVIRONMENT": "PROD",
@@ -46,30 +51,25 @@ def mock_environ_prod_dapla():
 
 # Mock for getpass.getpass
 @pytest.fixture
-def mock_getpass():
-    with patch("getpass.getpass", return_value="fakepassword"):
-        yield
+def patch_getpass(monkeypatch: pytest.MonkeyPatch):
+    def getpass_return(prompt: str) -> str:
+        if "bruker" in prompt:
+            return "kari"
+        if "passord" in prompt:
+            return "qwerty"
+        return ""
+
+    monkeypatch.setattr("getpass.getpass", getpass_return)
 
 
-# Mock for AuthClient.fetch_personal_token
 @pytest.fixture
-def mock_fetch_token():
-    with patch(
-        "dapla_auth_client.AuthClient.fetch_personal_token",
-        return_value="fake_token",
-    ):
-        yield
+def fake_encrypt_response(monkeypatch: pytest.MonkeyPatch, fake_auth: str) -> None:
+    def fake_request(*_: Any, **__: Any):
+        mock_response = mock.Mock(spec_set=Response)
+        mock_response.json.return_value = {"message": fake_auth}
+        return mock_response
 
-
-# Mock for requests.post
-@pytest.fixture
-def mock_requests_post():
-    with patch("requests.post") as mock_post:
-        mock_response = Mock(spec=Response)
-        mock_response.text = '{"message": "encrypted_password"}'
-        mock_response.status_code = 200
-        mock_post.return_value = mock_response
-        yield mock_post
+    monkeypatch.setattr("requests.post", fake_request)
 
 
 @pytest.mark.usefixtures("mock_environ_test")
@@ -112,11 +112,68 @@ def test_build_urls_testdb_from_prod(
     assert urls == expected_urls
 
 
+@pytest.mark.usefixtures("mock_environ_prod_dapla")
 def test_check_databases_from_prod(
-    mock_environ_prod_dapla: Callable[[], None],  # noqa: ARG001
     auth_fixture: requests.auth.AuthBase,
 ) -> None:
     statbank_auth = StatbankAuth(use_db=UseDb.PROD, auth=auth_fixture)
     assert statbank_auth.check_database() == "PROD"
     statbank_auth.use_db = UseDb.TEST
     assert statbank_auth.check_database() == "TEST"
+
+
+@pytest.mark.usefixtures("fake_encrypt_response", "patch_getpass")
+def test_auth_without_authfile(empty_netrc_file: Path, fake_auth: str):
+    config = StatbankConfig(
+        environment=DaplaEnvironment.PROD,
+        region=DaplaRegion.ON_PREM,
+        endpoint_base=furl("https://fakeurl.com"),
+        encrypt_url=furl("https://fakeurl.com/encrypt"),
+        useragent="statbank-test",
+        netrc_path=empty_netrc_file,
+    )
+
+    statbankauth = StatbankAuth(config=config)
+    auth = statbankauth._auth  # noqa: SLF001
+
+    assert isinstance(auth, requests.auth.HTTPBasicAuth)
+    assert auth.username == "kari"
+    assert auth.password == fake_auth
+
+
+@pytest.mark.usefixtures("fake_encrypt_response", "patch_getpass")
+def test_auth_persisted(empty_netrc_file: Path, fake_auth: str):
+    config = StatbankConfig(
+        environment=DaplaEnvironment.PROD,
+        region=DaplaRegion.ON_PREM,
+        endpoint_base=furl("https://fakeurl.com"),
+        encrypt_url=furl("https://fakeurl.com/encrypt"),
+        useragent="statbank-test",
+        netrc_path=empty_netrc_file,
+    )
+
+    StatbankAuth(config=config)
+
+    host = cast("str", config.endpoint_base.host)
+    authfile = Netrc(empty_netrc_file)
+    assert authfile[host].login == "kari"
+    assert authfile[host].password == fake_auth
+
+
+@pytest.mark.usefixtures("patch_getpass")
+def test_read_auth_from_authfile(existing_netrc_file: Path, fake_auth: str):
+    config = StatbankConfig(
+        environment=DaplaEnvironment.PROD,
+        region=DaplaRegion.ON_PREM,
+        endpoint_base=furl("https://fakeurl.com"),
+        encrypt_url=furl("https://fakeurl.com/encrypt"),
+        useragent="statbank-test",
+        netrc_path=existing_netrc_file,
+    )
+
+    statbankauth = StatbankAuth(use_db=UseDb.PROD, config=config)
+    auth = statbankauth._auth  # noqa: SLF001
+
+    assert isinstance(auth, requests.auth.HTTPBasicAuth)
+    assert auth.username == "ola"
+    assert auth.password == fake_auth

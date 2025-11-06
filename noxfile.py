@@ -1,4 +1,11 @@
-"""Nox sessions."""
+"""Nox sessions.
+
+Adds a light pre-run check that compares locally installed
+`poetry` and `nox` versions to the pinned tool versions in
+`.github/workflows/constraints.txt`. If either local tool is
+older than the constraint, a warning is printed recommending
+`pipx upgrade-all`.
+"""
 
 from collections.abc import Iterable
 import os
@@ -9,6 +16,15 @@ from pathlib import Path
 from textwrap import dedent
 
 import nox
+
+# Ensure project root is importable when Nox loads this file from elsewhere
+_ROOT = Path(__file__).parent.resolve()
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
+from utils.check_if_nox_poetry_is_outdated import (
+    check_tool_versions_against_constraints,
+)
 
 
 try:
@@ -22,6 +38,10 @@ except ImportError:
 
     {sys.executable} -m pip install nox-poetry"""
     raise SystemExit(dedent(message)) from None
+
+
+# Run the check as soon as the noxfile is imported (i.e., on `poetry run nox`).
+check_tool_versions_against_constraints()
 
 package = "statbank"
 python_versions = [

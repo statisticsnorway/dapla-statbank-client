@@ -21,11 +21,15 @@ from furl import furl
 from .globals import DaplaEnvironment
 from .globals import DaplaRegion
 from .globals import UseDb
+from .api_exceptions import StatbankAuthError
 from .statbank_logger import logger
 from .writable_netrc import Netrc
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+
+
 
 
 class TokenAuth(requests.auth.AuthBase):
@@ -208,20 +212,26 @@ class StatbankAuth:
             if host in authfile:
                 del authfile[host]
 
-    def _react_to_httperror_should_retry(self, e: requests.HTTPError) -> None:
+    def _react_to_httperror_should_retry(self, e: requests.HTTPError | StatbankAuthError) -> None:
         logger.error(f"We got an http-error, proceding to emptying the auth.")
         self._cleanup_netrc()
-        if hasattr(e, "response_content"):
+
+        default_err_msg = "Got an http-error, but it does not look like an account-lock or invalid password/username, is this something we should program for? - "
+        
+        if hasattr(e, "response_content") and e.response_content:
             if "ORA-28000" in e.response_content.get("ExceptionMessage", ""):
-                err_msg = f"Your account has been locked. Contact kundeservice to unlock. Errortext: {e.response_content.get('ExceptionMessage', '')}"
+                err_msg = f'Your account has been locked. Contact kundeservice@ssb.no to unlock. Errortext: {e.response_content.get("ExceptionMessage", "")}'
                 logger.error(err_msg)
-                raise requests.HTTPError(err_msg)
-                return False  # We dont want to retry if the account is locked.
+                new_err = StatbankAuthError(err_msg)
+                raise new_err
             elif "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
                 logger.error(f"TYPE CAREFULLY - The username and password you used may have been wrong. Errortext: {e.response_content.get('ExceptionMessage', '')}")
                 self._auth = self._get_auth()
                 return True
-        logger.error(f"Got an http-error, but it does not look like an account-lock or invalid password/username, is this something we should program for? - {e.response_content.get('Exception_message', '') if hasattr(e, 'response_content') else ''} - {e} ")
+            logger.error(f"{default_err_msg}{e.response_content.get('Exception_message', '')} - {e} ")
+        else:
+            logger.error(f"{default_err_msg}{e}")
+        
         raise e
         
 
@@ -236,16 +246,16 @@ class StatbankAuth:
 
         auth = TokenAuth(pat) if pat is not None else None
 
-        repsonse = r.post(
+        response = r.post(
             self._config.encrypt_url.url,
             auth=auth,
             json={"message": password},
             timeout=30,
         )
 
-        repsonse.raise_for_status()
+        response.raise_for_status()
 
-        data = cast(dict[Literal["message"], str], repsonse.json())  # noqa: TC006
+        data = cast(dict[Literal["message"], str], response.json())  # noqa: TC006
 
         return data["message"]
 

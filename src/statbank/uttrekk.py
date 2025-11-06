@@ -44,6 +44,7 @@ if TYPE_CHECKING:
 
 from .auth import StatbankAuth
 from .auth import StatbankConfig
+from .api_exceptions import StatbankAuthError
 from .globals import DATETIME_FORMAT
 from .globals import UseDb
 from .statbank_logger import logger
@@ -256,7 +257,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     @property
     def tableid(self: Self) -> str:
         """Originally the ID of the main table, which to get the Uttrekksbeskrivelse on."""
-        return str(self._data.tableid)
+        return str(self._data.tableid).zfill(5)
 
     @property
     def time_retrieved(self: Self) -> str:
@@ -334,7 +335,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def __repr__(self) -> str:
         """Return a string representation of how to instantiate this object again."""
-        return f'StatbankUttrekksBeskrivelse(tableid="{self.tableid}",)'
+        return f'StatbankUttrekksBeskrivelse(tableid="{str(self.tableid).zfill(5)}",)'
 
     def transferdata_template(
         self,
@@ -604,10 +605,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         try:
             response.raise_for_status()
         except r.HTTPError as e:
+            e = StatbankAuthError(e)  # Wrap so attribute is available to assign to
             e.response_content = response.json()
-            should_retry = self._react_to_httperror_should_retry(e)
-            if should_retry:
-                self._make_request()
+            raise e
         return response
 
     @classmethod

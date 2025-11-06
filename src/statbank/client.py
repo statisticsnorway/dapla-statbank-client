@@ -29,6 +29,7 @@ if TYPE_CHECKING:
 
 from .auth import StatbankAuth
 from .auth import StatbankConfig
+from .api_exceptions import StatbankAuthError
 from .get_apidata import apicodelist
 from .get_apidata import apidata
 from .get_apidata import apidata_all

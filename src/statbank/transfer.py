@@ -18,6 +18,7 @@ import requests.auth
 
 from .auth import StatbankAuth
 from .auth import StatbankConfig
+from .api_exceptions import StatbankAuthError
 from .globals import APPROVE_DEFAULT_JIT
 from .globals import OSLO_TIMEZONE
 from .globals import SSB_TBF_LEN
@@ -241,7 +242,7 @@ class StatbankTransfer(StatbankAuth):
 
     def __repr__(self) -> str:
         """Get a representation of how to recreate the object using parameters."""
-        return f'StatbankTransfer([data], tableid="{self.tableid}")'
+        return f'StatbankTransfer([data], tableid="{str(self.tableid).zfill(5)}")'
 
     @property
     def delay(self) -> bool:
@@ -371,10 +372,9 @@ class StatbankTransfer(StatbankAuth):
         try:
             result.raise_for_status()
         except r.HTTPError as e:
+            e = StatbankAuthError(e)  # Wrap so attribute is available
             e.response_content = result.json()
-            should_retry = self._react_to_httperror_should_retry(e)
-            if should_retry:
-                self._make_transfer_request()
+            raise e
         return result
 
     def _cleanup_response(self) -> None:

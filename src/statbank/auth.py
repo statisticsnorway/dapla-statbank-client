@@ -199,7 +199,7 @@ class StatbankAuth:
     def reset_auth(self) -> None:
         """Reset the auth by removing the entry from the .netrc-file first, then asking to enter the username and password again."""
         self._cleanup_netrc()
-        self._get_auth()
+        self._auth = self._get_auth()
 
         
     def _cleanup_netrc(self) -> None:
@@ -212,19 +212,16 @@ class StatbankAuth:
         logger.error(f"We got an http-error, proceding to emptying the auth.")
         self._cleanup_netrc()
         if hasattr(e, "response_content"):
-            #logger.info(e.response_content)
-            #logger.info(type(e.response_content))
-            #logger.info(e.response_content["Exception"])
-            if "account is locked" in e.response_content.get("ExceptionMessage", ""):
+            if "ORA-28000" in e.response_content.get("ExceptionMessage", ""):
                 err_msg = f"Your account has been locked. Contact kundeservice to unlock. Errortext: {e.response_content.get('ExceptionMessage', '')}"
                 logger.error(err_msg)
                 raise requests.HTTPError(err_msg)
                 return False  # We dont want to retry if the account is locked.
-            elif "invalid" in e.response_content.get("ExceptionMessage", ""):
-                logger.error(f"The username and password you used may have been wrong, type them in carefully. Errortext: {e.response_content.get('ExceptionMessage', '')}")
-                self._get_auth()
+            elif "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
+                logger.error(f"TYPE CAREFULLY - The username and password you used may have been wrong. Errortext: {e.response_content.get('ExceptionMessage', '')}")
+                self._auth = self._get_auth()
                 return True
-        logger.error(f"Got an http-error, but it does not look like an account-lock or invalid password/username: {e.response_content.get('Exception_message', '') if hasattr(e, 'response_content') else ''} - {e} ")
+        logger.error(f"Got an http-error, but it does not look like an account-lock or invalid password/username, is this something we should program for? - {e.response_content.get('Exception_message', '') if hasattr(e, 'response_content') else ''} - {e} ")
         raise e
         
 

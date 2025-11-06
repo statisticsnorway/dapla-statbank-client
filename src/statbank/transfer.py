@@ -372,7 +372,9 @@ class StatbankTransfer(StatbankAuth):
             result.raise_for_status()
         except r.HTTPError as e:
             e.response_content = result.json()
-            raise e
+            should_retry = self._react_to_httperror_should_retry(e)
+            if should_retry:
+                self._make_transfer_request()
         return result
 
     def _cleanup_response(self) -> None:

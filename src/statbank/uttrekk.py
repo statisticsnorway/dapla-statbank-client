@@ -605,7 +605,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
             response.raise_for_status()
         except r.HTTPError as e:
             e.response_content = response.json()
-            raise e
+            should_retry = self._react_to_httperror_should_retry(e)
+            if should_retry:
+                self._make_request()
         return response
 
     @classmethod

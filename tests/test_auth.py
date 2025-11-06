@@ -7,6 +7,7 @@ import requests.auth
 from furl import furl
 from requests import Response
 
+from statbank.api_exceptions import StatbankAuthError
 from statbank.auth import StatbankAuth
 from statbank.auth import StatbankConfig
 from statbank.auth import TokenAuth
@@ -162,3 +163,93 @@ def test_read_auth_from_authfile(
     assert isinstance(auth, requests.auth.HTTPBasicAuth)
     assert auth.username == "ola"
     assert auth.password == fake_auth
+
+
+def test_reset_auth_calls_cleanup_and_refreshes_auth(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    sa = StatbankAuth(config=config_fixture, auth=auth_fixture)
+
+    new_auth = requests.auth.HTTPBasicAuth(
+        username="new",
+        password="secret",  # noqa: S106 - fake password dude
+    )
+    cleanup_mock = mock.Mock()
+    get_auth_mock = mock.Mock(return_value=new_auth)
+
+    monkeypatch.setattr(sa, "_cleanup_netrc", cleanup_mock)
+    monkeypatch.setattr(sa, "_get_auth", get_auth_mock)
+
+    sa.reset_auth()
+
+    cleanup_mock.assert_called_once()
+    get_auth_mock.assert_called_once()
+    assert sa._auth is new_auth  # noqa: SLF001 - We are internal in the package dude
+
+
+def test_react_to_httperror_oracle_28000_raises(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    sa = StatbankAuth(config=config_fixture, auth=auth_fixture)
+    cleanup_mock = mock.Mock()
+    monkeypatch.setattr(sa, "_cleanup_netrc", cleanup_mock)
+
+    err = StatbankAuthError("wrapped")
+    err.response_content = {"ExceptionMessage": "ORA-28000: account locked"}
+
+    with pytest.raises(StatbankAuthError) as exc:
+        sa._react_to_httperror_should_retry(err)  # noqa: SLF001
+
+    cleanup_mock.assert_called_once()
+    assert "locked" in str(exc.value).lower()
+
+
+def test_react_to_httperror_oracle_01017_returns_true_and_refreshes(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    sa = StatbankAuth(config=config_fixture, auth=auth_fixture)
+    cleanup_mock = mock.Mock()
+    monkeypatch.setattr(sa, "_cleanup_netrc", cleanup_mock)
+
+    new_auth = requests.auth.HTTPBasicAuth(
+        username="newuser",
+        password="pw",  # noqa: S106 - fake password dude
+    )
+    get_auth_mock = mock.Mock(return_value=new_auth)
+    monkeypatch.setattr(sa, "_get_auth", get_auth_mock)
+
+    err = StatbankAuthError("wrapped")
+    err.response_content = {"ExceptionMessage": "ORA-01017: invalid username/password"}
+
+    should_retry = sa._react_to_httperror_should_retry(err)  # noqa: SLF001
+
+    cleanup_mock.assert_called_once()
+    get_auth_mock.assert_called_once()
+    assert should_retry is True
+    assert sa._auth is new_auth  # noqa: SLF001 - We are internal in the package dude
+
+
+def test_react_to_httperror_other_raises_original(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    sa = StatbankAuth(config=config_fixture, auth=auth_fixture)
+    cleanup_mock = mock.Mock()
+    monkeypatch.setattr(sa, "_cleanup_netrc", cleanup_mock)
+
+    err = StatbankAuthError("some other error")
+    err.response_content = {"ExceptionMessage": "SOME_OTHER_CODE"}
+
+    with pytest.raises(StatbankAuthError) as exc:
+        sa._react_to_httperror_should_retry(err)  # noqa: SLF001
+
+    cleanup_mock.assert_called_once()
+    # The method re-raises the same exception object when unhandled
+    assert exc.value is err

@@ -176,7 +176,7 @@ class StatbankAuth:
         }
 
     def _get_auth(self) -> requests.auth.AuthBase:
-        host = cast(str, self._config.endpoint_base.host)  # noqa: TC006
+        host = cast(str, self._config.endpoint_base.host)
 
         with Netrc(self._config.netrc_path) as authfile:
             auth_record = authfile[host]
@@ -211,7 +211,7 @@ class StatbankAuth:
     def _react_to_httperror_should_retry(
         self,
         e: requests.HTTPError | StatbankAuthError,
-    ) -> None:
+    ) -> bool:
         logger.error("We got an http-error, proceding to emptying the auth.")
         self._cleanup_netrc()
 
@@ -257,7 +257,7 @@ class StatbankAuth:
 
         response.raise_for_status()
 
-        data = cast(dict[Literal["message"], str], response.json())  # noqa: TC006
+        data = cast(dict[Literal["message"], str], response.json())
 
         return data["message"]
 

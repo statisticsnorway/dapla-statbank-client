@@ -112,6 +112,55 @@ def uttrekksbeskrivelse_success(
     )
 
 
+def test_uttrekksbeskrivelse_str_contains_core_info(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    s = str(uttrekksbeskrivelse_success)
+    assert "Uttrekksbeskrivelse for statbanktabell 10000" in s
+    assert "Deltabell (DataFrame) nummer 1" in s
+    # From fixture data: includes codelist text and example line
+    assert "Kodeliste 1" in s
+    assert "Antall" in s
+    assert "Eksempellinje: 01;2022;100" in s
+
+
+def test_uttrekksbeskrivelse_repr_format(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    r = repr(uttrekksbeskrivelse_success)
+    assert r == 'StatbankUttrekksBeskrivelse(tableid="10000",)'
+
+
+def test_transferdata_template_without_dfs(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    template = uttrekksbeskrivelse_success.transferdata_template()
+    assert template == {"delfil1.dat": "df0"}
+
+
+def test_transferdata_template_with_dfs(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    df_test_template = pd.DataFrame({"A": [1, 2]})
+    template = uttrekksbeskrivelse_success.transferdata_template([df_test_template])
+    assert list(template.keys()) == ["delfil1.dat"]
+    assert template["delfil1.dat"] is df_test_template
+
+
+def test_transferdata_template_raises_for_wrong_len(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    with pytest.raises(KeyError):
+        uttrekksbeskrivelse_success.transferdata_template([])
+
+
+def test_transferdata_template_raises_for_non_df(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    with pytest.raises(TypeError):
+        uttrekksbeskrivelse_success.transferdata_template(["not a df"])  # type: ignore[list-item]
+
+
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 def test_transfer_date_is_string(
     mock_transfer_make_request: mock.Mock,

@@ -16,9 +16,9 @@ import pandas as pd
 import requests as r
 import requests.auth
 
+from .api_exceptions import StatbankAuthError
 from .auth import StatbankAuth
 from .auth import StatbankConfig
-from .api_exceptions import StatbankAuthError
 from .globals import APPROVE_DEFAULT_JIT
 from .globals import OSLO_TIMEZONE
 from .globals import SSB_TBF_LEN
@@ -374,7 +374,7 @@ class StatbankTransfer(StatbankAuth):
         except r.HTTPError as e:
             e = StatbankAuthError(e)  # Wrap so attribute is available
             e.response_content = result.json()
-            raise e
+            raise
         return result
 
     def _cleanup_response(self) -> None:

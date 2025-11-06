@@ -18,18 +18,15 @@ import requests.auth
 from dapla_auth_client import AuthClient
 from furl import furl
 
+from .api_exceptions import StatbankAuthError
 from .globals import DaplaEnvironment
 from .globals import DaplaRegion
 from .globals import UseDb
-from .api_exceptions import StatbankAuthError
 from .statbank_logger import logger
 from .writable_netrc import Netrc
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-
-
 
 
 class TokenAuth(requests.auth.AuthBase):
@@ -205,35 +202,40 @@ class StatbankAuth:
         self._cleanup_netrc()
         self._auth = self._get_auth()
 
-        
     def _cleanup_netrc(self) -> None:
-        host = cast(str, self._config.endpoint_base.host) 
+        host = cast("str", self._config.endpoint_base.host)
         with Netrc(self._config.netrc_path) as authfile:
             if host in authfile:
                 del authfile[host]
 
-    def _react_to_httperror_should_retry(self, e: requests.HTTPError | StatbankAuthError) -> None:
-        logger.error(f"We got an http-error, proceding to emptying the auth.")
+    def _react_to_httperror_should_retry(
+        self,
+        e: requests.HTTPError | StatbankAuthError,
+    ) -> None:
+        logger.error("We got an http-error, proceding to emptying the auth.")
         self._cleanup_netrc()
 
         default_err_msg = "Got an http-error, but it does not look like an account-lock or invalid password/username, is this something we should program for? - "
-        
+
         if hasattr(e, "response_content") and e.response_content:
             if "ORA-28000" in e.response_content.get("ExceptionMessage", ""):
                 err_msg = f'Your account has been locked. Contact kundeservice@ssb.no to unlock. Errortext: {e.response_content.get("ExceptionMessage", "")}'
                 logger.error(err_msg)
                 new_err = StatbankAuthError(err_msg)
                 raise new_err
-            elif "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
-                logger.error(f"TYPE CAREFULLY - The username and password you used may have been wrong. Errortext: {e.response_content.get('ExceptionMessage', '')}")
+            if "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
+                logger.error(
+                    f"TYPE CAREFULLY - The username and password you used may have been wrong. Errortext: {e.response_content.get('ExceptionMessage', '')}",
+                )
                 self._auth = self._get_auth()
                 return True
-            logger.error(f"{default_err_msg}{e.response_content.get('Exception_message', '')} - {e} ")
+            logger.error(
+                f"{default_err_msg}{e.response_content.get('Exception_message', '')} - {e} ",
+            )
         else:
             logger.error(f"{default_err_msg}{e}")
-        
+
         raise e
-        
 
     def _encrypt_password(self: Self, password: str) -> str:
         pat = None

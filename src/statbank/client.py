@@ -7,7 +7,6 @@ import json
 import os
 import shutil
 import subprocess
-import requests
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -16,6 +15,8 @@ from typing import Literal
 from typing import cast
 
 import ipywidgets as widgets
+import requests
+import requests.auth
 from IPython.display import display
 from pathlib_abc import ReadablePath
 
@@ -23,13 +24,11 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import pandas as pd
-    import requests.auth
 
     from .api_types import QueryWholeType
 
 from .auth import StatbankAuth
 from .auth import StatbankConfig
-from .api_exceptions import StatbankAuthError
 from .get_apidata import apicodelist
 from .get_apidata import apidata
 from .get_apidata import apidata_all
@@ -510,7 +509,6 @@ class StatbankClient(StatbankAuth):
             should_retry = self._react_to_httperror_should_retry(e)
             if should_retry:
                 self._actually_check_username_password()  # Recursive fun
-        
 
     # Class meta-validation
     def _validate_params_action(self, tableid: str) -> None:

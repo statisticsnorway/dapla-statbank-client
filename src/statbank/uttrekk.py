@@ -42,9 +42,9 @@ if TYPE_CHECKING:
     from .api_types import SuppressionCodeListType
     from .api_types import SuppressionDeltabellCodeListType
 
+from .api_exceptions import StatbankAuthError
 from .auth import StatbankAuth
 from .auth import StatbankConfig
-from .api_exceptions import StatbankAuthError
 from .globals import DATETIME_FORMAT
 from .globals import UseDb
 from .statbank_logger import logger
@@ -607,7 +607,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         except r.HTTPError as e:
             e = StatbankAuthError(e)  # Wrap so attribute is available to assign to
             e.response_content = response.json()
-            raise e
+            raise
         return response
 
     @classmethod

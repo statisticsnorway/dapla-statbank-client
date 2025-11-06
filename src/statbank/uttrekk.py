@@ -139,10 +139,7 @@ class UttrekksBeskrivelseData:
 
             codelists[kodeliste["kodeliste"]] = codelist
 
-        if "null_prikk_missing_kodeliste" in filbeskrivelse:
-            suppression = filbeskrivelse["null_prikk_missing_kodeliste"]
-        else:
-            suppression = None
+        suppression = filbeskrivelse.get("null_prikk_missing_kodeliste", None)
 
         return cls(
             tableid=tableid,

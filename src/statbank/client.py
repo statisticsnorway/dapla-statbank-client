@@ -280,7 +280,7 @@ class StatbankClient(StatbankAuth):
         """
         path: Path | ReadablePath | None = None
 
-        if isinstance(json_path_or_str, (Path, ReadablePath)):
+        if isinstance(json_path_or_str, Path | ReadablePath):
             path = json_path_or_str
         else:
             try_path = Path(json_path_or_str)

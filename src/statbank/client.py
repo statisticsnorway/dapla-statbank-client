@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import requests
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -131,12 +132,7 @@ class StatbankClient(StatbankAuth):
 
         self._validate_date()
         if self.check_username_password:
-            logger.info(
-                "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
-            )
-            self.get_description(
-                "05300",
-            )
+            self._actually_check_username_password()
         logger.info("Publishing date set to %s", self.date.isoformat())
 
     # Representation
@@ -500,6 +496,20 @@ class StatbankClient(StatbankAuth):
             logger.warning(
                 "Warning, you are publishing during a weekend, this is not common practice.",
             )
+
+    def _actually_check_username_password(self) -> None:
+        logger.info(
+            "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
+        )
+        try:
+            self.get_description(
+                "05300",
+            )
+        except requests.HTTPError as e:
+            should_retry = self._react_to_httperror_should_retry(e)
+            if should_retry:
+                self._actually_check_username_password()  # Recursive fun
+        
 
     # Class meta-validation
     def _validate_params_action(self, tableid: str) -> None:

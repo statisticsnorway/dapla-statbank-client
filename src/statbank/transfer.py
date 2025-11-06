@@ -370,9 +370,9 @@ class StatbankTransfer(StatbankAuth):
         # Trying to clean all auth etc out of response
         try:
             result.raise_for_status()
-        except r.HTTPError:
-            logger.error(result.text)
-            raise
+        except r.HTTPError as e:
+            e.response_content = result.json()
+            raise e
         return result
 
     def _cleanup_response(self) -> None:

@@ -603,9 +603,9 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         )
         try:
             response.raise_for_status()
-        except r.HTTPError:
-            logger.error(response.text)
-            raise
+        except r.HTTPError as e:
+            e.response_content = response.json()
+            raise e
         return response
 
     @classmethod

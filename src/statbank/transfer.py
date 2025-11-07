@@ -16,6 +16,7 @@ import pandas as pd
 import requests as r
 import requests.auth
 
+from .api_exceptions import StatbankAuthError
 from .auth import StatbankAuth
 from .auth import StatbankConfig
 from .globals import APPROVE_DEFAULT_JIT
@@ -241,7 +242,7 @@ class StatbankTransfer(StatbankAuth):
 
     def __repr__(self) -> str:
         """Get a representation of how to recreate the object using parameters."""
-        return f'StatbankTransfer([data], tableid="{self.tableid}")'
+        return f'StatbankTransfer([data], tableid="{str(self.tableid).zfill(5)}")'
 
     @property
     def delay(self) -> bool:
@@ -370,9 +371,8 @@ class StatbankTransfer(StatbankAuth):
         # Trying to clean all auth etc out of response
         try:
             result.raise_for_status()
-        except r.HTTPError:
-            logger.error(result.text)
-            raise
+        except r.HTTPError as e:
+            raise StatbankAuthError(response_content=result.json()) from e
         return result
 
     def _cleanup_response(self) -> None:

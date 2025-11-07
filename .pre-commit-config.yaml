@@ -1,76 +1,41 @@
 default_language_version:
-  python: python3.10
+  python: python3.11
 repos:
-  - repo: local
+  # Pre-commit maintained utility hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-      # General file checkers
       - id: check-added-large-files
-        name: Check added large files
-        entry: check-added-large-files
-        language: system
       - id: check-merge-conflict
-        name: Check for merge conflict strings
-        entry: check-merge-conflict
-        language: system
       - id: check-case-conflict
-        name: Check for problematic file names
-        entry: check-case-conflict
-        language: system
-
-      # General text checkers
       - id: end-of-file-fixer
-        name: Fix End of Files
-        entry: end-of-file-fixer
-        language: system
         types: [text]
       - id: trailing-whitespace
-        name: Trim Trailing Whitespace
-        entry: trailing-whitespace-fixer
-        language: system
         types: [text]
       - id: mixed-line-ending
-        name: Mixed Line Ending
-        entry: mixed-line-ending
-        language: system
         types: [text]
-
-      # Serialization format checkers
       - id: check-yaml
-        name: Check Yaml
-        entry: check-yaml
-        language: system
-        types: [yaml]
       - id: check-json
-        name: Check JSON
-        entry: check-json
-        language: system
-        types: [json]
       - id: check-toml
-        name: Check Toml
-        entry: check-toml
-        language: system
-        types: [toml]
-
-      # Python tools
       - id: check-ast
-        name: Check Python syntax
-        entry: check-ast
-        language: system
-        types: [python]
+
+  # Darglint docstring checker
+  - repo: https://github.com/terrencepreilly/darglint
+    rev: v1.8.1
+    hooks:
       - id: darglint
-        name: darglint
-        entry: darglint
-        language: system
-        types: [python]
+
+  # Ruff linter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
       - id: ruff
-        name: ruff
-        entry: ruff check --fix --exit-non-zero-on-fix
-        language: system
-        types_or: [python, jupyter]
+        args: ["--fix", "--exit-non-zero-on-fix"]
         require_serial: true
+
+  # Black formatter
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
       - id: black
-        name: black
-        entry: black
-        language: system
-        types_or: [python, jupyter]
         require_serial: true

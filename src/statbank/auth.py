@@ -18,6 +18,7 @@ import requests.auth
 from dapla_auth_client import AuthClient
 from furl import furl
 
+from .api_exceptions import StatbankAuthError
 from .globals import DaplaEnvironment
 from .globals import DaplaRegion
 from .globals import UseDb
@@ -175,7 +176,7 @@ class StatbankAuth:
         }
 
     def _get_auth(self) -> requests.auth.AuthBase:
-        host = cast(str, self._config.endpoint_base.host)  # noqa: TC006
+        host = cast(str, self._config.endpoint_base.host)
 
         with Netrc(self._config.netrc_path) as authfile:
             auth_record = authfile[host]
@@ -196,6 +197,50 @@ class StatbankAuth:
             ),  # Can be None in Python 3.10
         )
 
+    def reset_auth(self) -> None:
+        """Reset the auth by removing the entry from the .netrc-file first, then asking to enter the username and password again."""
+        self._cleanup_netrc()
+        self._auth = self._get_auth()
+
+    def _cleanup_netrc(self) -> None:
+        host = cast("str", self._config.endpoint_base.host)
+        with Netrc(self._config.netrc_path) as authfile:
+            if host in authfile:
+                del authfile[host]
+
+    def _react_to_httperror_should_retry(
+        self,
+        e: requests.HTTPError | StatbankAuthError,
+    ) -> bool:
+        default_err_msg = """Got an http-error, but it does not look like an account-lock or invalid password/username,
+        is this something we should program for?
+        If you want to reset the auth manually call StatbankClient().reset_auth() or
+        StatbankAuth().reset_auth(). Alternatively edit the .netrc file directly.""".replace(
+            "\n",
+            "",
+        )
+
+        if hasattr(e, "response_content") and e.response_content:
+            if "ORA-28000" in e.response_content.get("ExceptionMessage", ""):
+                err_msg = f'Your account has been locked. Contact kundeservice@ssb.no to unlock. Resetting auth. Errortext: {e.response_content.get("ExceptionMessage", "")}'
+                logger.error(err_msg)
+                new_err = StatbankAuthError(err_msg)
+                self._cleanup_netrc()
+                raise new_err
+            if "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
+                logger.error(
+                    f"TYPE CAREFULLY - The username and password you used may have been wrong. Resetting Auth. Errortext: {e.response_content.get('ExceptionMessage', '')}",
+                )
+                self.reset_auth()
+                return True
+            logger.error(
+                f"{default_err_msg}{e.response_content.get('Exception_message', '')} - {e} ",
+            )
+        else:
+            logger.error(f"{default_err_msg}{e}.")
+
+        raise e
+
     def _encrypt_password(self: Self, password: str) -> str:
         pat = None
 
@@ -207,16 +252,16 @@ class StatbankAuth:
 
         auth = TokenAuth(pat) if pat is not None else None
 
-        repsonse = r.post(
+        response = r.post(
             self._config.encrypt_url.url,
             auth=auth,
             json={"message": password},
             timeout=30,
         )
 
-        repsonse.raise_for_status()
+        response.raise_for_status()
 
-        data = cast(dict[Literal["message"], str], repsonse.json())  # noqa: TC006
+        data = cast('dict[Literal["message"], str]', response.json())
 
         return data["message"]
 

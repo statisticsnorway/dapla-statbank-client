@@ -112,6 +112,55 @@ def uttrekksbeskrivelse_success(
     )
 
 
+def test_uttrekksbeskrivelse_str_contains_core_info(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    s = str(uttrekksbeskrivelse_success)
+    assert "Uttrekksbeskrivelse for statbanktabell 10000" in s
+    assert "Deltabell (DataFrame) nummer 1" in s
+    # From fixture data: includes codelist text and example line
+    assert "Kodeliste 1" in s
+    assert "Antall" in s
+    assert "Eksempellinje: 01;2022;100" in s
+
+
+def test_uttrekksbeskrivelse_repr_format(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    r = repr(uttrekksbeskrivelse_success)
+    assert r == 'StatbankUttrekksBeskrivelse(tableid="10000",)'
+
+
+def test_transferdata_template_without_dfs(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    template = uttrekksbeskrivelse_success.transferdata_template()
+    assert template == {"delfil1.dat": "df0"}
+
+
+def test_transferdata_template_with_dfs(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    df_test_template = pd.DataFrame({"A": [1, 2]})
+    template = uttrekksbeskrivelse_success.transferdata_template([df_test_template])
+    assert list(template.keys()) == ["delfil1.dat"]
+    assert template["delfil1.dat"] is df_test_template
+
+
+def test_transferdata_template_raises_for_wrong_len(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    with pytest.raises(KeyError):
+        uttrekksbeskrivelse_success.transferdata_template([])
+
+
+def test_transferdata_template_raises_for_non_df(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    with pytest.raises(TypeError):
+        uttrekksbeskrivelse_success.transferdata_template(["not a df"])  # type: ignore[list-item]
+
+
 @mock.patch.object(StatbankTransfer, "_make_transfer_request")
 def test_transfer_date_is_string(
     mock_transfer_make_request: mock.Mock,
@@ -761,3 +810,180 @@ def test_get_user_initials(
         match=r"Can't find the users email or initials in the system.",
     ):
         StatbankClient._get_user_initials()  # noqa: SLF001
+
+
+@mock.patch.object(StatbankClient, "_get_user_initials")
+def test_client_init_accepts_datetime(
+    mock_get_user_initials: mock.Mock,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    mock_get_user_initials.return_value = fake_user()
+    dt = datetime.datetime(2050, 1, 1, 12, 0).astimezone(OSLO_TIMEZONE)
+    client = StatbankClient(
+        date=dt,
+        check_username_password=False,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+    assert isinstance(client.date, datetime.date)
+    assert client.date == datetime.date(2050, 1, 1)
+
+
+@mock.patch.object(StatbankClient, "_actually_check_username_password")
+@mock.patch.object(StatbankClient, "_get_user_initials")
+def test_client_init_checks_username_password(
+    mock_get_user_initials: mock.Mock,
+    mock_check_user_pass: mock.Mock,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    mock_get_user_initials.return_value = fake_user()
+    StatbankClient(
+        date="2050-01-01",
+        check_username_password=True,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+    mock_check_user_pass.assert_called_once()
+
+
+@mock.patch.object(StatbankClient, "_get_user_initials")
+def test_client_repr_includes_bcc_and_overwrite(
+    mock_get_user_initials: mock.Mock,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    mock_get_user_initials.return_value = fake_user()
+    with mock.patch.object(StatbankClient, "_actually_check_username_password"):
+        client = StatbankClient(
+            date="2050-01-01",
+            overwrite=False,
+            approve=1,
+            check_username_password=True,
+            config=config_fixture,
+            auth=auth_fixture,
+        )
+    r = repr(client)
+    assert 'bcc = "tbf"' in r
+    assert "overwrite = False" in r
+    assert "check_username_password = True" in r
+
+
+def test_client_set_date_with_date_obj(client_fixture: StatbankClient):
+    client_fixture.set_publish_date(datetime.date(2050, 1, 1))
+    assert client_fixture.date == datetime.date(2050, 1, 1)
+    assert "Date set to " in client_fixture.log[-1]
+
+
+def test_read_description_json_accepts_path(
+    uttrekksbeskrivelse_success: Callable,
+    client_fixture: StatbankClient,
+):
+    json_file_path = Path("test_uttrekk_path.json")
+    uttrekksbeskrivelse_success.to_json(str(json_file_path))
+    test_uttrekk = client_fixture.read_description_json(json_file_path)
+    json_file_path.unlink()
+    assert len(test_uttrekk.codelists)
+
+
+@mock.patch.object(StatbankClient, "_get_user_initials")
+def test_warn_on_past_date(
+    mock_get_user_initials: mock.Mock,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+    caplog: pytest.LogCaptureFixture,
+):
+    mock_get_user_initials.return_value = fake_user()
+    past = datetime.datetime.now().astimezone(
+        OSLO_TIMEZONE,
+    ).date() - datetime.timedelta(days=1)
+    with caplog.at_level(logging.WARNING):
+        StatbankClient(
+            date=past,
+            check_username_password=False,
+            config=config_fixture,
+            auth=auth_fixture,
+        )
+    assert any("in the future" in m for m in caplog.messages)
+
+
+def test_uttrekksbeskrivelse_init_raises_when_no_tableid_nor_data(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    with pytest.raises(ValueError, match=r"UttrekksBeskrivelseData"):
+        StatbankUttrekksBeskrivelse(
+            raise_errors=True,
+            config=config_fixture,
+            auth=auth_fixture,
+        )
+
+
+def test_uttrekksbeskrivelse_str_includes_internasjonal_rapportering(
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    bdata = UttrekksBeskrivelseData(
+        tableid=10000,
+        tablename="HovedTabellNavn",
+        time_retrieved=datetime.datetime(2022, 9, 29, 18, 51),  # noqa: DTZ001
+        subtables={"delfil1.dat": "10000: Fake table"},
+        variables=[
+            {
+                "deltabell": "delfil1.dat",
+                "variabler": [
+                    {
+                        "kolonnenummer": "1",
+                        "Klassifikasjonsvariabel": "Kodeliste1",
+                        "Variabeltext": "kodeliste1",
+                        "Kodeliste_id": "Kodeliste1",
+                        "Kodeliste_text": "Kodeliste 1",
+                    },
+                ],
+                "statistikkvariabler": [
+                    {
+                        "kolonnenummer": "2",
+                        "Text": "Antall",
+                        "Enhet": "personer",
+                        "Antall_lagrede_desimaler": "0",
+                        "Antall_viste_desimaler": "0",
+                    },
+                ],
+                "null_prikk_missing": [
+                    {
+                        "kolonnenummer": "3",
+                        "gjelder_for_text": "NPM",
+                        "gjelder_for__kolonner_nummer": "2",
+                    },
+                ],
+                "internasjonal_rapportering": [
+                    {
+                        "kolonnenummer": "4",
+                        "gjelder_for_text": "IR",
+                        "gjelder_for__kolonner_nummer": "2",
+                    },
+                ],
+                "eksempel_linje": "01;2022;100",
+            },
+        ],
+        codelists={},
+        suppression=None,
+    )
+    u = StatbankUttrekksBeskrivelse(
+        data=bdata,
+        raise_errors=True,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+    s = str(u)
+    assert "IR" in s  # hit internasjonal_rapportering branch
+    assert "NPM" in s  # hit null_prikk_missing branch
+
+
+def test_uttrekksbeskrivelse_to_json_returns_string(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+):
+    content = uttrekksbeskrivelse_success.to_json()
+    assert isinstance(content, str)
+    json.loads(content)

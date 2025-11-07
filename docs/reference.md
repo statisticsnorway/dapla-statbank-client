@@ -64,14 +64,6 @@ statbank.globals module
    :undoc-members:
    :show-inheritance:
 
-statbank.netrc module
----------------------
-
-.. automodule:: statbank.netrc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 statbank.response\_to\_pandas module
 ------------------------------------
 
@@ -111,3 +103,14 @@ statbank.uttrekk\_validations module
    :members:
    :undoc-members:
    :show-inheritance:
+
+statbank.writable\_netrc module
+-------------------------------
+
+.. automodule:: statbank.writable_netrc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+```

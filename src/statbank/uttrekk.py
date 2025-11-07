@@ -42,6 +42,7 @@ if TYPE_CHECKING:
     from .api_types import SuppressionCodeListType
     from .api_types import SuppressionDeltabellCodeListType
 
+from .api_exceptions import StatbankAuthError
 from .auth import StatbankAuth
 from .auth import StatbankConfig
 from .globals import DATETIME_FORMAT
@@ -138,10 +139,7 @@ class UttrekksBeskrivelseData:
 
             codelists[kodeliste["kodeliste"]] = codelist
 
-        if "null_prikk_missing_kodeliste" in filbeskrivelse:
-            suppression = filbeskrivelse["null_prikk_missing_kodeliste"]
-        else:
-            suppression = None
+        suppression = filbeskrivelse.get("null_prikk_missing_kodeliste", None)
 
         return cls(
             tableid=tableid,
@@ -256,7 +254,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     @property
     def tableid(self: Self) -> str:
         """Originally the ID of the main table, which to get the Uttrekksbeskrivelse on."""
-        return str(self._data.tableid)
+        return str(self._data.tableid).zfill(5)
 
     @property
     def time_retrieved(self: Self) -> str:
@@ -334,7 +332,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     def __repr__(self) -> str:
         """Return a string representation of how to instantiate this object again."""
-        return f'StatbankUttrekksBeskrivelse(tableid="{self.tableid}",)'
+        return f'StatbankUttrekksBeskrivelse(tableid="{str(self.tableid).zfill(5)}",)'
 
     def transferdata_template(
         self,
@@ -603,9 +601,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         )
         try:
             response.raise_for_status()
-        except r.HTTPError:
-            logger.error(response.text)
-            raise
+        except r.HTTPError as e:
+            raise StatbankAuthError(response_content=response.json()) from e
         return response
 
     @classmethod

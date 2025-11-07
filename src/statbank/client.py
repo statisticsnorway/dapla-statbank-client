@@ -15,6 +15,8 @@ from typing import Literal
 from typing import cast
 
 import ipywidgets as widgets
+import requests
+import requests.auth
 from IPython.display import display
 from pathlib_abc import ReadablePath
 
@@ -22,7 +24,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     import pandas as pd
-    import requests.auth
 
     from .api_types import QueryWholeType
 
@@ -125,18 +126,13 @@ class StatbankClient(StatbankAuth):
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
         elif isinstance(date, datetime.datetime):
-            self.date = self.date = date.date()
+            self.date = date.date()
         else:
             self.date = date
 
         self._validate_date()
         if self.check_username_password:
-            logger.info(
-                "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
-            )
-            self.get_description(
-                "05300",
-            )
+            self._actually_check_username_password()
         logger.info("Publishing date set to %s", self.date.isoformat())
 
     # Representation
@@ -284,7 +280,7 @@ class StatbankClient(StatbankAuth):
         """
         path: Path | ReadablePath | None = None
 
-        if isinstance(json_path_or_str, (Path, ReadablePath)):
+        if isinstance(json_path_or_str, Path | ReadablePath):
             path = json_path_or_str
         else:
             try_path = Path(json_path_or_str)
@@ -500,6 +496,19 @@ class StatbankClient(StatbankAuth):
             logger.warning(
                 "Warning, you are publishing during a weekend, this is not common practice.",
             )
+
+    def _actually_check_username_password(self) -> None:
+        logger.info(
+            "Checking filbeskrivelse of random tableid 05300 to double-check username & password early.",
+        )
+        try:
+            self.get_description(
+                "05300",
+            )
+        except requests.HTTPError as e:
+            should_retry = self._react_to_httperror_should_retry(e)
+            if should_retry:
+                self._actually_check_username_password()  # Recursive fun
 
     # Class meta-validation
     def _validate_params_action(self, tableid: str) -> None:

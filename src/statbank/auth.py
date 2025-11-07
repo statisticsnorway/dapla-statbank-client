@@ -212,28 +212,32 @@ class StatbankAuth:
         self,
         e: requests.HTTPError | StatbankAuthError,
     ) -> bool:
-        logger.error("We got an http-error, proceding to emptying the auth.")
-        self._cleanup_netrc()
-
-        default_err_msg = "Got an http-error, but it does not look like an account-lock or invalid password/username, is this something we should program for? - "
+        default_err_msg = """Got an http-error, but it does not look like an account-lock or invalid password/username,
+        is this something we should program for?
+        If you want to reset the auth manually call StatbankClient().reset_auth() or
+        StatbankAuth().reset_auth(). Alternatively edit the .netrc file directly.""".replace(
+            "\n",
+            "",
+        )
 
         if hasattr(e, "response_content") and e.response_content:
             if "ORA-28000" in e.response_content.get("ExceptionMessage", ""):
-                err_msg = f'Your account has been locked. Contact kundeservice@ssb.no to unlock. Errortext: {e.response_content.get("ExceptionMessage", "")}'
+                err_msg = f'Your account has been locked. Contact kundeservice@ssb.no to unlock. Resetting auth. Errortext: {e.response_content.get("ExceptionMessage", "")}'
                 logger.error(err_msg)
                 new_err = StatbankAuthError(err_msg)
+                self._cleanup_netrc()
                 raise new_err
             if "ORA-01017" in e.response_content.get("ExceptionMessage", ""):
                 logger.error(
-                    f"TYPE CAREFULLY - The username and password you used may have been wrong. Errortext: {e.response_content.get('ExceptionMessage', '')}",
+                    f"TYPE CAREFULLY - The username and password you used may have been wrong. Resetting Auth. Errortext: {e.response_content.get('ExceptionMessage', '')}",
                 )
-                self._auth = self._get_auth()
+                self.reset_auth()
                 return True
             logger.error(
                 f"{default_err_msg}{e.response_content.get('Exception_message', '')} - {e} ",
             )
         else:
-            logger.error(f"{default_err_msg}{e}")
+            logger.error(f"{default_err_msg}{e}.")
 
         raise e
 
@@ -257,7 +261,7 @@ class StatbankAuth:
 
         response.raise_for_status()
 
-        data = cast(dict[Literal["message"], str], response.json())
+        data = cast('dict[Literal["message"], str]', response.json())
 
         return data["message"]
 

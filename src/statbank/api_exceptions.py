@@ -4,23 +4,32 @@ import requests
 
 
 class StatbankAuthError(requests.HTTPError):
-    """We pass up the error-response with this error up through try-excepts."""
+    """Raised when authentication with Statbank fails.
 
-    def __init__(self, other_error: str | Exception) -> None:
-        """Initializing the error with a possibility of wrapping around an existing error.
+    Extends ``requests.HTTPError`` with an optional ``response_content`` attribute
+    that can hold parsed JSON from the response.
+
+    Args:
+        *args: Positional arguments forwarded to ``requests.HTTPError``.
+        response_content: Optional JSON-decoded payload to attach.
+        **kwargs: Keyword arguments forwarded to ``requests.HTTPError``.
+    """
+
+    def __init__(
+        self,
+        *args: Any,
+        response_content: dict[str, Any] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Initialize the Statbank authentication error.
 
         Args:
-            other_error: The error-string, or a different exception that we want to re-wrap in this exception.
+            *args: Positional arguments forwarded to ``requests.HTTPError``.
+            response_content: Optional JSON-decoded payload to attach.
+            **kwargs: Keyword arguments forwarded to ``requests.HTTPError``.
         """
-        error_text: str = str(other_error)
-        super().__init__(error_text)
-
-        self.response_content: dict[str, Any] | None = None
-        if hasattr(
-            other_error,
-            "response_content",
-        ):  # If we double-wrap the error, lets try to save this attribute
-            self.response_content = other_error.response_content
+        super().__init__(*args, **kwargs)
+        self.response_content: dict[str, Any] | None = response_content
 
 
 class StatbankApiError(Exception):

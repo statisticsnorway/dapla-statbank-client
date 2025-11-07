@@ -198,9 +198,10 @@ def test_react_to_httperror_oracle_28000_raises(
     cleanup_mock = mock.Mock()
     monkeypatch.setattr(sa, "_cleanup_netrc", cleanup_mock)
 
-    err = StatbankAuthError("wrapped")
-    err.response_content = {"ExceptionMessage": "ORA-28000: account locked"}
-
+    err = StatbankAuthError(
+        "wrapped",
+        response_content={"ExceptionMessage": "ORA-28000: account locked"},
+    )
     with pytest.raises(StatbankAuthError) as exc:
         sa._react_to_httperror_should_retry(err)  # noqa: SLF001
 
@@ -224,8 +225,10 @@ def test_react_to_httperror_oracle_01017_returns_true_and_refreshes(
     get_auth_mock = mock.Mock(return_value=new_auth)
     monkeypatch.setattr(sa, "_get_auth", get_auth_mock)
 
-    err = StatbankAuthError("wrapped")
-    err.response_content = {"ExceptionMessage": "ORA-01017: invalid username/password"}
+    err = StatbankAuthError(
+        "wrapped",
+        response_content={"ExceptionMessage": "ORA-01017: invalid username/password"},
+    )
 
     should_retry = sa._react_to_httperror_should_retry(err)  # noqa: SLF001
 
@@ -250,7 +253,8 @@ def test_react_to_httperror_other_raises_original(
     with pytest.raises(StatbankAuthError) as exc:
         sa._react_to_httperror_should_retry(err)  # noqa: SLF001
 
-    cleanup_mock.assert_called_once()
+    # On a general error we dont want the cleanup to have been called, because we do not recognize the error
+    assert not cleanup_mock.called
     # The method re-raises the same exception object when unhandled
     assert exc.value is err
 

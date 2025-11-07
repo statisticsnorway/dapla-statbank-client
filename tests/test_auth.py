@@ -253,3 +253,54 @@ def test_react_to_httperror_other_raises_original(
     cleanup_mock.assert_called_once()
     # The method re-raises the same exception object when unhandled
     assert exc.value is err
+
+
+def test_config_from_environ_missing_env_vars(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Ensure valid enums so we reach the KeyError -> ValueError branch
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "TEST")
+    monkeypatch.setenv("DAPLA_REGION", "ON_PREM")
+    # Remove required envs to trigger KeyError -> ValueError
+    monkeypatch.delenv("STATBANK_BASE_URL", raising=False)
+    monkeypatch.delenv("STATBANK_ENCRYPT_URL", raising=False)
+    with pytest.raises(ValueError, match=r"Kunne ikke finne"):
+        StatbankConfig.from_environ(use_db=None)
+
+
+def test_config_from_environ_invalid_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Force furl() to raise ValueError to hit the except ValueError branch
+    monkeypatch.setenv("STATBANK_BASE_URL", "https://example.invalid")
+    monkeypatch.setenv("STATBANK_ENCRYPT_URL", "https://example.invalid/encrypt")
+    monkeypatch.setenv("DAPLA_ENVIRONMENT", "TEST")
+    monkeypatch.setenv("DAPLA_REGION", "ON_PREM")
+
+    def _boom(_: str):
+        msg = "bad url"
+        raise ValueError(msg)
+
+    monkeypatch.setattr("statbank.auth.furl", _boom)
+    with pytest.raises(ValueError, match=r"ikke er gyldig"):
+        StatbankConfig.from_environ(use_db=None)
+
+
+def test_cleanup_netrc_removes_entry(
+    existing_netrc_file: Path,
+    auth_fixture: requests.auth.AuthBase,
+):
+    # Ensure cleanup only touches the provided temp netrc file
+    cfg = StatbankConfig(
+        endpoint_base=furl("https://fakeurl.com"),
+        encrypt_url=furl("https://fakeurl.com/encrypt"),
+        useragent="statbank-test",
+        environment=DaplaEnvironment.PROD,
+        region=DaplaRegion.ON_PREM,
+        netrc_path=existing_netrc_file,
+    )
+    sa = StatbankAuth(config=cfg, auth=auth_fixture)
+    # Verify entry exists initially
+    host = cast("str", cfg.endpoint_base.host)
+    with Netrc(existing_netrc_file) as authfile:
+        assert authfile[host]
+    # Perform cleanup and verify removal
+    sa._cleanup_netrc()  # noqa: SLF001
+    with Netrc(existing_netrc_file) as authfile:
+        assert not authfile[host]

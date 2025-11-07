@@ -126,7 +126,7 @@ class StatbankClient(StatbankAuth):
                 error_msg = f"Loaduser parameter removed, please do not use it in your code. OR: {e}"
                 raise ValueError(error_msg) from e
         elif isinstance(date, datetime.datetime):
-            self.date = self.date = date.date()
+            self.date = date.date()
         else:
             self.date = date
 

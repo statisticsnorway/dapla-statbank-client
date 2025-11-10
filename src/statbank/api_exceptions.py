@@ -31,6 +31,17 @@ class StatbankAuthError(requests.HTTPError):
         super().__init__(*args, **kwargs)
         self.response_content: dict[str, Any] | None = response_content
 
+    def __str__(self) -> str:
+        """Create a string representation of the error, including the response_content, if any.
+        
+        Returns:
+            str: The string representation of the error.
+        """
+        base = super().__str__()
+        if self.response_content:
+            return f"{base}\nResponse content: {self.response_content}"
+        return base
+
 
 class StatbankApiError(Exception):
     """Base class for Statbank Api Errors."""

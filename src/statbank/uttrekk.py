@@ -602,7 +602,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         try:
             response.raise_for_status()
         except r.HTTPError as e:
-            raise StatbankAuthError(response_content=response.json()) from e
+            raise StatbankAuthError(str(e), response_content=response.json()) from e
         return response
 
     @classmethod

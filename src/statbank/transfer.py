@@ -372,7 +372,7 @@ class StatbankTransfer(StatbankAuth):
         try:
             result.raise_for_status()
         except r.HTTPError as e:
-            raise StatbankAuthError(response_content=result.json()) from e
+            raise StatbankAuthError(str(e), response_content=result.json()) from e
         return result
 
     def _cleanup_response(self) -> None:

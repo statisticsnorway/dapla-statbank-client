@@ -33,7 +33,7 @@ class StatbankAuthError(requests.HTTPError):
 
     def __str__(self) -> str:
         """Create a string representation of the error, including the response_content, if any.
-        
+
         Returns:
             str: The string representation of the error.
         """

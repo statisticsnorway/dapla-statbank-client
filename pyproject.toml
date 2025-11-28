@@ -5,7 +5,7 @@ license = "MIT"
 version = "1.4.0"
 readme = "README.md"
 authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics Norway"}]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.10"
 
 dependencies = [
     "pandas >=2.2.0",
@@ -16,7 +16,7 @@ dependencies = [
     "toml >=0.10.2",
     "python-dotenv >=1.0.1",
     "colorama >=0.4.6",
-    "dapla-auth-client >=1.0.1",
+    "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
     "furl >=2.1.4",
     "pathlib-abc >=0.5.2",
 ]
@@ -36,7 +36,7 @@ requires-poetry = ">=2.0"
 pygments = ">=2.10.0"
 black = { extras = ["jupyter"], version = ">=24.3.0" }
 coverage = { extras = ["toml"], version = ">=6.2" }
-darglint = ">=1.8.1"
+darglint = {version = ">=1.8.1", python = ">=3.12,<4.0"}
 mypy = ">=0.930"
 pre-commit = ">=2.16.0"
 pre-commit-hooks = ">=4.1.0"
@@ -61,7 +61,7 @@ pandas-stubs = ">=2.2.0"
 types-requests = ">=2.28.2"
 types-colorama = ">=0.4.6"
 types-toml = ">=0.10.2"
-pyarrow-stubs = ">=10.0.1"
+pyarrow-stubs = {version = ">=10.0.1", python = ">=3.8,<4.0"}
 
 
 [tool.pytest.ini_options]

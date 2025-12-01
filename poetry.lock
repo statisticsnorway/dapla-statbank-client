@@ -609,7 +609,7 @@ description = "Dapla Auth Client"
 optional = false
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "python_version >= \"3.11\""
+markers = "python_version >= \"3.11\" and python_version < \"4.0\""
 files = [
     {file = "dapla_auth_client-1.2.1-py3-none-any.whl", hash = "sha256:58c3edb0f43495392c55051260480bf3fc7daf94d78cd7c20762c3876dcbc2cc"},
     {file = "dapla_auth_client-1.2.1.tar.gz", hash = "sha256:0bc9e6c188857c26bc4e1b239fc22f1a2b5cb2ea9a2216781f1643e57879cc33"},

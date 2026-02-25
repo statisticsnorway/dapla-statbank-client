@@ -2,7 +2,7 @@
 name = "dapla-statbank-client"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 license = "MIT"
-version = "1.4.0"
+version = "1.4.1"
 readme = "README.md"
 authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics Norway"}]
 requires-python = ">=3.10"

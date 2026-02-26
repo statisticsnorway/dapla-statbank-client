@@ -6,6 +6,7 @@ import itertools
 import json
 import math
 import sys
+import warnings
 from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
@@ -15,6 +16,7 @@ from typing import Literal
 from typing import TypedDict
 from typing import overload
 
+import numpy as np
 import pandas as pd
 import requests as r
 import requests.auth
@@ -554,6 +556,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     ) -> str:
         if pd.isna(n):
             result: str = ""
+        elif n in [np.inf, -np.inf]:
+            warnings.warn(
+                "Found Infinite values in your data, why? Remove them?",
+                stacklevel=1,
+            )
+            result = ""
         elif round_up and decimals and (n or n == 0):
             with localcontext() as ctx:
                 ctx.rounding = ROUND_HALF_UP

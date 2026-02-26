@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 from unittest import mock
 
 import ipywidgets as widgets
+import numpy as np
 import pandas as pd
 import pytest
 import requests
@@ -34,6 +35,17 @@ if TYPE_CHECKING:
 
 def test_round_up_zero():
     assert StatbankUttrekksBeskrivelse._round(0.0, 0) == "0"  # noqa: SLF001
+
+
+def test_round_handles_inf_values():
+    assert StatbankUttrekksBeskrivelse._round(np.inf, 0) == ""  # noqa: SLF001
+    assert StatbankUttrekksBeskrivelse._round(-np.inf, 0) == ""  # noqa: SLF001
+
+
+@pytest.mark.parametrize("value", [np.inf, -np.inf])
+def test_round_warns_on_inf_values(value: float):
+    with pytest.warns(UserWarning, match="Found Infinite values in your data"):
+        assert StatbankUttrekksBeskrivelse._round(value, 0) == ""  # noqa: SLF001
 
 
 def fake_user():

@@ -4,11 +4,17 @@ import re
 import urllib
 from collections import Counter
 from http import HTTPStatus
+from itertools import chain
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import TypeVar
 
+import pandas as pd
+import pxwebapi
+import pxwebapi.query_types
+import pxwebapi.selection_parser
 import requests as r
+from furl import furl
 from requests.adapters import HTTPAdapter
 from requests.adapters import Retry
 
@@ -16,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
     from collections.abc import Sequence
 
-    import pandas as pd
+    import httpx
 
     from .api_types import QueryPartType
     from .api_types import QueryWholeType
@@ -30,10 +36,94 @@ from .statbank_logger import logger
 # Getting data from Statbank
 
 STATBANK_TABLE_ID_LENGTH = 5
+STATBANK_API_V1_ENDPOINT = furl("https://data.ssb.no/api/v0/no/table")
 T = TypeVar("T")
 
 
-def apidata(
+def _convert_to_api2_query(
+    old_query: QueryWholeType | None,
+) -> list[pxwebapi.query_types.Selection]:
+    selections: list[pxwebapi.query_types.Selection] = []
+
+    if old_query is None:
+        return selections
+
+    for old_select in old_query["query"]:
+        variable_code = old_select["code"]
+        old_filter = old_select["selection"]["filter"]
+        old_values = old_select["selection"]["values"]
+        new_values: list[pxwebapi.selection_parser.Expression]
+        code_list = None
+        if old_filter.lower() == "top":
+            if len(old_values) == 1:
+                expression = pxwebapi.selection_parser.TopExpression(
+                    int(old_values[0]),
+                )
+            elif len(old_values) == 2:
+                expression = pxwebapi.selection_parser.TopExpression(
+                    int(old_values[0]),
+                    int(old_values[1]),
+                )
+            else:
+                msg = "Invalid TOP select expression"
+                raise ValueError(msg)
+            new_values = [expression]
+
+        elif old_filter.lower() == "bottom":
+            if len(old_values) == 1:
+                expression = pxwebapi.selection_parser.BottomExpression(
+                    int(old_values[0]),
+                )
+            elif len(old_values) == 2:
+                expression = pxwebapi.selection_parser.BottomExpression(
+                    int(old_values[0]),
+                    int(old_values[1]),
+                )
+            else:
+                msg = "Invalid BOTTOM select expression"
+                raise ValueError(msg)
+            new_values = [expression]
+
+        elif old_filter.lower() == "range":
+            if len(old_values) != 2:
+                msg = "Invalid RANGE select expression"
+                raise ValueError(msg)
+            expression = pxwebapi.selection_parser.RangeExpression(
+                old_values[0],
+                old_values[1],
+            )
+            new_values = [expression]
+        elif old_filter.lower() == "to":
+            if len(old_values) != 1:
+                msg = "Invalid TO select expression"
+                raise ValueError(msg)
+            expression = pxwebapi.selection_parser.ToExpression(old_values[0])
+            new_values = [expression]
+
+        elif old_filter.lower() == "from":
+            if len(old_values) != 1:
+                msg = "Invalid FROM select expression"
+                raise ValueError(msg)
+            expression = pxwebapi.selection_parser.FromExpression(old_values[0])
+            new_values = [expression]
+        else:
+            if old_filter not in ("item", "all"):
+                code_list = old_filter.replace(":", "_", count=1)
+            new_values = [
+                pxwebapi.selection_parser.CodeExpression(c) for c in old_values
+            ]
+
+        new_select = pxwebapi.query_types.Selection(
+            variable_code,
+            code_list,
+            new_values,
+        )
+        selections.append(new_select)
+
+    return selections
+
+
+def apidata_legacy(
     id_or_url: str = "",
     payload: QueryWholeType | None = None,
     include_id: bool = False,
@@ -83,6 +173,95 @@ def apidata(
     table_data = response_to_pandas(resultat, include_id=include_id)
 
     return table_data.convert_dtypes()
+
+
+def apidata(
+    id_or_url: str = "",
+    payload: QueryWholeType | None = None,
+    include_id: bool = False,
+    client: httpx.Client | None = None,
+) -> pd.DataFrame:
+    """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
+
+    Args:
+        id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+        payload (QueryWholeType | None): a dict in the shape of a QueryWhole, to include with the request, can be copied from the statbank-webpage.
+        include_id (bool): If you want to include "codes" in the dataframe, set this to True
+
+    Returns:
+        pd.DataFrame: The table-content
+
+    Raises:
+        ValueError: If the first parameter is not recognized as a statbank ID or a direct url.
+    """
+    table_id = None
+
+    if len(id_or_url) == STATBANK_TABLE_ID_LENGTH and id_or_url.isdigit():
+        table_id = id_or_url
+
+    elif (
+        STATBANK_API_V1_ENDPOINT.origin == (url := furl(id_or_url)).origin
+        and STATBANK_API_V1_ENDPOINT.path.segments == url.path.segments[:-1]
+    ):
+        table_id = url.path.segments[-1]
+
+    if table_id is None:
+        return apidata_legacy(id_or_url, payload, include_id)
+
+    selections = _convert_to_api2_query(payload)
+    statbank2 = pxwebapi.PxAPI(pxwebapi.STATBANK_CONFIG, client=client)
+    metadata = statbank2.get_table_metadata(table_id)
+    df = statbank2.get_table_with_selections(
+        table_id,
+        selections,
+    ).to_pandas()
+
+    drop_columns = [c for c in df.columns if c.endswith("_symbol")] + ["timestamp"]
+    df = df.drop(columns=drop_columns)
+
+    if "value" not in df.columns:
+        # Ingen tabeller har mer enn én variabel med rollen "metric" (dvs. mer enn én statistikkvariabel)
+        metric_id = metadata.role.metric[0]
+        metric_name = metadata.dimension[metric_id].label
+        other_var = [c for c in df.columns if not c.startswith(metric_id)]
+
+        melted_df = df.melt(
+            other_var,
+            var_name=metric_name,
+            value_name="value",
+        )
+        melted_df[metric_name] = melted_df[metric_name].str.removeprefix(
+            metric_id + "_",
+        )
+        df = melted_df
+
+    labeled = []
+
+    for dimension in metadata.dimension.values():
+        if dimension.label not in df.columns:
+            continue
+        if not dimension.category.label:
+            raise ValueError
+        labeled.append(df[dimension.label].map(dimension.category.label))
+
+    if not include_id:
+        return pd.concat(
+            chain(
+                labeled,
+                (df["value"]),
+            ),
+            axis="columns",
+        )
+
+    unlabeled = []
+
+    for var_id, dimension in metadata.dimension.items():
+        if dimension.label not in df.columns:
+            continue
+        unlabeled.append(df[dimension.label].rename(var_id))
+
+    interleaved = chain.from_iterable(zip(unlabeled, labeled, strict=False))
+    return pd.concat(chain(interleaved, (df["value"],)), axis="columns")
 
 
 def apidata_all(id_or_url: str = "", include_id: bool = False) -> pd.DataFrame:

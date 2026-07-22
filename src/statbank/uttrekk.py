@@ -13,6 +13,7 @@ from decimal import localcontext
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import TypedDict
 from typing import overload
 
@@ -20,11 +21,6 @@ import numpy as np
 import pandas as pd
 import requests as r
 import requests.auth
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated

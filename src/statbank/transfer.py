@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import cast
 from typing import overload
 
@@ -27,11 +28,6 @@ from .globals import Approve
 from .globals import UseDb
 from .globals import _approve_type_check
 from .statbank_logger import logger
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated

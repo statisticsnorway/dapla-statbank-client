@@ -2936,14 +2936,14 @@ test = ["pytest"]
 
 [[package]]
 name = "ssb-pxapi2-arrow"
-version = "0.0.1.dev1784118150"
+version = "0.0.1.dev1784560157"
 description = "Pxwebapi2 arrow"
 optional = false
 python-versions = ">=3.12"
 groups = ["main"]
 files = [
-    {file = "ssb_pxapi2_arrow-0.0.1.dev1784118150-py3-none-any.whl", hash = "sha256:8f019a445ad51c5e7beeaff33ad9d70526af197ab2d42ff7b0c9598d0336028a"},
-    {file = "ssb_pxapi2_arrow-0.0.1.dev1784118150.tar.gz", hash = "sha256:230cc09de546b60753c82ba2062a3b18db9a5dc077c4d7c08dd6600fd698d474"},
+    {file = "ssb_pxapi2_arrow-0.0.1.dev1784560157-py3-none-any.whl", hash = "sha256:1b71445626d84f241ca9641a3240209b4b34c65d2c34237ab7756a08e609fc55"},
+    {file = "ssb_pxapi2_arrow-0.0.1.dev1784560157.tar.gz", hash = "sha256:5e3787b787b87ed2b7ebec6699d49bafc17748066a4032144153a951380d77e6"},
 ]
 
 [package.dependencies]
@@ -3549,4 +3549,4 @@ tests-strict = ["pytest (==4.6.0) ; python_version < \"3.10.0\" and python_versi
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "171129c7a86b3354be8d08041431ac3c40846720459781745e49d72c0d7d0901"
+content-hash = "4e31403b963c8c1237ba461be4e5587b6e1fc38449c27b7769d3bd2fd2ecabab"

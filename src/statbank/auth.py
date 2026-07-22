@@ -2,16 +2,11 @@ from __future__ import annotations
 
 import getpass
 import os
-import sys
 from importlib.metadata import version
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import cast
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 import requests as r
 import requests.auth

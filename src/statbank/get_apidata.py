@@ -3,16 +3,21 @@ from __future__ import annotations
 from itertools import chain
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import cast
 
 import msgspec
 import pandas as pd
 import pxwebapi
 import pxwebapi.expression
 import pxwebapi.query_types
+import pxwebapi.response_types
 from furl import furl
+from pxwebapi._msg_hooks import enc_hook
 
 from .get_apidata_internal import apicodelist_internal
+from .get_apidata_internal import apidata_all_internal
 from .get_apidata_internal import apidata_internal
+from .get_apidata_internal import apidata_query_all
 from .get_apidata_internal import apimetadata_internal
 
 if TYPE_CHECKING:
@@ -45,6 +50,7 @@ def convert_to_api2_selection(  # noqa: PLR0912
         ValueError: If the old selection could not be converted.
     """
     new_selections: list[pxwebapi.query_types.Selection] = []
+    expression: pxwebapi.expression.Expression
 
     for old_select in old_selections:
         variable_code = old_select["code"]
@@ -129,9 +135,98 @@ def _get_table_id(id_or_url: str) -> str | None:
         STATBANK_API_V0_ENDPOINT.origin == url.origin
         and STATBANK_API_V0_ENDPOINT.path.segments == url.path.segments[:-1]
     ):
-        return url.path.segments[-1]
+        return cast(str, url.path.segments[-1])
 
     return None
+
+
+def _stack_table(
+    df: pd.DataFrame,
+    statbank2: pxwebapi.PxAPI,
+    table_id: str,
+    metadata: pxwebapi.response_types.DatasetResponse,
+    selections: list[pxwebapi.query_types.Selection],
+) -> pd.DataFrame:
+    """Gjør tabellene man får med parquet som OutputFormat til å bli lik de man fikk med den gamle apidata funksjonen.
+
+    Hvis kun en statistikkvariabel-verdi er valgt, så får denne kolonnenavnet "value" i Parquet-dataene, som før,
+    men det er ingen kolonne  som angir hvilen statistikkvariabel som er brukt, slik at den må legges til igjen.
+    Er flere verdier valgt stabler API statistikkvariabelen utover, slik at vi må stable variabelen sammen igjen,
+    For å etterape det gamle APIet.
+    """
+    drop_columns = [c for c in df.columns if c.endswith("_symbol")] + ["timestamp"]
+    df = df.drop(columns=drop_columns)
+
+    metric_id = metadata.role.metric[0]
+    metric_name = metadata.dimension[metric_id].label
+
+    if "value" not in df.columns:
+        # Ingen tabeller har mer enn én variabel med rollen "metric" (dvs. mer enn én statistikkvariabel) i Statistikkbanken
+        other_var = [c for c in df.columns if not c.startswith(metric_id)]
+
+        melted_df = df.melt(
+            other_var,
+            var_name=metric_name,
+            value_name="value",
+        )
+        melted_df[metric_name] = melted_df[metric_name].str.removeprefix(
+            metric_id + "_",
+        )
+        return melted_df
+
+    try:
+        metric_selection = next(
+            filter(lambda s: s.variable_code == metric_id, selections),
+        )
+    except StopIteration:
+        metric_selection = pxwebapi.query_types.Selection(
+            metric_id,
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        )
+    else:
+        if not metric_selection:
+            metric_selection = pxwebapi.query_types.Selection(
+                metric_id,
+                value_codes=[pxwebapi.expression.CodeExpression("*")],
+            )
+
+    matcher = statbank2.get_expression_matcher(table_id, metric_selection)
+    selected_code = matcher.get_codes_from_expressions()[0]
+    df.insert(len(df.columns) - 1, metric_name, selected_code)
+
+    return df
+
+
+def _label_table(
+    df: pd.DataFrame,
+    metadata: pxwebapi.response_types.DatasetResponse,
+    include_id: bool,
+) -> pd.DataFrame:
+    labeled = []
+
+    for dimension in metadata.dimension.values():
+        if dimension.label not in df.columns:
+            continue
+        labeled.append(df[dimension.label].map(dimension.category.label))
+
+    if not include_id:
+        return pd.concat(
+            chain(
+                labeled,
+                (df["value"],),
+            ),
+            axis="columns",
+        )
+
+    unlabeled = []
+
+    for var_id, dimension in metadata.dimension.items():
+        if dimension.label not in df.columns:
+            continue
+        unlabeled.append(df[dimension.label].rename(var_id))
+
+    interleaved = chain.from_iterable(zip(unlabeled, labeled, strict=False))
+    return pd.concat(chain(interleaved, (df["value"],)), axis="columns")
 
 
 def apidata(
@@ -163,91 +258,22 @@ def apidata(
 
     selections = convert_to_api2_selection(payload["query"]) if payload else []
     statbank2 = pxwebapi.PxAPI(pxwebapi.STATBANK_CONFIG, client=client)
-    metadata = statbank2.get_table_metadata(table_id)
     df = statbank2.get_table_with_selections(
         table_id,
         selections,
     ).to_pandas()
 
-    drop_columns = [c for c in df.columns if c.endswith("_symbol")] + ["timestamp"]
-    df = df.drop(columns=drop_columns)
+    metadata = statbank2.get_table_metadata(table_id)
 
-    # Hvis kun en statistikkvariabel-verdi er valgt, så får denne kolonnenavnet "value" i Parquet-dataene (som før).
-    # Er flere verdier valgt stabler API statistikkvariabelen utover, slik at vi må stable variabelen sammen igjen,
-    # For å etterape det gamle APIet.
-    metric_id = metadata.role.metric[0]
-    metric_name = metadata.dimension[metric_id].label
+    df = _stack_table(
+        df,
+        statbank2,
+        table_id,
+        metadata,
+        selections,
+    )
 
-    if "value" not in df.columns:
-        # Ingen tabeller har mer enn én variabel med rollen "metric" (dvs. mer enn én statistikkvariabel) i Statistikkbanken
-        other_var = [c for c in df.columns if not c.startswith(metric_id)]
-
-        melted_df = df.melt(
-            other_var,
-            var_name=metric_name,
-            value_name="value",
-        )
-        melted_df[metric_name] = melted_df[metric_name].str.removeprefix(
-            metric_id + "_",
-        )
-        df = melted_df
-
-    else:
-        try:
-            metric_selection = next(
-                filter(lambda s: s.variable_code == metric_id, selections),
-            )
-        except StopIteration:
-            metric_selection = pxwebapi.query_types.Selection(
-                metric_id,
-                value_codes=[pxwebapi.expression.CodeExpression("*")],
-            )
-        else:
-            if not metric_selection:
-                metric_selection = pxwebapi.query_types.Selection(
-                    metric_id,
-                    value_codes=[pxwebapi.expression.CodeExpression("*")],
-                )
-
-        dimension = metadata.dimension[metric_selection.variable_code]
-        all_codes = statbank2._get_all_codes(  # noqa: SLF001
-            dimension,
-            metric_selection.code_list,
-        )
-
-        selected_code = (
-            pxwebapi.pxwebapi.ExpressionMatcher(all_codes).get_codes_from_expressions(
-                metric_selection.value_codes,
-            )
-        )[0]
-
-        df.insert(len(df.columns) - 1, metric_name, selected_code)
-
-    labeled = []
-
-    for dimension in metadata.dimension.values():
-        if dimension.label not in df.columns:
-            continue
-        labeled.append(df[dimension.label].map(dimension.category.label))
-
-    if not include_id:
-        return pd.concat(
-            chain(
-                labeled,
-                (df["value"],),
-            ),
-            axis="columns",
-        )
-
-    unlabeled = []
-
-    for var_id, dimension in metadata.dimension.items():
-        if dimension.label not in df.columns:
-            continue
-        unlabeled.append(df[dimension.label].rename(var_id))
-
-    interleaved = chain.from_iterable(zip(unlabeled, labeled, strict=False))
-    return pd.concat(chain(interleaved, (df["value"],)), axis="columns")
+    return _label_table(df, metadata, include_id)
 
 
 def apidata_all(
@@ -266,6 +292,30 @@ def apidata_all(
         pd.DataFrame: Table-content
 
     """
+    table_id = _get_table_id(id_or_url)
+
+    if not table_id:
+        return apidata_all_internal(id_or_url, include_id)
+
+    statbank2 = pxwebapi.PxAPI(pxwebapi.STATBANK_CONFIG, client=client)
+    query = statbank2.get_view(id_or_url, view=pxwebapi.pxwebapi.TableView.ALL)
+
+    df = statbank2.get_table_with_selections(
+        table_id,
+        query.selection,
+    ).to_pandas()
+
+    metadata = statbank2.get_table_metadata(table_id)
+
+    df = _stack_table(
+        df,
+        statbank2,
+        table_id,
+        metadata,
+        query.selection,
+    )
+
+    return _label_table(df, metadata, include_id)
 
 
 def apimetadata(id_or_url: str, client: httpx.Client | None = None) -> dict[str, Any]:
@@ -285,7 +335,7 @@ def apimetadata(id_or_url: str, client: httpx.Client | None = None) -> dict[str,
 
     statbank2 = pxwebapi.PxAPI(pxwebapi.STATBANK_CONFIG, client=client)
     metadata = statbank2.get_table_metadata(table_id)
-    return msgspec.to_builtins(metadata)
+    return cast(dict[str, Any], msgspec.to_builtins(metadata, enc_hook=enc_hook))
 
 
 def apicodelist(
@@ -362,3 +412,14 @@ def apidata_rotate(
         values=val,
         columns=[i for i in df.columns if i not in (ind, val)],
     )
+
+
+__all__ = [
+    "apicodelist",
+    "apidata",
+    "apidata_all",
+    "apidata_query_all",
+    "apidata_rotate",
+    "apimetadata",
+    "convert_to_api2_selection",
+]

@@ -43,7 +43,7 @@ def apidata_internal(
     Returns:
         pd.DataFrame: The table-content
 
-    Raises:
+    Propagates:
         ValueError: If the first parameter is not recognized as a statbank ID or a direct url.
     """
     if not isinstance(url, furl):
@@ -57,7 +57,7 @@ def apidata_internal(
 
     if client is None:
         client = httpx.Client(
-            transport=pxwebapi.rate_limiter.PxUnlimtedTransport(),
+            transport=pxwebapi.rate_limiter.PxUnknownLimitTransport(),
             timeout=20,
         )
 
@@ -136,14 +136,14 @@ def apimetadata_internal(
     Returns:
         dict[str, Any]: The metadata of the table as the json returned from the API-get-request.
 
-    Raises:
+    Propagates:
         ValueError: If the first parameter is not recognized as a statbank ID or a direct url.
     """
     if not isinstance(url, furl):
         url = furl(url)
 
     if client is None:
-        client = httpx.Client(transport=pxwebapi.rate_limiter.PxUnlimtedTransport())
+        client = httpx.Client(transport=pxwebapi.rate_limiter.PxUnknownLimitTransport())
 
     res = client.get(url.url)
     res.raise_for_status()

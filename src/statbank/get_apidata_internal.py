@@ -66,7 +66,7 @@ def apidata_internal(
     resultat = client.post(url.url, json=payload)
 
     if not resultat.is_success:
-        _read_error(url, payload, resultat)
+        _read_error(url, payload, resultat, client)
 
     # Få pd.DataFrame fra resultatet
     table_data = response_to_pandas(resultat, include_id=include_id)
@@ -117,7 +117,7 @@ def apidata_all_internal(
     """
     return apidata_internal(
         url,
-        apidata_query_all(url),
+        apidata_query_all(url, client=client),
         include_id=include_id,
         client=client,
     )
@@ -203,7 +203,7 @@ def _find_duplicates[T](items: Iterable[T]) -> list[T]:
     return [item for item, n in Counter(items).items() if n > 1]
 
 
-def _read_error(url: furl, query: QueryWholeType, response: httpx.Response) -> None:
+def _read_error(url: furl, query: QueryWholeType, response: httpx.Response, client: httpx.Client) -> None:
     """Raises an appropriate error."""
     error_message: str | None
 
@@ -221,7 +221,7 @@ def _read_error(url: furl, query: QueryWholeType, response: httpx.Response) -> N
 
         if match:
             variable = match["variable"]
-            error_message = _check_selection(variable, url, query)
+            error_message = _check_selection(variable, url, query, client)
             if not error_message:
                 error_message = (
                     f'Your query failed with the error message: "{api_error_message}"'
@@ -240,6 +240,7 @@ def _check_selection(
     variable: str,
     url: furl,
     query: QueryWholeType,
+    client: httpx.Client,
 ) -> str | None:
     """Checks for common errors in your query selection, and returns a error message.
 
@@ -276,11 +277,11 @@ def _check_selection(
 
     if filter_type in ("agg", "agg_single"):
         return (
-            "A value is probably invalid for variable {variable}, but an aggregation is used,"
+            f"A value is probably invalid for variable {variable}, but an aggregation is used,"
             "and metadata for aggregations is not available, so it is not possible to determine witch."
         )
 
-    meta = apimetadata_internal(url)
+    meta = apimetadata_internal(url, client=client)
 
     variable_meta = next(
         filter(lambda part: part["code"] == variable, meta["variables"]),

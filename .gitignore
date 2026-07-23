@@ -13,6 +13,7 @@
 *.gz
 *.orig
 *.parquet
+!/tests/resources/*.parquet
 *.sas7bdat
 *.xls
 *.xlsx

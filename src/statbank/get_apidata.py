@@ -112,7 +112,7 @@ def convert_to_api2_selection(  # noqa: PLR0912
             new_values = [expression]
         else:
             if old_filter not in ("item", "all"):
-                code_list = old_filter.replace(":", "_", count=1)
+                code_list = old_filter.replace(":", "_", 1)
             new_values = [pxwebapi.expression.CodeExpression(c) for c in old_values]
 
         new_select = pxwebapi.query_types.Selection(

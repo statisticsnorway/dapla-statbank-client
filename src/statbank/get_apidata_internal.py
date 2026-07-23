@@ -203,7 +203,12 @@ def _find_duplicates[T](items: Iterable[T]) -> list[T]:
     return [item for item, n in Counter(items).items() if n > 1]
 
 
-def _read_error(url: furl, query: QueryWholeType, response: httpx.Response, client: httpx.Client) -> None:
+def _read_error(
+    url: furl,
+    query: QueryWholeType,
+    response: httpx.Response,
+    client: httpx.Client,
+) -> None:
     """Raises an appropriate error."""
     error_message: str | None
 

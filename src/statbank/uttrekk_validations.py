@@ -16,7 +16,8 @@ import pandas as pd
 
 from statbank.statbank_logger import logger
 
-NANS = ["", "nan", "na", "none", ".", "<NA>", "NA"]
+# Empty strings are accepted by Statbanken as intentional empty cells.
+NANS = ["nan", "na", "none", ".", "<NA>", "NA"]
 
 
 class StatbankValidateError(Exception):

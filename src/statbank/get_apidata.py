@@ -135,7 +135,7 @@ def _get_table_id(id_or_url: str) -> str | None:
         STATBANK_API_V0_ENDPOINT.origin == url.origin
         and STATBANK_API_V0_ENDPOINT.path.segments == url.path.segments[:-1]
     ):
-        return cast(str, url.path.segments[-1])
+        return cast("str", url.path.segments[-1])
 
     return None
 
@@ -335,7 +335,7 @@ def apimetadata(id_or_url: str, client: httpx.Client | None = None) -> dict[str,
 
     statbank2 = pxwebapi.PxAPI(pxwebapi.STATBANK_CONFIG, client=client)
     metadata = statbank2.get_table_metadata(table_id)
-    return cast(dict[str, Any], msgspec.to_builtins(metadata, enc_hook=enc_hook))
+    return cast("dict[str, Any]", msgspec.to_builtins(metadata, enc_hook=enc_hook))
 
 
 def apicodelist(

@@ -5,7 +5,7 @@ license = "MIT"
 version = "1.4.1"
 readme = "README.md"
 authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics Norway"}]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 dependencies = [
     "pandas >=2.2.0",
@@ -19,6 +19,7 @@ dependencies = [
     "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
     "furl >=2.1.4",
     "pathlib-abc >=0.5.2",
+    "ssb-pxapi2-arrow >=0.0.1",
 ]
 
 [project.urls]

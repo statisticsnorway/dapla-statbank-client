@@ -293,6 +293,15 @@ def df_53000():
     return pd.DataFrame(data)
 
 
+@pytest.fixture
+def df_53000_with_id():
+    with (files(resources) / "dataframe_05300_with_id.json").open(
+        encoding="utf-8",
+    ) as buffer:
+        data = cast("dict[str, Any]", json.load(buffer))
+    return pd.DataFrame(data)
+
+
 def mock_httpx_client(respons_func: RequestHandler) -> httpx.Client:
 
     transport = httpx.MockTransport(respons_func)
@@ -568,6 +577,178 @@ def test_convert_some_query(query_some_05300: QueryWholeType):
     assert result == expected
 
 
+@pytest.mark.parametrize(
+    ("v0_query", "expected"),
+    [
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "bottom",
+                        "values": ["3"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.BottomExpression(3)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "bottom",
+                        "values": ["3", "1"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.BottomExpression(3, 1)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "top",
+                        "values": ["3", "1"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.TopExpression(3, 1)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "to",
+                        "values": ["2020"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.ToExpression("2020")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "from",
+                        "values": ["2020"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.FromExpression("2020")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Region",
+                    "selection": {
+                        "filter": "agg:Kommune",
+                        "values": ["0301"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Region",
+                    code_list="agg_Kommune",
+                    value_codes=[pxwebapi.expression.CodeExpression("0301")],
+                ),
+            ],
+        ),
+    ],
+    ids=(
+        "valid_top_query",
+        "valid_bottom_query",
+        "valid_offset_bottom_query",
+        "valid_to_query",
+        "valid_from_query",
+        "valid_agg_query",
+    ),
+)
+def test_convert_to_api2_selection_success(
+    v0_query: list[dict[str, Any]],
+    expected: list[pxwebapi.query_types.Selection],
+) -> None:
+    assert convert_to_api2_selection(v0_query) == expected
+
+
+@pytest.mark.parametrize(
+    ("v0_query", "error_match"),
+    [
+        (
+            [
+                {
+                    "code": "Avstand1",
+                    "selection": {
+                        "filter": "range",
+                        "values": ["02"],
+                    },
+                },
+            ],
+            "Invalid RANGE select expression",
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "to",
+                        "values": ["2020", "2021"],
+                    },
+                },
+            ],
+            "Invalid TO select expression",
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "from",
+                        "values": [],
+                    },
+                },
+            ],
+            "Invalid FROM select expression",
+        ),
+    ],
+)
+def test_convert_to_api2_selection_invalid(
+    v0_query: list[dict[str, Any]],
+    error_match: str,
+) -> None:
+    with pytest.raises(ValueError, match=error_match):
+        convert_to_api2_selection(v0_query)
+
+
 def test_apidata_new_with_number(
     query_all_05300: QueryWholeType,
     df_53000: pd.DataFrame,
@@ -583,6 +764,23 @@ def test_apidata_new_with_number(
 
     assert result.shape == df_53000.shape
     pd.testing.assert_index_equal(result.columns, df_53000.columns)
+
+
+def test_apidata_new_include_id(
+    query_all_05300: QueryWholeType,
+    df_53000_with_id: pd.DataFrame,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata("05300", query_all_05300, include_id=True, client=client)
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/05300/data"),
+        1,
+    )
+
+    assert result.shape == df_53000_with_id.shape
+    pd.testing.assert_index_equal(result.columns, df_53000_with_id.columns)
 
 
 def test_apidata_new_with_oldurl(

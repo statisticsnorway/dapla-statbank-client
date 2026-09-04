@@ -152,7 +152,7 @@ def _stack_table(
     Hvis kun en statistikkvariabel-verdi er valgt, så får denne kolonnenavnet "value" i Parquet-dataene, som før,
     men det er ingen kolonne  som angir hvilen statistikkvariabel som er brukt, slik at den må legges til igjen.
     Er flere verdier valgt stabler API statistikkvariabelen utover, slik at vi må stable variabelen sammen igjen,
-    For å etterape det gamle APIet.
+    for å etterape det gamle APIet.
     """
     drop_columns = [c for c in df.columns if c.endswith("_symbol")] + ["timestamp"]
     df = df.drop(columns=drop_columns)
@@ -184,9 +184,10 @@ def _stack_table(
             value_codes=[pxwebapi.expression.CodeExpression("*")],
         )
     else:
-        if not metric_selection:
+        if not metric_selection.value_codes:
             metric_selection = pxwebapi.query_types.Selection(
-                metric_id,
+                variable_code=metric_id,
+                code_list=metric_selection.code_list,
                 value_codes=[pxwebapi.expression.CodeExpression("*")],
             )
 
@@ -199,15 +200,50 @@ def _stack_table(
 
 def _label_table(
     df: pd.DataFrame,
+    statbank2: pxwebapi.PxAPI,
     metadata: pxwebapi.response_types.DatasetResponse,
+    selections: Iterable[pxwebapi.query_types.Selection],
     include_id: bool,
 ) -> pd.DataFrame:
+    code_list_labels: dict[str | None, dict[str, str]] = {}
+    for selection in selections:
+        if selection.code_list is None:
+            continue
+
+        dimension = metadata.dimension[selection.variable_code]
+        if not dimension.extension.codelists:
+            raise RuntimeError(
+                f"Code list '{selection.code_list}' not found in dimension metadata",
+            )
+        try:
+            code_list_info = next(
+                filter(
+                    lambda cd: cd.id == selection.code_list,
+                    dimension.extension.codelists,
+                ),
+            )
+        except StopIteration as e:
+            raise RuntimeError(
+                f"Code list '{selection.code_list}' not found in dimension metadata",
+            ) from e
+
+        code_list = {
+            vm.code: vm.label
+            for vm in statbank2.get_code_list(code_list_info.id).values
+        }
+        code_list_labels[selection.variable_code] = code_list
+
     labeled = []
 
     for dimension in metadata.dimension.values():
         if dimension.label not in df.columns:
             continue
-        labeled.append(df[dimension.label].map(dimension.category.label))
+
+        try:
+            labels = code_list_labels[dimension.label]
+        except KeyError:
+            labels = dimension.category.label
+        labeled.append(df[dimension.label].map(labels))
 
     if not include_id:
         return pd.concat(
@@ -273,7 +309,7 @@ def apidata(
         selections,
     )
 
-    return _label_table(df, metadata, include_id)
+    return _label_table(df, statbank2, metadata, selections, include_id)
 
 
 def apidata_all(
@@ -315,7 +351,7 @@ def apidata_all(
         query.selection,
     )
 
-    return _label_table(df, metadata, include_id)
+    return _label_table(df, statbank2, metadata, query.selection, include_id)
 
 
 def apimetadata(id_or_url: str, client: httpx.Client | None = None) -> dict[str, Any]:

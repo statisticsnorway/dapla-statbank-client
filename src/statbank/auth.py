@@ -2,16 +2,11 @@ from __future__ import annotations
 
 import getpass
 import os
-import sys
 from importlib.metadata import version
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import cast
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 import requests as r
 import requests.auth
@@ -176,7 +171,7 @@ class StatbankAuth:
         }
 
     def _get_auth(self) -> requests.auth.AuthBase:
-        host = cast("str", self._config.endpoint_base.host)
+        host = cast(str, self._config.endpoint_base.host)
 
         with Netrc(self._config.netrc_path) as authfile:
             auth_record = authfile[host]
@@ -203,7 +198,7 @@ class StatbankAuth:
         self._auth = self._get_auth()
 
     def _cleanup_netrc(self) -> None:
-        host = cast("str", self._config.endpoint_base.host)
+        host = cast(str, self._config.endpoint_base.host)
         with Netrc(self._config.netrc_path) as authfile:
             if host in authfile:
                 del authfile[host]

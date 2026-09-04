@@ -2,10 +2,10 @@
 name = "dapla-statbank-client"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 license = "MIT"
-version = "1.4.1"
+version = "1.5.0"
 readme = "README.md"
 authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics Norway"}]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 
 dependencies = [
     "pandas >=2.2.0",
@@ -19,6 +19,7 @@ dependencies = [
     "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
     "furl >=2.1.4",
     "pathlib-abc >=0.5.2",
+    "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
 ]
 
 [project.urls]
@@ -67,6 +68,7 @@ pyarrow-stubs = {version = ">=10.0.1", python = ">=3.8,<4.0"}
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 markers = ["integration_dapla: actually runs against the real statbank API, therefore needs username and password"]
+addopts = "-v"
 
 
 
@@ -135,7 +137,9 @@ ignore = [
     "FBT002", # Carl: Users will not want to create Enums just to run the function
     "PLR2004", # Allow to compare with unnamed numerical constants.
     "SIM118", # Allow "for key in dict.keys()" instead of "for key in dict" (more explicit)
+    "TC006" # Allow unquoted type expressions in typing.cast()
 ]
+external = ["S"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

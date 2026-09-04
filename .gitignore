@@ -13,6 +13,7 @@
 *.gz
 *.orig
 *.parquet
+!/tests/resources/*.parquet
 *.sas7bdat
 *.xls
 *.xlsx
@@ -267,3 +268,6 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
+
+# VS Code settings folder
+.vscode/

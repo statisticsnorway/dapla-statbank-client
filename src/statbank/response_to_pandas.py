@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 import json
 from typing import TYPE_CHECKING
-from typing import Any
 
 import numpy as np
 import pandas as pd
-import requests
 
 if TYPE_CHECKING:
+    from typing import Any
+
+    import httpx
     from numpy.typing import NDArray
 
 
@@ -49,13 +52,13 @@ def stack_categories(varcodes: dict[str, list[str]]) -> pd.DataFrame:
 
 
 def response_to_pandas(
-    response: requests.models.Response,
+    response: httpx.Response,
     include_id: bool = False,
 ) -> pd.DataFrame:
     """Converts a response from the SSB Statbank API to a pandas DataFrame.
 
     Args:
-        response (requests.models.Response): The response object from the API.
+        response: The response object from the API.
         include_id (bool): Whether to include the ID columns in the output. Defaults to False.
 
     Returns:

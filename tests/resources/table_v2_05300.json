@@ -1,0 +1,88 @@
+{
+    "language": "no",
+    "id": "05300",
+    "label": "05300: Avstand til nærmeste lokale/sted hvor ulike kulturtilbud er jevnlig tilgjengelig (prosent) 1991-2025",
+    "description": "",
+    "sortCode": "0000000200",
+    "updated": "2026-03-05T07:00:00Z",
+    "firstPeriod": "1991",
+    "lastPeriod": "2025",
+    "category": "public",
+    "variableNames": [
+        "avstand",
+        "kulturtilbud",
+        "statistikkvariabel",
+        "år"
+    ],
+    "source": "Statistisk sentralbyrå",
+    "subjectCode": "kf",
+    "timeUnit": "Annual",
+    "paths": [
+        [
+            {
+                "id": "kf",
+                "label": "Kultur og fritid",
+                "sortCode": "0000060"
+            },
+            {
+                "id": "kf01",
+                "label": "Idrett og friluftsliv",
+                "sortCode": "0000061"
+            },
+            {
+                "id": "kulturbar",
+                "label": "Norsk kulturbarometer",
+                "sortCode": "0000062"
+            },
+            {
+                "id": "div_kulturbar_mappe",
+                "label": "Norsk kulturbarometer",
+                "sortCode": "0000000200"
+            }
+        ],
+        [
+            {
+                "id": "kf",
+                "label": "Kultur og fritid",
+                "sortCode": "0000060"
+            },
+            {
+                "id": "kf02",
+                "label": "Kultur",
+                "sortCode": "0000062"
+            },
+            {
+                "id": "kulturbar",
+                "label": "Norsk kulturbarometer",
+                "sortCode": "0000063"
+            },
+            {
+                "id": "div_kulturbar_mappe",
+                "label": "Norsk kulturbarometer",
+                "sortCode": "0000000200"
+            }
+        ]
+    ],
+    "links": [
+        {
+            "rel": "self",
+            "hreflang": "no",
+            "href": "https://data.ssb.no/api/pxwebapi/v2/tables/05300?lang=no"
+        },
+        {
+            "rel": "alternate",
+            "hreflang": "en",
+            "href": "https://data.ssb.no/api/pxwebapi/v2/tables/05300?lang=en"
+        },
+        {
+            "rel": "metadata",
+            "hreflang": "no",
+            "href": "https://data.ssb.no/api/pxwebapi/v2/tables/05300/metadata?lang=no"
+        },
+        {
+            "rel": "data",
+            "hreflang": "no",
+            "href": "https://data.ssb.no/api/pxwebapi/v2/tables/05300/data?lang=no&outputFormat=json-stat2"
+        }
+    ]
+}

@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import sys
 from abc import ABCMeta
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
+from typing import Self
 
 if TYPE_CHECKING:
     from statbank.api_types import DelTabellType
@@ -21,6 +16,7 @@ import pandas as pd
 
 from statbank.statbank_logger import logger
 
+# Empty strings are accepted by Statbanken as intentional empty cells.
 NANS = ["nan", "na", "none", ".", "<NA>", "NA"]
 
 

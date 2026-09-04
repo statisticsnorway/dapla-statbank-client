@@ -139,6 +139,7 @@ ignore = [
     "SIM118", # Allow "for key in dict.keys()" instead of "for key in dict" (more explicit)
     "TC006" # Allow unquoted type expressions in typing.cast()
 ]
+external = ["S"]
 
 [tool.ruff.lint.isort]
 force-single-line = true

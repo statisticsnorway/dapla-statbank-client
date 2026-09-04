@@ -35,7 +35,7 @@ STATBANK_TABLE_ID_LENGTH = 5
 STATBANK_API_V0_ENDPOINT = furl("https://data.ssb.no/api/v0/no/table")
 
 
-def convert_to_api2_selection(  # noqa: PLR0912
+def convert_to_api2_selection(  # noqa: PLR0912, S3776
     old_selections: Iterable[QueryPartType],
 ) -> list[pxwebapi.query_types.Selection]:
     """Converts a Pxweb version 0 selection to a Pxweb version 2 selection.
@@ -198,7 +198,7 @@ def _stack_table(
     return df
 
 
-def _label_table(
+def _label_table(  # noqa: S3776
     df: pd.DataFrame,
     statbank2: pxwebapi.PxAPI,
     metadata: pxwebapi.response_types.DatasetResponse,
@@ -212,8 +212,11 @@ def _label_table(
 
         dimension = metadata.dimension[selection.variable_code]
         if not dimension.extension.codelists:
+            error_msg = (
+                f"Code list '{selection.code_list}' not found in dimension metadata"
+            )
             raise RuntimeError(
-                f"Code list '{selection.code_list}' not found in dimension metadata",
+                error_msg,
             )
         try:
             code_list_info = next(
@@ -223,13 +226,16 @@ def _label_table(
                 ),
             )
         except StopIteration as e:
+            error_msg = (
+                f"Code list '{selection.code_list}' not found in dimension metadata"
+            )
             raise RuntimeError(
-                f"Code list '{selection.code_list}' not found in dimension metadata",
+                error_msg,
             ) from e
 
         code_list = {
             vm.code: vm.label
-            for vm in statbank2.get_code_list(code_list_info.id).values
+            for vm in statbank2.get_code_list(code_list_info.id).values  # noqa: PD011
         }
         code_list_labels[selection.variable_code] = code_list
 

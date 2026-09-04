@@ -64,7 +64,10 @@ class _FakeHandler:
             msg = f"The url {url} was never called"
             raise AssertionError(msg)
 
-    def __call__(self: Self, request: httpx.Request) -> httpx.Response:  # noqa: PLR0911
+    def __call__(  # noqa: PLR0911, PLR0912
+        self: Self,
+        request: httpx.Request,
+    ) -> httpx.Response:
         self.history.append(request)
         if request.url == INTERNAL_05300_URL:
             if request.method == HTTPMethod.POST:
@@ -376,7 +379,7 @@ def df_53000_with_id():
     with (files(resources) / "dataframe_05300_with_id.json").open(
         encoding="utf-8",
     ) as buffer:
-        data = cast("dict[str, Any]", json.load(buffer))
+        data = cast(dict[str, Any], json.load(buffer))
     return pd.DataFrame(data)
 
 
@@ -963,7 +966,6 @@ def test_apidata_with_aggregation(
         furl("https://data.ssb.no/api/pxwebapi/v2/tables/14216/data"),
         1,
     )
-    print(result)
 
     assert result.shape == (8, 5)
     assert all(

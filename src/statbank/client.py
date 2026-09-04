@@ -211,7 +211,7 @@ class StatbankClient(StatbankAuth):
         """
         match date:
             case widgets.DatePicker():
-                self.date = cast("datetime.date", date.value)
+                self.date = cast(datetime.date, date.value)
             case datetime.datetime():
                 self.date = date.date()
             case datetime.date():
@@ -289,7 +289,7 @@ class StatbankClient(StatbankAuth):
                     path = try_path
 
         content = cast(
-            "str",
+            str,
             path.read_text() if path else json_path_or_str,
         )
 

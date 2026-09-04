@@ -137,6 +137,7 @@ ignore = [
     "FBT002", # Carl: Users will not want to create Enums just to run the function
     "PLR2004", # Allow to compare with unnamed numerical constants.
     "SIM118", # Allow "for key in dict.keys()" instead of "for key in dict" (more explicit)
+    "TC006" # Allow unquoted type expressions in typing.cast()
 ]
 
 [tool.ruff.lint.isort]

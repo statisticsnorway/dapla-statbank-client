@@ -171,7 +171,7 @@ class StatbankAuth:
         }
 
     def _get_auth(self) -> requests.auth.AuthBase:
-        host = cast("str", self._config.endpoint_base.host)
+        host = cast(str, self._config.endpoint_base.host)
 
         with Netrc(self._config.netrc_path) as authfile:
             auth_record = authfile[host]
@@ -198,7 +198,7 @@ class StatbankAuth:
         self._auth = self._get_auth()
 
     def _cleanup_netrc(self) -> None:
-        host = cast("str", self._config.endpoint_base.host)
+        host = cast(str, self._config.endpoint_base.host)
         with Netrc(self._config.netrc_path) as authfile:
             if host in authfile:
                 del authfile[host]

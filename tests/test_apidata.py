@@ -289,7 +289,7 @@ def query_some_05300() -> QueryWholeType:
 @pytest.fixture
 def df_53000():
     with (files(resources) / "dataframe_05300.json").open(encoding="utf-8") as buffer:
-        data = cast("dict[str, Any]", json.load(buffer))
+        data = cast(dict[str, Any], json.load(buffer))
     return pd.DataFrame(data)
 
 

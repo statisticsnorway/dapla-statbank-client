@@ -16,6 +16,9 @@ import pxwebapi.query_types
 import pytest
 from furl import furl
 
+from statbank import apicodelist
+from statbank import apidata_all
+from statbank import apimetadata
 from statbank.api_exceptions import StatbankParameterError
 from statbank.api_exceptions import StatbankVariableSelectionError
 from statbank.api_exceptions import TooBigRequestError
@@ -111,8 +114,46 @@ class _FakeHandler:
                 headers={"Content-Type": "application/json"},
             )
 
+        if request.url.path == "/api/pxwebapi/v2/tables/14216/metadata":
+            if request.method != HTTPMethod.GET:
+                return httpx.Response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "metadata_14216.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
         if request.url.path == "/api/pxwebapi/v2/tables/05300/data":
             content = (files(resources) / "05300.parquet").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/octet-tsream"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/14216/data":
+            content = (
+                files(resources)
+                / "14216_valgdistrikt=v-02-v03_tettsted=0801,0802_tid=2021_contenscode=star.parquet"
+            ).read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/octet-tsream"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/codelists/agg_Valgdistrikt":
+            content = (
+                files(resources) / "code_lists_agg_valgdistrikt.json"
+            ).read_bytes()
 
             return httpx.Response(
                 HTTPStatus.OK,
@@ -287,6 +328,43 @@ def query_some_05300() -> QueryWholeType:
 
 
 @pytest.fixture
+def query_agg_14216() -> QueryWholeType:
+    return {
+        "query": [
+            {
+                "code": "Region",
+                "selection": {
+                    "filter": "agg:Valgdistrikt",
+                    "values": ["V-02", "V-03"],
+                },
+            },
+            {
+                "code": "TettSted",
+                "selection": {
+                    "filter": "item",
+                    "values": ["0801", "0802"],
+                },
+            },
+            {
+                "code": "ContentsCode",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "Tid",
+                "selection": {
+                    "filter": "item",
+                    "values": ["2021"],
+                },
+            },
+        ],
+        "response": {},
+    }
+
+
+@pytest.fixture
 def df_53000():
     with (files(resources) / "dataframe_05300.json").open(encoding="utf-8") as buffer:
         data = cast(dict[str, Any], json.load(buffer))
@@ -315,7 +393,23 @@ def test_apimetadata_internal() -> None:
         INTERNAL_05300_URL,
         client=client,
     )
-    assert len(result.get("title"))
+    assert (
+        result.get("title")
+        == "05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år"
+    )
+
+
+def test_apimetadata() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apimetadata(
+        "05300",
+        client=client,
+    )
+    assert (
+        result.get("label")
+        == "05300: Avstand til nærmeste lokale/sted hvor ulike kulturtilbud er jevnlig tilgjengelig (prosent) 1991-2025"
+    )
 
 
 def test_apicodelist_all_internal() -> None:
@@ -323,6 +417,16 @@ def test_apicodelist_all_internal() -> None:
     client = mock_httpx_client(handler)
     result = apicodelist_internal(
         INTERNAL_05300_URL,
+        client=client,
+    )
+    assert len(result) == VAR_NUM
+
+
+def test_apicodelist_all() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
         client=client,
     )
     assert len(result) == VAR_NUM
@@ -341,11 +445,37 @@ def test_apicodelist_specific_internal() -> None:
     assert all(isinstance(x, str) for x in result.values())
 
 
+def test_apicodelist_all_specific() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
+        "Avstand1",
+        client=client,
+    )
+    assert len(result)
+    assert isinstance(result, dict)
+    assert all(isinstance(x, str) for x in result.values())
+
+
 def test_apicodelist_specific_text_internal() -> None:
     handler = _FakeHandler()
     client = mock_httpx_client(handler)
     result = apicodelist_internal(
         INTERNAL_05300_URL,
+        "avstand",
+        client=client,
+    )
+    assert len(result)
+    assert isinstance(result, dict)
+    assert all(isinstance(x, str) for x in result.values())
+
+
+def test_apicodelist_specific_text() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
         "avstand",
         client=client,
     )
@@ -378,6 +508,18 @@ def test_apidata_all_05300_internal() -> None:
     client = mock_httpx_client(fake_post_apidata)
     df_all = apidata_all_internal(
         INTERNAL_05300_URL,
+        include_id=True,
+        client=client,
+    )
+    assert isinstance(df_all, pd.DataFrame)
+    assert len(df_all)
+
+
+def test_apidata_all_05300() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    df_all = apidata_all(
+        "05300",
         include_id=True,
         client=client,
     )
@@ -803,3 +945,28 @@ def test_apidata_new_with_oldurl(
 
     assert result.shape == df_53000.shape
     pd.testing.assert_index_equal(result.columns, df_53000.columns)
+
+
+def test_apidata_with_aggregation(
+    query_agg_14216: QueryWholeType,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata(
+        "14216",
+        query_agg_14216,
+        include_id=False,
+        client=client,
+    )
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/14216/data"),
+        1,
+    )
+    print(result)
+
+    assert result.shape == (8, 5)
+    assert all(
+        result.columns == ["region", "tettsted", "statistikkvariabel", "år", "value"],
+    )
+    assert result["region"].isin({"Akershus", "Oslo"}).all()

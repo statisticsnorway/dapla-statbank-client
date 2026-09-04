@@ -19,7 +19,7 @@ dependencies = [
     "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
     "furl >=2.1.4",
     "pathlib-abc >=0.5.2",
-    "ssb-pxapi2-arrow (>=0.0.1, <0.1.0)",
+    "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
 ]
 
 [project.urls]

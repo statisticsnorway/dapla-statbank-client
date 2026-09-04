@@ -12,7 +12,7 @@ import pxwebapi.expression
 import pxwebapi.query_types
 import pxwebapi.response_types
 from furl import furl
-from pxwebapi._msg_hooks import enc_hook
+from pxwebapi.msg_hooks import enc_hook
 
 from .get_apidata_internal import apicodelist_internal
 from .get_apidata_internal import apidata_all_internal
@@ -235,12 +235,12 @@ def _label_table(
 
     labeled = []
 
-    for dimension in metadata.dimension.values():
+    for dimension_id, dimension in metadata.dimension.items():
         if dimension.label not in df.columns:
             continue
 
         try:
-            labels = code_list_labels[dimension.label]
+            labels = code_list_labels[dimension_id]
         except KeyError:
             labels = dimension.category.label
         labeled.append(df[dimension.label].map(labels))

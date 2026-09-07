@@ -27,7 +27,7 @@ jobs:
 
       - name: Upgrade pip
         run: |
-          pip install --upgrade pip
+          pip install -c ${{ github.workspace }}/.github/workflows/constraints.txt pip
           pip --version
 
       - name: Install Poetry

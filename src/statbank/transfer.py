@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
+from typing import Self
 from typing import cast
 from typing import overload
 
@@ -27,11 +28,6 @@ from .globals import Approve
 from .globals import UseDb
 from .globals import _approve_type_check
 from .statbank_logger import logger
-
-if sys.version_info >= (3, 11):
-    from typing import Self
-else:
-    from typing_extensions import Self
 
 if sys.version_info >= (3, 13):
     from warnings import deprecated
@@ -396,15 +392,15 @@ class StatbankTransfer(StatbankAuth):
         resp_json: TransferResultType = self.response.json()
         response_msg = resp_json["TotalResult"]["Message"]
         match_oppdragsnummer = cast(
-            "re.Match[str]",
+            re.Match[str],
             pattern_work_number.search(response_msg),
         )
         match_publish_date = cast(
-            "re.Match[str]",
+            re.Match[str],
             pattern_publish_date.search(response_msg),
         )
         match_publish_time = cast(
-            "re.Match[str]",
+            re.Match[str],
             pattern_publish_time.search(response_msg),
         )
 

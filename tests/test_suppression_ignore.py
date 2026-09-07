@@ -32,14 +32,14 @@ def test_validate_raises_on_literal_nans_data():
         filbesk.validate(data, raise_errors=True)
 
 
-def test_validate_raises_on_literal_empty():
+def test_validate_allows_literal_empty():
     filbesk = fake_uttrekksbeskrivelse_successful()
     data = fake_data_to_validate()
     data["konflikt1.dat"]["Arbeidstakarar"] = pd.Series(
         ["", "nan", "", None],
-    )  # The last 3 are suppressed, so should raise error because of the first one...
-    with pytest.raises(StatbankValidateError):
-        filbesk.validate(data, raise_errors=True)
+    )  # The first empty string is an intentional empty cell; the last 3 are suppressed.
+
+    filbesk.validate(data, raise_errors=True)
 
 
 def test_validate_raises_on_na():

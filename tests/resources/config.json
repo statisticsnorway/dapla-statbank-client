@@ -1,0 +1,45 @@
+{
+    "apiVersion": "2.2.0",
+    "appVersion": "2.3.0+build.21",
+    "languages": [
+        {
+            "id": "no",
+            "label": "Norsk"
+        },
+        {
+            "id": "en",
+            "label": "English"
+        }
+    ],
+    "defaultLanguage": "no",
+    "maxDataCells": 500,
+    "maxCallsPerTimeWindow": 0,
+    "timeWindow": 0,
+    "license": "https://test.test/diverse/lisens",
+    "sourceReferences": [
+        {
+            "language": "en",
+            "text": "Source: Test Norway"
+        },
+        {
+            "language": "no",
+            "text": "Kilde: Test sentralbyrå"
+        }
+    ],
+    "defaultDataFormat": "json-stat2",
+    "dataFormats": [
+        "parquet",
+        "json-stat2"
+    ],
+    "features": [
+        {
+            "id": "CORS",
+            "params": [
+                {
+                    "key": "enabled",
+                    "value": "False"
+                }
+            ]
+        }
+    ]
+}

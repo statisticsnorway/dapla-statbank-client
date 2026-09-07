@@ -1,0 +1,86 @@
+    {
+        "title": "05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år",
+        "variables": [
+            {
+                "code": "Avstand1",
+                "text": "avstand",
+                "values": [
+                    "01",
+                    "02",
+                    "03",
+                    "04",
+                    "05",
+                    "06"
+                ],
+                "valueTexts": [
+                    "Under 1 km",
+                    "1-4,9 km",
+                    "5-9,9 km",
+                    "10-24 km",
+                    "25-49 km",
+                    "50 km eller over"
+                ]
+            },
+            {
+                "code": "Kulturtilbud",
+                "text": "kulturtilbud",
+                "values": [
+                    "01",
+                    "02",
+                    "03",
+                    "04",
+                    "05",
+                    "06",
+                    "07",
+                    "08"
+                ],
+                "valueTexts": [
+                    "Kino eller lokale med jevnlig spillefilmframvisning",
+                    "Teater eller lokale med jevnlige teater- eller operaforestillinger",
+                    "Konsertsal eller lokale med jevnlige musikkarrangement",
+                    "Galleri eller lokale med jevnlige kunstutstillinger",
+                    "Museum",
+                    "Idrettsplass eller idrettshall",
+                    "Folkebibliotek",
+                    "Bokhandel"
+                ]
+            },
+            {
+                "code": "ContentsCode",
+                "text": "statistikkvariabel",
+                "values": [
+                    "Avstand"
+                ],
+                "valueTexts": [
+                    "Avstand til nærmeste lokale/sted"
+                ]
+            },
+            {
+                "code": "Tid",
+                "text": "år",
+                "values": [
+                    "1991",
+                    "1994",
+                    "1997",
+                    "2000",
+                    "2004",
+                    "2008",
+                    "2012",
+                    "2016",
+                    "2021"
+                ],
+                "valueTexts": [
+                    "1991",
+                    "1994",
+                    "1997",
+                    "2000",
+                    "2004",
+                    "2008",
+                    "2012",
+                    "2016",
+                    "2021"
+                ],
+                "time": true
+            }
+        ]
+    }

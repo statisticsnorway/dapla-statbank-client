@@ -1,0 +1,556 @@
+{
+    "version": "2.0",
+    "class": "dataset",
+    "label": "14216: Areal og befolkning i tettsteder (K) (T) 2000-2026",
+    "source": "Statistisk sentralbyrå",
+    "updated": "2026-08-31T06:00:00Z",
+    "link": {
+        "related": [
+            {
+                "extension": {
+                    "relation": "statistics-homepage",
+                    "metaid": "KORTNAVN:beftett"
+                },
+                "href": "https://www.ssb.no/beftett",
+                "label": "Statistikkside",
+                "type": "text/html"
+            },
+            {
+                "extension": {
+                    "relation": "about-statistics",
+                    "metaid": "KORTNAVN:beftett"
+                },
+                "href": "https://www.ssb.no/beftett#om-statistikken",
+                "label": "Definisjoner og forklaringer",
+                "type": "text/html"
+            }
+        ]
+    },
+    "note": [
+        "Ikke medregnet personer uten opplysninger om bostedstrøk."
+    ],
+    "role": {
+        "time": [
+            "Tid"
+        ],
+        "geo": [
+            "Region",
+            "TettSted"
+        ],
+        "metric": [
+            "ContentsCode"
+        ]
+    },
+    "id": [
+        "Region",
+        "TettSted",
+        "ContentsCode",
+        "Tid"
+    ],
+    "size": [
+        120,
+        2,
+        2,
+        25
+    ],
+    "dimension": {
+        "Region": {
+            "label": "region",
+            "note": [
+                "[Se liste over endringer i de regionale inndelingene](https://www.ssb.no/offentlig-sektor/kommunekatalog/endringer-i-de-regionale-inndelingene)."
+            ],
+            "category": {
+                "index": {
+                    "3101": 0,
+                    "3103": 1,
+                    "3105": 2,
+                    "3107": 3,
+                    "3110": 4,
+                    "3112": 5,
+                    "3114": 6,
+                    "3116": 7,
+                    "3118": 8,
+                    "3120": 9,
+                    "3122": 10,
+                    "3124": 11,
+                    "3201": 12,
+                    "3203": 13,
+                    "3205": 14,
+                    "3207": 15,
+                    "3209": 16,
+                    "3212": 17,
+                    "3214": 18,
+                    "3216": 19,
+                    "3218": 20,
+                    "3220": 21,
+                    "3222": 22,
+                    "3224": 23,
+                    "3226": 24,
+                    "3228": 25,
+                    "3230": 26,
+                    "3232": 27,
+                    "3234": 28,
+                    "3236": 29,
+                    "3238": 30,
+                    "3240": 31,
+                    "3242": 32,
+                    "3001": 33,
+                    "3002": 34,
+                    "3003": 35,
+                    "3004": 36,
+                    "3011": 37,
+                    "3012": 38,
+                    "3013": 39,
+                    "3014": 40,
+                    "3015": 41,
+                    "3016": 42,
+                    "3017": 43,
+                    "3018": 44,
+                    "3019": 45,
+                    "3020": 46,
+                    "3021": 47,
+                    "3022": 48,
+                    "3023": 49,
+                    "3024": 50,
+                    "3025": 51,
+                    "3026": 52,
+                    "3027": 53,
+                    "3028": 54,
+                    "3029": 55,
+                    "3030": 56,
+                    "3031": 57,
+                    "3032": 58,
+                    "3033": 59,
+                    "3034": 60,
+                    "3035": 61,
+                    "3036": 62,
+                    "3037": 63,
+                    "3054": 64,
+                    "0101": 65,
+                    "0102": 66,
+                    "0103": 67,
+                    "0104": 68,
+                    "0105": 69,
+                    "0106": 70,
+                    "0111": 71,
+                    "0113": 72,
+                    "0114": 73,
+                    "0115": 74,
+                    "0116": 75,
+                    "0117": 76,
+                    "0118": 77,
+                    "0119": 78,
+                    "0121": 79,
+                    "0122": 80,
+                    "0123": 81,
+                    "0124": 82,
+                    "0125": 83,
+                    "0127": 84,
+                    "0128": 85,
+                    "0130": 86,
+                    "0131": 87,
+                    "0133": 88,
+                    "0134": 89,
+                    "0135": 90,
+                    "0136": 91,
+                    "0137": 92,
+                    "0138": 93,
+                    "0199": 94,
+                    "0211": 95,
+                    "0213": 96,
+                    "0214": 97,
+                    "0215": 98,
+                    "0216": 99,
+                    "0217": 100,
+                    "0219": 101,
+                    "0220": 102,
+                    "0221": 103,
+                    "0226": 104,
+                    "0227": 105,
+                    "0228": 106,
+                    "0229": 107,
+                    "0230": 108,
+                    "0231": 109,
+                    "0233": 110,
+                    "0234": 111,
+                    "0235": 112,
+                    "0236": 113,
+                    "0237": 114,
+                    "0238": 115,
+                    "0239": 116,
+                    "0299": 117,
+                    "0301": 118,
+                    "0399": 119
+                },
+                "label": {
+                    "3101": "Halden",
+                    "3103": "Moss",
+                    "3105": "Sarpsborg",
+                    "3107": "Fredrikstad",
+                    "3110": "Hvaler",
+                    "3112": "Råde",
+                    "3114": "Våler (Østfold)",
+                    "3116": "Skiptvet",
+                    "3118": "Indre Østfold",
+                    "3120": "Rakkestad",
+                    "3122": "Marker",
+                    "3124": "Aremark",
+                    "3201": "Bærum",
+                    "3203": "Asker",
+                    "3205": "Lillestrøm",
+                    "3207": "Nordre Follo",
+                    "3209": "Ullensaker",
+                    "3212": "Nesodden",
+                    "3214": "Frogn",
+                    "3216": "Vestby",
+                    "3218": "Ås",
+                    "3220": "Enebakk",
+                    "3222": "Lørenskog",
+                    "3224": "Rælingen",
+                    "3226": "Aurskog-Høland",
+                    "3228": "Nes",
+                    "3230": "Gjerdrum",
+                    "3232": "Nittedal",
+                    "3234": "Lunner",
+                    "3236": "Jevnaker",
+                    "3238": "Nannestad",
+                    "3240": "Eidsvoll",
+                    "3242": "Hurdal",
+                    "3001": "Halden (2020-2023)",
+                    "3002": "Moss (2020-2023)",
+                    "3003": "Sarpsborg (2020-2023)",
+                    "3004": "Fredrikstad (2020-2023)",
+                    "3011": "Hvaler (2020-2023)",
+                    "3012": "Aremark (2020-2023)",
+                    "3013": "Marker (2020-2023)",
+                    "3014": "Indre Østfold (2020-2023)",
+                    "3015": "Skiptvet (2020-2023)",
+                    "3016": "Rakkestad (2020-2023)",
+                    "3017": "Råde (2020-2023)",
+                    "3018": "Våler (Viken) (2020-2023)",
+                    "3019": "Vestby (2020-2023)",
+                    "3020": "Nordre Follo (2020-2023)",
+                    "3021": "Ås (2020-2023)",
+                    "3022": "Frogn (2020-2023)",
+                    "3023": "Nesodden (2020-2023)",
+                    "3024": "Bærum (2020-2023)",
+                    "3025": "Asker (2020-2023)",
+                    "3026": "Aurskog-Høland (2020-2023)",
+                    "3027": "Rælingen (2020-2023)",
+                    "3028": "Enebakk (2020-2023)",
+                    "3029": "Lørenskog (2020-2023)",
+                    "3030": "Lillestrøm (2020-2023)",
+                    "3031": "Nittedal (2020-2023)",
+                    "3032": "Gjerdrum (2020-2023)",
+                    "3033": "Ullensaker (2020-2023)",
+                    "3034": "Nes (2020-2023)",
+                    "3035": "Eidsvoll (2020-2023)",
+                    "3036": "Nannestad (2020-2023)",
+                    "3037": "Hurdal (2020-2023)",
+                    "3054": "Lunner (2020-2023)",
+                    "0101": "Halden (-2019)",
+                    "0102": "Sarpsborg (-1991)",
+                    "0103": "Fredrikstad (-1993)",
+                    "0104": "Moss (-2019)",
+                    "0105": "Sarpsborg (1992-2019)",
+                    "0106": "Fredrikstad (1994-2019)",
+                    "0111": "Hvaler (-2019)",
+                    "0113": "Borge (-1993)",
+                    "0114": "Varteig (-1991)",
+                    "0115": "Skjeberg (-1991)",
+                    "0116": "Berg  (-1966)",
+                    "0117": "Idd (-1966)",
+                    "0118": "Aremark (-2019)",
+                    "0119": "Marker (1964-2019)",
+                    "0121": "Rømskog (-2019)",
+                    "0122": "Trøgstad (-2019)",
+                    "0123": "Spydeberg (-2019)",
+                    "0124": "Askim (-2019)",
+                    "0125": "Eidsberg (-2019)",
+                    "0127": "Skiptvet (-2019)",
+                    "0128": "Rakkestad (-2019)",
+                    "0130": "Tune (-1991)",
+                    "0131": "Rolvsøy (1911-1993)",
+                    "0133": "Kråkerøy (1908-1993)",
+                    "0134": "Onsøy (-1993)",
+                    "0135": "Råde (-2019)",
+                    "0136": "Rygge (-2019)",
+                    "0137": "Våler (Østfold) (-2019)",
+                    "0138": "Hobøl (-2019)",
+                    "0199": "Uoppgitt kommune Østfold",
+                    "0211": "Vestby (-2019)",
+                    "0213": "Ski (1931-2019)",
+                    "0214": "Ås (-2019)",
+                    "0215": "Frogn (-2019)",
+                    "0216": "Nesodden (-2019)",
+                    "0217": "Oppegård (1915-2019)",
+                    "0219": "Bærum (-2019)",
+                    "0220": "Asker (-2019)",
+                    "0221": "Aurskog-Høland (1966-2019)",
+                    "0226": "Sørum (-2019)",
+                    "0227": "Fet (-2019)",
+                    "0228": "Rælingen (1929-2019)",
+                    "0229": "Enebakk (-2019)",
+                    "0230": "Lørenskog (1908-2019)",
+                    "0231": "Skedsmo (-2019)",
+                    "0233": "Nittedal (-2019)",
+                    "0234": "Gjerdrum (-2019)",
+                    "0235": "Ullensaker (-2019)",
+                    "0236": "Nes (Akershus) (-2019)",
+                    "0237": "Eidsvoll (-2019)",
+                    "0238": "Nannestad (-2019)",
+                    "0239": "Hurdal (-2019)",
+                    "0299": "Uoppgitt kommune Akershus",
+                    "0301": "Oslo - Oslove",
+                    "0399": "Uoppgitt komm. Oslo"
+                }
+            },
+            "extension": {
+                "elimination": true,
+                "show": "code_value",
+                "codelists": [
+                    {
+                        "id": "agg_Valgdistrikt",
+                        "label": "Valgdistrikt",
+                        "type": "Aggregation",
+                        "links": [
+                            {
+                                "rel": "metadata",
+                                "hreflang": "no",
+                                "href": "https://data.ssb.no/api/pxwebapi/v2/codeLists/agg_Valgdistrikt?lang=no"
+                            }
+                        ]
+                    },
+                    {
+                        "id": "vs_Kommun",
+                        "label": "Alle kommuner ",
+                        "type": "Valueset",
+                        "links": [
+                            {
+                                "rel": "metadata",
+                                "hreflang": "no",
+                                "href": "https://data.ssb.no/api/pxwebapi/v2/codeLists/vs_Kommun?lang=no"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "link": {
+                "describedby": [
+                    {
+                        "extension": {
+                            "Region": "urn:ssb:classification:klass:131 urn:ssb:classification:klass:104 urn:ssb:classification:klass:106 urn:ssb:classification:klass:108 urn:ssb:classification:klass:109 urn:ssb:classification:klass:563 urn:ssb:classification:klass:128 urn:ssb:classification:klass:543"
+                        }
+                    }
+                ],
+                "related": [
+                    {
+                        "extension": {
+                            "relation": "definitions",
+                            "metaid": "urn:ssb:classification:klass:131"
+                        },
+                        "href": "https://www.ssb.no/klass/klassifikasjoner/131",
+                        "label": "Standard for kommuneinndeling",
+                        "type": "text/html"
+                    },
+                    {
+                        "extension": {
+                            "relation": "definitions",
+                            "metaid": "urn:ssb:classification:klass:543"
+                        },
+                        "href": "https://www.ssb.no/klass/klassifikasjoner/543",
+                        "label": "Standard for valgdistrikt",
+                        "type": "text/html"
+                    }
+                ]
+            }
+        },
+        "TettSted": {
+            "label": "tettsted",
+            "category": {
+                "index": {
+                    "0801": 159,
+                    "0802": 160
+                },
+                "label": {
+                    "0801": "Oslo",
+                    "0802": "Movatn"
+                },
+                "note": {}
+            },
+            "extension": {
+                "elimination": true,
+                "show": "code_value",
+                "codelists": []
+            },
+            "link": {
+                "describedby": [
+                    {
+                        "extension": {
+                            "TettSted": "urn:ssb:classification:klass:110 urn:ssb:conceptvariable:vardok:141"
+                        }
+                    }
+                ],
+                "related": [
+                    {
+                        "extension": {
+                            "relation": "definitions",
+                            "metaid": "urn:ssb:classification:klass:110"
+                        },
+                        "href": "https://www.ssb.no/klass/klassifikasjoner/110",
+                        "label": "Standard for tettstedsinndeling",
+                        "type": "text/html"
+                    },
+                    {
+                        "extension": {
+                            "relation": "definitions",
+                            "metaid": "urn:ssb:conceptvariable:vardok:141"
+                        },
+                        "href": "https://www.ssb.no/a/metadata/conceptvariable/vardok/141/nb",
+                        "label": "Variabeldefinisjon av tettsted",
+                        "type": "text/html"
+                    }
+                ]
+            }
+        },
+        "ContentsCode": {
+            "label": "statistikkvariabel",
+            "category": {
+                "index": {
+                    "Areal": 0,
+                    "Bosatte": 1
+                },
+                "label": {
+                    "Areal": "Areal av tettsted (km²)",
+                    "Bosatte": "Bosatte"
+                },
+                "unit": {
+                    "Areal": {
+                        "base": "km²",
+                        "decimals": 2
+                    },
+                    "Bosatte": {
+                        "base": "personer",
+                        "decimals": 0
+                    }
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "refperiod": {
+                    "Areal": "01.01",
+                    "Bosatte": "01.01"
+                },
+                "show": "value",
+                "codelists": [],
+                "measuringType": {
+                    "Areal": "Stock",
+                    "Bosatte": "Stock"
+                },
+                "priceType": {
+                    "Areal": "NotApplicable",
+                    "Bosatte": "NotApplicable"
+                },
+                "adjustment": {
+                    "Areal": "None",
+                    "Bosatte": "None"
+                },
+                "alternativeText": {
+                    "Areal": "Areal av tettsted (km²)",
+                    "Bosatte": "Bosatte"
+                }
+            }
+        },
+        "Tid": {
+            "label": "år",
+            "category": {
+                "index": {
+                    "2000": 0,
+                    "2002": 1,
+                    "2003": 2,
+                    "2004": 3,
+                    "2005": 4,
+                    "2006": 5,
+                    "2007": 6,
+                    "2008": 7,
+                    "2009": 8,
+                    "2011": 9,
+                    "2012": 10,
+                    "2013": 11,
+                    "2014": 12,
+                    "2015": 13,
+                    "2016": 14,
+                    "2017": 15,
+                    "2018": 16,
+                    "2019": 17,
+                    "2020": 18,
+                    "2021": 19,
+                    "2022": 20,
+                    "2023": 21,
+                    "2024": 22,
+                    "2025": 23,
+                    "2026": 24
+                },
+                "label": {
+                    "2000": "2000",
+                    "2002": "2002",
+                    "2003": "2003",
+                    "2004": "2004",
+                    "2005": "2005",
+                    "2006": "2006",
+                    "2007": "2007",
+                    "2008": "2008",
+                    "2009": "2009",
+                    "2011": "2011",
+                    "2012": "2012",
+                    "2013": "2013",
+                    "2014": "2014",
+                    "2015": "2015",
+                    "2016": "2016",
+                    "2017": "2017",
+                    "2018": "2018",
+                    "2019": "2019",
+                    "2020": "2020",
+                    "2021": "2021",
+                    "2022": "2022",
+                    "2023": "2023",
+                    "2024": "2024",
+                    "2025": "2025",
+                    "2026": "2026"
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "show": "code",
+                "codelists": []
+            }
+        }
+    },
+    "extension": {
+        "px": {
+            "infofile": "None",
+            "tableid": "14216",
+            "decimals": 0,
+            "official-statistics": true,
+            "aggregallowed": true,
+            "copyright": false,
+            "language": "no",
+            "contents": "14216: Areal og befolkning i tettsteder,",
+            "descriptiondefault": false,
+            "heading": [
+                "ContentsCode",
+                "Tid"
+            ],
+            "stub": [
+                "Region",
+                "TettSted"
+            ],
+            "matrix": "14216",
+            "subject-code": "be",
+            "subject-area": "Befolkning"
+        },
+        "contact": [
+        ]
+    },
+    "value": []
+}

@@ -1,5 +1,5 @@
 default_language_version:
-  python: python3.11
+  python: python3.13
 repos:
   # Pre-commit maintained utility hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -27,7 +27,7 @@ repos:
 
   # Ruff linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.2
+    rev: v0.15.22
     hooks:
       - id: ruff
         args: ["--fix", "--exit-non-zero-on-fix"]
@@ -35,7 +35,7 @@ repos:
 
   # Black formatter
   - repo: https://github.com/psf/black
-    rev: 26.1.0
+    rev: 26.5.1
     hooks:
       - id: black
         require_serial: true

@@ -1,0 +1,222 @@
+{
+    "version": "2.0",
+    "class": "dataset",
+    "label": "05300: Avstand til nærmeste lokale/sted hvor ulike kulturtilbud er jevnlig tilgjengelig (prosent) 1991-2025",
+    "source": "Statistisk sentralbyrå",
+    "updated": "2022-05-24T06:00:00Z",
+    "link": {
+        "related": [
+            {
+                "extension": {
+                    "relation": "statistics-homepage",
+                    "metaid": "KORTNAVN:kulturbar"
+                },
+                "href": "https://www.ssb.no/kulturbar",
+                "label": "Statistikkside",
+                "type": "text/html"
+            },
+            {
+                "extension": {
+                    "relation": "about-statistics",
+                    "metaid": "KORTNAVN:kulturbar"
+                },
+                "href": "https://www.ssb.no/kulturbar#om-statistikken",
+                "label": "Definisjoner og forklaringer",
+                "type": "text/html"
+            }
+        ]
+    },
+    "role": {
+        "time": [
+            "Tid"
+        ],
+        "metric": [
+            "ContentsCode"
+        ]
+    },
+    "id": [
+        "Avstand1",
+        "Kulturtilbud",
+        "ContentsCode",
+        "Tid"
+    ],
+    "size": [
+        6,
+        8,
+        1,
+        9
+    ],
+    "dimension": {
+        "Avstand1": {
+            "label": "avstand",
+            "category": {
+                "index": {
+                    "01": 0,
+                    "02": 1,
+                    "03": 2,
+                    "04": 3,
+                    "05": 4,
+                    "06": 5
+                },
+                "label": {
+                    "01": "Under 1 km",
+                    "02": "1-4,9 km",
+                    "03": "5-9,9 km",
+                    "04": "10-24 km",
+                    "05": "25-49 km",
+                    "06": "50 km eller over"
+                },
+                "note": {
+                    "05": [
+                        "I 1991 var lengste avstand 25 km eller over."
+                    ]
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "show": "value",
+                "codelists": []
+            }
+        },
+        "Kulturtilbud": {
+            "label": "kulturtilbud",
+            "category": {
+                "index": {
+                    "01": 0,
+                    "02": 1,
+                    "03": 2,
+                    "04": 3,
+                    "05": 4,
+                    "06": 5,
+                    "07": 6,
+                    "08": 7
+                },
+                "label": {
+                    "01": "Kino eller lokale med jevnlig spillefilmframvisning",
+                    "02": "Teater eller lokale med jevnlige teater- eller operaforestillinger",
+                    "03": "Konsertsal eller lokale med jevnlige musikkarrangement",
+                    "04": "Galleri eller lokale med jevnlige kunstutstillinger",
+                    "05": "Museum",
+                    "06": "Idrettsplass eller idrettshall",
+                    "07": "Folkebibliotek",
+                    "08": "Bokhandel"
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "show": "value",
+                "codelists": []
+            }
+        },
+        "ContentsCode": {
+            "label": "statistikkvariabel",
+            "category": {
+                "index": {
+                    "Avstand": 0
+                },
+                "label": {
+                    "Avstand": "Avstand til nærmeste lokale/sted"
+                },
+                "unit": {
+                    "Avstand": {
+                        "base": "prosent",
+                        "decimals": 0
+                    }
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "refperiod": {
+                    "Avstand": "31.12."
+                },
+                "show": "value",
+                "codelists": [],
+                "measuringType": {
+                    "Avstand": "Stock"
+                },
+                "priceType": {
+                    "Avstand": "NotApplicable"
+                },
+                "adjustment": {
+                    "Avstand": "None"
+                },
+                "alternativeText": {
+                    "Avstand": "Avstand til nærmeste lokale/sted"
+                }
+            }
+        },
+        "Tid": {
+            "label": "år",
+            "category": {
+                "index": {
+                    "1991": 0,
+                    "1994": 1,
+                    "1997": 2,
+                    "2000": 3,
+                    "2004": 4,
+                    "2008": 5,
+                    "2012": 6,
+                    "2016": 7,
+                    "2021": 8
+                },
+                "label": {
+                    "1991": "1991",
+                    "1994": "1994",
+                    "1997": "1997",
+                    "2000": "2000",
+                    "2004": "2004",
+                    "2008": "2008",
+                    "2012": "2012",
+                    "2016": "2016",
+                    "2021": "2021"
+                }
+            },
+            "extension": {
+                "elimination": false,
+                "show": "code",
+                "codelists": []
+            }
+        }
+    },
+    "extension": {
+        "px": {
+            "infofile": "None",
+            "tableid": "05300",
+            "decimals": 0,
+            "official-statistics": true,
+            "aggregallowed": false,
+            "copyright": false,
+            "language": "no",
+            "contents": "05300: Avstand til nærmeste lokale/sted (prosent),",
+            "descriptiondefault": false,
+            "heading": [
+                "ContentsCode",
+                "Tid"
+            ],
+            "stub": [
+                "Avstand1",
+                "Kulturtilbud"
+            ],
+            "matrix": "05300",
+            "subject-code": "kf",
+            "subject-area": "Kultur og fritid"
+        },
+        "contact": [
+            {
+                "name": "Fam Vivian Bekkengen",
+                "organization": "Statistisk sentralbyrå",
+                "phone": "90 60 37 46",
+                "mail": "fvb@ssb.no",
+                "raw": "Fam Vivian Bekkengen, Statistisk sentralbyrå# +47 90 60 37 46#fvb@ssb.no"
+            },
+            {
+                "name": "Andreas Østhus",
+                "organization": "Statistisk sentralbyrå",
+                "phone": "47 64 99 08",
+                "mail": "thu@ssb.no",
+                "raw": "Andreas Østhus, Statistisk sentralbyrå# +47 47 64 99 08#thu@ssb.no"
+            }
+        ]
+    },
+    "value": []
+}

@@ -133,7 +133,7 @@ def test_auth_persisted(empty_netrc_file: Path, fake_auth: str):
 
     StatbankAuth(config=config)
 
-    host = cast("str", config.endpoint_base.host)
+    host = cast(str, config.endpoint_base.host)
     authfile = Netrc(empty_netrc_file)
     assert authfile[host].login == "kari"
     assert authfile[host].password == fake_auth
@@ -301,7 +301,7 @@ def test_cleanup_netrc_removes_entry(
     )
     sa = StatbankAuth(config=cfg, auth=auth_fixture)
     # Verify entry exists initially
-    host = cast("str", cfg.endpoint_base.host)
+    host = cast(str, cfg.endpoint_base.host)
     with Netrc(existing_netrc_file) as authfile:
         assert authfile[host]
     # Perform cleanup and verify removal

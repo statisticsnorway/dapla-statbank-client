@@ -3,52 +3,32 @@
 from __future__ import annotations
 
 import netrc
-import sys
 from collections import defaultdict
-from collections.abc import Iterator
-from collections.abc import Mapping
 from collections.abc import MutableMapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
-from typing import TypeAlias
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+    from collections.abc import Mapping
     from types import TracebackType
-
-if sys.version_info >= (3, 11):
     from typing import Self
 
-    @dataclass
-    class NetrcRecord:
-        """Dataclass to store login info."""
 
-        login: str
-        account: str
-        password: str
+@dataclass
+class NetrcRecord:
+    """Dataclass to store login info."""
 
-        def __bool__(self: Self) -> bool:  # noqa: D105
-            return self.login != ""
+    login: str
+    account: str
+    password: str
 
-    if TYPE_CHECKING:
-        _NetrcTuple: TypeAlias = tuple[str, str, str]
+    def __bool__(self: Self) -> bool:  # noqa: D105
+        return self.login != ""
 
-else:
-    from typing_extensions import Self
 
-    @dataclass
-    class NetrcRecord:
-        """Dataclass to store login info."""
-
-        login: str
-        account: str | None
-        password: str | None
-
-        def __bool__(self: Self) -> bool:  # noqa: D105
-            return self.login != ""
-
-    if TYPE_CHECKING:
-        _NetrcTuple: TypeAlias = tuple[str, str | None, str | None]
+type _NetrcTuple = tuple[str, str, str]
 
 
 def _to_record(

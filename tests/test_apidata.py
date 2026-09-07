@@ -1,89 +1,246 @@
+from __future__ import annotations
+
+import json
+from http import HTTPMethod
+from http import HTTPStatus
+from importlib.resources import files
 from typing import TYPE_CHECKING
 from typing import Any
-from unittest import mock
+from typing import Self
+from typing import cast
 
+import httpx
 import pandas as pd
+import pxwebapi.expression
+import pxwebapi.query_types
 import pytest
-import requests
-from dotenv import load_dotenv
-from requests.exceptions import HTTPError
+from furl import furl
 
+from statbank import apicodelist
+from statbank import apidata_all
+from statbank import apimetadata
 from statbank.api_exceptions import StatbankParameterError
 from statbank.api_exceptions import StatbankVariableSelectionError
 from statbank.api_exceptions import TooBigRequestError
-from statbank.client import StatbankClient
-from statbank.get_apidata import _check_selection
-from statbank.get_apidata import apicodelist
 from statbank.get_apidata import apidata
-from statbank.get_apidata import apidata_all
-from statbank.get_apidata import apidata_query_all
 from statbank.get_apidata import apidata_rotate
-from statbank.get_apidata import apimetadata
+from statbank.get_apidata import convert_to_api2_selection
+from statbank.get_apidata_internal import apicodelist_internal
+from statbank.get_apidata_internal import apidata_all_internal
+from statbank.get_apidata_internal import apidata_internal
+from statbank.get_apidata_internal import apidata_query_all
+from statbank.get_apidata_internal import apimetadata_internal
+
+from . import resources
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from statbank.api_types import QueryWholeType
 
-load_dotenv()
 
 DIGITS_IN_YEAR = 4
-
-
 VAR_NUM = 4
+INTERNAL_05300_URL = "https://i.ssb.no/pxwebi/api/v0/no/prod_24v_intern/START/kf/kf01/kulturbar/div_kulturbar_mappe/Kulturbaromet58"
+EXTERNAL_V2_05300_URL = "https://data.ssb.no/api/pxwebapi/v2/tables/05300"
+
+type RequestHandler = Callable[[httpx.Request], httpx.Response]
 
 
-def fake_get_table_meta() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 200
-    response._content = bytes(  # noqa: SLF001
-        '{"title":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","variables": [{"code":"Avstand1","text":"avstand","values":["01","02","03","04","05","06"], "valueTexts":["Under 1 km","1-4,9 km","5-9,9 km","10-24 km","25-49 km","50 km eller over"]}, {"code":"Kulturtilbud","text":"kulturtilbud","values":["01","02","03","04","05","06","07","08"], "valueTexts":["Kino eller lokale med jevnlig spillefilmframvisning", "Teater eller lokale med jevnlige teater- eller operaforestillinger", "Konsertsal eller lokale med jevnlige musikkarrangement", "Galleri eller lokale med jevnlige kunstutstillinger","Museum", "Idrettsplass eller idrettshall","Folkebibliotek","Bokhandel"]}, {"code":"ContentsCode","text":"statistikkvariabel","values":["Avstand"], "valueTexts":["Avstand til nærmeste lokale/sted"]}, {"code":"Tid","text":"år","values": ["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"valueTexts": ["1991","1994","1997","2000","2004","2008","2012","2016","2021"],"time":true}]}',
-        "utf8",
+class _FakeHandler:
+    def __init__(self: Self) -> None:
+        self.history: list[httpx.Request] = []
+
+    def assert_url_was_called(self: Self, url: furl, n: int | None = None) -> None:
+        """Asserts that a URL was called at least once, or n number of times."""
+        n_called = sum(
+            (request.url.netloc.decode() == url.netloc and request.url.path == url.path)
+            for request in self.history
+        )
+        if n and n != n_called:
+            msg = f"The url {url} was called {n_called} times, and not {n} times"
+            raise AssertionError(msg)
+        if n == 0:
+            msg = f"The url {url} was never called"
+            raise AssertionError(msg)
+
+    def __call__(  # noqa: PLR0911, PLR0912
+        self: Self,
+        request: httpx.Request,
+    ) -> httpx.Response:
+        self.history.append(request)
+        if request.url == INTERNAL_05300_URL:
+            if request.method == HTTPMethod.POST:
+                content = (files(resources) / "dataset_05300.json").read_bytes()
+
+                return httpx.Response(
+                    HTTPStatus.OK,
+                    content=content,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "table_v0_05300.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/05300":
+            if request.method != HTTPMethod.GET:
+                return httpx.Response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "table_v2_05300.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/05300/metadata":
+            if request.method != HTTPMethod.GET:
+                return httpx.Response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "metadata_05300.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/14216/metadata":
+            if request.method != HTTPMethod.GET:
+                return httpx.Response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "metadata_14216.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/05300/data":
+            content = (files(resources) / "05300.parquet").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/octet-tsream"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/tables/14216/data":
+            content = (
+                files(resources)
+                / "14216_valgdistrikt=v-02-v03_tettsted=0801,0802_tid=2021_contenscode=star.parquet"
+            ).read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/octet-tsream"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/codelists/agg_Valgdistrikt":
+            content = (
+                files(resources) / "code_lists_agg_valgdistrikt.json"
+            ).read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        if request.url.path == "/api/pxwebapi/v2/config":
+            if request.method != HTTPMethod.GET:
+                return httpx.Response(
+                    HTTPStatus.METHOD_NOT_ALLOWED,
+                    headers={"Content-Type": "application/json"},
+                )
+
+            content = (files(resources) / "config.json").read_bytes()
+
+            return httpx.Response(
+                HTTPStatus.OK,
+                content=content,
+                headers={"Content-Type": "application/json"},
+            )
+
+        return httpx.Response(
+            HTTPStatus.NOT_FOUND,
+        )
+
+
+def fake_error(request: httpx.Request) -> httpx.Response:  # noqa: ARG001
+    return httpx.Response(
+        HTTPStatus.INTERNAL_SERVER_ERROR,
+        headers={"Content-Type": "application/json"},
     )
-    response.request = requests.PreparedRequest()
-    return response
 
 
-def fake_post_apidata() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 200
-    response._content = bytes(  # noqa: SLF001
-        '{"class":"dataset","label":"05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år","source":"Statistisk sentralbyrå","updated":"2022-05-24T06:00:00Z","id":["Avstand1","Kulturtilbud","ContentsCode","Tid"],"size":[6,8,1,9],"dimension":{"Avstand1":{"label":"avstand","category":{"index":{"01":0,"02":1,"03":2,"04":3,"05":4,"06":5},"label":{"01":"Under 1 km","02":"1-4,9 km","03":"5-9,9 km","04":"10-24 km","05":"25-49 km","06":"50 km eller over"}}},"Kulturtilbud":{"label":"kulturtilbud","category":{"index":{"01":0,"02":1,"03":2,"04":3,"05":4,"06":5,"07":6,"08":7},"label":{"01":"Kino eller lokale med jevnlig spillefilmframvisning","02":"Teater eller lokale med jevnlige teater- eller operaforestillinger","03":"Konsertsal eller lokale med jevnlige musikkarrangement","04":"Galleri eller lokale med jevnlige kunstutstillinger","05":"Museum","06":"Idrettsplass eller idrettshall","07":"Folkebibliotek","08":"Bokhandel"}}},"ContentsCode":{"label":"statistikkvariabel","category":{"index":{"Avstand":0},"label":{"Avstand":"Avstand til nærmeste lokale/sted"},"unit":{"Avstand":{"base":"prosent","decimals":0}}}},"Tid":{"label":"år","category":{"index":{"1991":0,"1994":1,"1997":2,"2000":3,"2004":4,"2008":5,"2012":6,"2016":7,"2021":8},"label":{"1991":"1991","1994":"1994","1997":"1997","2000":"2000","2004":"2004","2008":"2008","2012":"2012","2016":"2016","2021":"2021"}}}},"value":[16,14,12,12,11,12,10,12,12,7,7,6,6,6,7,7,8,7,8,8,8,8,7,10,9,10,8,11,11,9,10,10,12,10,11,8,10,9,9,9,8,10,8,9,8,38,36,33,32,33,38,34,34,27,23,23,20,18,19,20,18,17,15,20,22,20,19,18,21,18,18,null,39,39,38,35,36,36,39,42,null,23,23,23,23,26,28,30,32,null,26,28,24,25,30,31,34,35,null,33,34,30,29,33,33,36,37,null,32,35,33,32,32,33,34,34,null,44,47,49,48,48,44,48,50,null,50,50,50,51,49,48,50,51,null,42,44,43,42,45,44,46,48,null,21,20,20,19,21,21,20,21,null,16,15,15,15,17,19,18,22,null,16,17,16,16,18,20,19,23,null,18,18,17,18,20,19,19,23,null,22,22,20,19,22,20,22,24,null,11,9,11,11,11,9,11,10,null,16,15,17,17,18,17,18,19,null,18,14,16,16,15,14,16,16,null,18,19,21,22,22,21,21,19,16,16,16,21,22,19,22,22,21,16,17,15,21,21,19,22,19,20,15,16,16,20,20,19,20,20,19,16,21,21,24,23,21,23,20,21,18,6,5,6,6,6,6,6,5,5,9,10,10,10,11,12,11,11,10,12,11,14,14,13,14,13,12,null,7,6,7,9,7,7,7,5,6,38,12,13,14,13,11,11,8,10,34,11,12,13,12,9,10,7,10,22,9,10,10,7,8,8,6,10,15,8,9,10,9,8,10,7,11,1,2,1,1,1,1,1,1,2,2,2,2,3,2,2,2,1,4,8,6,5,7,5,4,4,3,null,null,2,2,3,2,3,3,2,3,null,26,23,19,18,13,12,9,15,null,21,19,16,13,9,8,5,10,null,13,14,11,8,7,7,5,11,null,4,6,6,5,6,6,4,10,null,0,0,0,1,1,0,0,1,null,0,1,0,1,1,1,0,2,null,3,2,2,3,3,3,2,null],"status":{"71":".","80":".","89":".","98":".","107":".","116":".","125":".","134":".","143":".","152":".","161":".","170":".","179":".","188":".","197":".","206":".","215":".","287":".","359":".","360":"..","369":"..","378":"..","387":"..","396":"..","405":"..","414":"..","423":"..","431":"."},"role":{"time":["Tid"],"metric":["ContentsCode"]},"version":"2.0","extension":{"px":{"infofile":"None","tableid":"05300","decimals":0}}}',
-        "utf8",
-    )
-    response.request = requests.PreparedRequest()
-    return response
+def fake_post_error(request: httpx.Request) -> httpx.Response:
+    if request.method == HTTPMethod.POST:
+        return fake_error(request)
+    return _FakeHandler()(request)
 
 
-def fake_post_too_many_values_selected() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 400
-    response._content = bytes(  # noqa: SLF001
-        '{"error": "Too many values selected"}',
-        encoding="utf8",
-    )
-    response.request = requests.PreparedRequest()
-    return response
+def fake_post_apidata(request: httpx.Request) -> httpx.Response:
+    if request.method == HTTPMethod.POST:
+        content = (files(resources) / "dataset_05300.json").read_bytes()
+
+        return httpx.Response(
+            HTTPStatus.OK,
+            content=content,
+            headers={"Content-Type": "application/json"},
+        )
+
+    return _FakeHandler()(request)
 
 
-def fake_post_parameter_error() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 400
-    response._content = bytes(  # noqa: SLF001
-        '{"error": "Parameter error"}',
-        encoding="utf8",
-    )
-    response.request = requests.PreparedRequest()
-    return response
+def fake_post_too_many_values_selected(request: httpx.Request) -> httpx.Response:
+    if request.method == HTTPMethod.POST:
+        return httpx.Response(
+            HTTPStatus.FORBIDDEN,
+            content=b"""{"error": "Too many values selected"}""",
+            headers={"Content-Type": "application/json"},
+        )
+
+    return _FakeHandler()(request)
 
 
-def fake_post_variable_error() -> requests.Response:
-    response = requests.Response()
-    response.status_code = 400
-    response._content = bytes(  # noqa: SLF001
-        '{"error": "The request for variable \'Avstand1\' has an error. Please check your query."}',
-        encoding="utf8",
-    )
-    response.request = requests.PreparedRequest()
-    return response
+def fake_post_parameter_error(request: httpx.Request) -> httpx.Response:
+    if request.method == HTTPMethod.POST:
+        return httpx.Response(
+            HTTPStatus.BAD_REQUEST,
+            content=b"""{"error": "Parameter error"}""",
+            headers={"Content-Type": "application/json"},
+        )
+
+    return _FakeHandler()(request)
+
+
+def fake_post_variable_error(request: httpx.Request) -> httpx.Response:
+    if request.method == HTTPMethod.POST:
+        return httpx.Response(
+            HTTPStatus.BAD_REQUEST,
+            content=b"""{"error": "The request for variable \'Avstand1\' has an error. Please check your query."}""",
+            headers={"Content-Type": "application/json"},
+        )
+
+    return _FakeHandler()(request)
 
 
 def fake_metadata() -> dict[str, Any]:
@@ -99,245 +256,345 @@ def fake_metadata() -> dict[str, Any]:
     }
 
 
-@mock.patch.object(requests, "get")
-def test_apimetadata(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    assert len(apimetadata("05300").get("title"))
+@pytest.fixture
+def query_all_05300() -> QueryWholeType:
+    return {
+        "query": [
+            {
+                "code": "Avstand1",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "Kulturtilbud",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "ContentsCode",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "Tid",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+        ],
+        "response": {},
+    }
 
 
-@mock.patch.object(requests, "get")
-def test_apicodelist_all(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    assert len(apicodelist("05300")) == VAR_NUM
+@pytest.fixture
+def query_some_05300() -> QueryWholeType:
+    return {
+        "query": [
+            {
+                "code": "Avstand1",
+                "selection": {
+                    "filter": "range",
+                    "values": ["02", "03"],
+                },
+            },
+            {
+                "code": "Kulturtilbud",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "ContentsCode",
+                "selection": {
+                    "filter": "item",
+                    "values": ["Avstand"],
+                },
+            },
+            {
+                "code": "Tid",
+                "selection": {
+                    "filter": "top",
+                    "values": ["3"],
+                },
+            },
+        ],
+        "response": {},
+    }
 
 
-@mock.patch.object(requests, "get")
-def test_apicodelist_specific(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    result = apicodelist("05300", "Avstand1")
+@pytest.fixture
+def query_agg_14216() -> QueryWholeType:
+    return {
+        "query": [
+            {
+                "code": "Region",
+                "selection": {
+                    "filter": "agg:Valgdistrikt",
+                    "values": ["V-02", "V-03"],
+                },
+            },
+            {
+                "code": "TettSted",
+                "selection": {
+                    "filter": "item",
+                    "values": ["0801", "0802"],
+                },
+            },
+            {
+                "code": "ContentsCode",
+                "selection": {
+                    "filter": "all",
+                    "values": ["*"],
+                },
+            },
+            {
+                "code": "Tid",
+                "selection": {
+                    "filter": "item",
+                    "values": ["2021"],
+                },
+            },
+        ],
+        "response": {},
+    }
+
+
+@pytest.fixture
+def df_53000():
+    with (files(resources) / "dataframe_05300.json").open(encoding="utf-8") as buffer:
+        data = cast(dict[str, Any], json.load(buffer))
+    return pd.DataFrame(data)
+
+
+@pytest.fixture
+def df_53000_with_id():
+    with (files(resources) / "dataframe_05300_with_id.json").open(
+        encoding="utf-8",
+    ) as buffer:
+        data = cast(dict[str, Any], json.load(buffer))
+    return pd.DataFrame(data)
+
+
+def mock_httpx_client(respons_func: RequestHandler) -> httpx.Client:
+
+    transport = httpx.MockTransport(respons_func)
+    return httpx.Client(transport=transport)
+
+
+def test_apimetadata_internal() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apimetadata_internal(
+        INTERNAL_05300_URL,
+        client=client,
+    )
+    assert (
+        result.get("title")
+        == "05300: Avstand til nærmeste lokale/sted (prosent), etter avstand, kulturtilbud, statistikkvariabel og år"
+    )
+
+
+def test_apimetadata() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apimetadata(
+        "05300",
+        client=client,
+    )
+    assert (
+        result.get("label")
+        == "05300: Avstand til nærmeste lokale/sted hvor ulike kulturtilbud er jevnlig tilgjengelig (prosent) 1991-2025"
+    )
+
+
+def test_apicodelist_all_internal() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist_internal(
+        INTERNAL_05300_URL,
+        client=client,
+    )
+    assert len(result) == VAR_NUM
+
+
+def test_apicodelist_all() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
+        client=client,
+    )
+    assert len(result) == VAR_NUM
+
+
+def test_apicodelist_specific_internal() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist_internal(
+        INTERNAL_05300_URL,
+        "Avstand1",
+        client=client,
+    )
     assert len(result)
     assert isinstance(result, dict)
     assert all(isinstance(x, str) for x in result.values())
 
 
-@mock.patch.object(requests, "get")
-def test_apicodelist_specific_text(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    result = apicodelist("05300", "avstand")
+def test_apicodelist_all_specific() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
+        "Avstand1",
+        client=client,
+    )
     assert len(result)
     assert isinstance(result, dict)
     assert all(isinstance(x, str) for x in result.values())
 
 
-@mock.patch.object(requests, "get")
-def test_apicodelist_specific_missing_raises(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
+def test_apicodelist_specific_text_internal() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist_internal(
+        INTERNAL_05300_URL,
+        "avstand",
+        client=client,
+    )
+    assert len(result)
+    assert isinstance(result, dict)
+    assert all(isinstance(x, str) for x in result.values())
+
+
+def test_apicodelist_specific_text() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apicodelist(
+        "05300",
+        "avstand",
+        client=client,
+    )
+    assert len(result)
+    assert isinstance(result, dict)
+    assert all(isinstance(x, str) for x in result.values())
+
+
+def test_apicodelist_specific_missing_raises_internal() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
     with pytest.raises(ValueError, match="Cant find") as _:
-        apicodelist("05300", "missing")
+        apicodelist_internal(
+            INTERNAL_05300_URL,
+            "missing",
+            client=client,
+        )
 
 
-@pytest.fixture
-@mock.patch.object(requests, "get")
-def query_all_05300(fake_get: mock.Mock) -> pd.DataFrame:
-    fake_get.return_value = fake_get_table_meta()
-    return apidata_query_all("05300")
+def test_query_all_raises_500_internal() -> None:
+    client = mock_httpx_client(fake_error)
+    with pytest.raises(expected_exception=httpx.HTTPStatusError) as _:
+        apidata_query_all(
+            INTERNAL_05300_URL,
+            client=client,
+        )
 
 
-@pytest.fixture
-@mock.patch.object(requests, "post")
-def apidata_05300(fake_post: mock.Mock, query_all_05300: pd.DataFrame) -> pd.DataFrame:
-    fake_post.return_value = fake_post_apidata()
-    return apidata("05300", query_all_05300, include_id=True)
-
-
-@mock.patch.object(requests, "get")
-def test_query_all_raises_500(fake_get: mock.Mock) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    fake_get.return_value.status_code = 500
-    with pytest.raises(expected_exception=HTTPError) as _:
-        apidata_query_all("https://data.ssb.no/api/v0/no/table/05300")
-
-
-@mock.patch("statbank.get_apidata.apidata")
-@mock.patch.object(requests, "get")
-def test_apidata_all_05300(
-    fake_meta_get: mock.Mock,
-    fake_apidata: mock.Mock,
-    apidata_05300: pd.DataFrame,
-) -> None:
-    fake_meta_get.return_value = fake_get_table_meta()
-    fake_apidata.return_value = apidata_05300
-    df_all = apidata_all("05300", include_id=True)
+def test_apidata_all_05300_internal() -> None:
+    client = mock_httpx_client(fake_post_apidata)
+    df_all = apidata_all_internal(
+        INTERNAL_05300_URL,
+        include_id=True,
+        client=client,
+    )
     assert isinstance(df_all, pd.DataFrame)
     assert len(df_all)
 
 
-@mock.patch("statbank.get_apidata.apidata")
-@mock.patch.object(requests, "get")
-def test_apidata_rotate_05300(
-    fake_meta_get: mock.Mock,
-    fake_apidata: mock.Mock,
-    apidata_05300: pd.DataFrame,
-) -> None:
-    fake_meta_get.return_value = fake_get_table_meta()
-    fake_apidata.return_value = apidata_05300
-    df_all = apidata_all("05300", include_id=True)
-    df_rotate = apidata_rotate(df_all, ind="år", val="value")
-    # After rotating index should be 4-digit years
-    for ind in df_rotate.index:
-        assert len(ind) == DIGITS_IN_YEAR
-        assert ind.isdigit()
-
-
-@mock.patch.object(requests, "get")
-def test_client_apimetadata(
-    fake_get: mock.Mock,
-    client_fixture: StatbankClient,
-) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    metadata = client_fixture.apimetadata("05300")
-    assert len(metadata.get("title"))
-
-
-@mock.patch.object(requests, "get")
-def test_client_apicodelist(
-    fake_get: mock.Mock,
-    client_fixture: StatbankClient,
-) -> None:
-    fake_get.return_value = fake_get_table_meta()
-    metadata = client_fixture.apicodelist("05300", "Avstand1")
-    assert len(metadata)
-    assert isinstance(metadata, dict)
-    assert all(isinstance(x, str) for x in metadata.values())
-
-
-@mock.patch.object(requests, "post")
-def test_client_apidata(
-    fake_post: mock.Mock,
-    client_fixture: StatbankClient,
-    query_all_05300: pd.DataFrame,
-) -> None:
-    fake_post.return_value = fake_post_apidata()
-    tabledata = client_fixture.apidata("05300", query_all_05300)
-    assert isinstance(tabledata, pd.DataFrame)
-    assert len(tabledata)
-
-
-@mock.patch.object(requests, "post")
-def test_client_apidata_no_query(
-    fake_post: mock.Mock,
-    client_fixture: StatbankClient,
-) -> None:
-    fake_post.return_value = fake_post_apidata()
-    tabledata = client_fixture.apidata("05300")
-    assert isinstance(tabledata, pd.DataFrame)
-    assert len(tabledata)
-
-
-@mock.patch("statbank.get_apidata.apidata")
-@mock.patch.object(requests, "get")
-def test_client_apidata_all(
-    fake_meta_get: mock.Mock,
-    fake_apidata: mock.Mock,
-    client_fixture: StatbankClient,
-    apidata_05300: pd.DataFrame,
-) -> None:
-    fake_meta_get.return_value = fake_get_table_meta()
-    fake_apidata.return_value = apidata_05300
-    tabledata = client_fixture.apidata_all("https://data.ssb.no/api/v0/no/table/05300")
-    assert isinstance(tabledata, pd.DataFrame)
-    assert len(tabledata)
-
-
-@mock.patch("statbank.get_apidata.apidata")
-@mock.patch.object(requests, "get")
-def test_client_apidata_rotate_05300(
-    fake_meta_get: mock.Mock,
-    fake_apidata: mock.Mock,
-    client_fixture: StatbankClient,
-    apidata_05300: pd.DataFrame,
-) -> None:
-    fake_meta_get.return_value = fake_get_table_meta()
-    fake_apidata.return_value = apidata_05300
-    df_all = client_fixture.apidata_all(
-        "https://data.ssb.no/api/v0/no/table/05300/",
+def test_apidata_all_05300() -> None:
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    df_all = apidata_all(
+        "05300",
         include_id=True,
+        client=client,
     )
-    df_rotate = client_fixture.apidata_rotate(df_all, ind="år", val="value")
+    assert isinstance(df_all, pd.DataFrame)
+    assert len(df_all)
+
+
+def test_apidata_rotate_05300_internal(
+    df_53000: pd.DataFrame,
+) -> None:
+
+    df_rotate = apidata_rotate(df_53000, ind="år", val="value")
     # After rotating index should be 4-digit years
     for ind in df_rotate.index:
         assert len(ind) == DIGITS_IN_YEAR
         assert ind.isdigit()
 
 
-@mock.patch.object(requests.Session, "post")
-def test_apidata_raises_parameter_error(
-    fake_post: mock.Mock,
-    query_all_05300: pd.DataFrame,
+def test_apidata_raises_parameter_error_internal(
+    query_all_05300: QueryWholeType,
 ) -> None:
-    fake_post.return_value = fake_post_parameter_error()
-    fake_post.return_value.status_code = 400
+    client = mock_httpx_client(fake_post_parameter_error)
     with pytest.raises(expected_exception=StatbankParameterError) as _:
-        apidata("05300", query_all_05300, include_id=True)
+        apidata_internal(
+            INTERNAL_05300_URL,
+            query_all_05300,
+            include_id=True,
+            client=client,
+        )
 
 
-@mock.patch.object(requests.Session, "post")
-@mock.patch.object(requests, "get")
-def test_apidata_raises_variable_error(
-    fake_meta_get: mock.Mock,
-    fake_post: mock.Mock,
-    query_all_05300: pd.DataFrame,
+def test_apidata_raises_variable_error_internal(
+    query_all_05300: QueryWholeType,
 ) -> None:
-    fake_meta_get.return_value = fake_get_table_meta()
-    fake_post.return_value = fake_post_variable_error()
-    fake_post.return_value.status_code = 400
+    client = mock_httpx_client(fake_post_variable_error)
     with pytest.raises(expected_exception=StatbankVariableSelectionError) as _:
-        apidata("05300", query_all_05300, include_id=True)
+        apidata_internal(
+            INTERNAL_05300_URL,
+            query_all_05300,
+            include_id=True,
+            client=client,
+        )
 
 
-@mock.patch.object(requests.Session, "post")
-def test_apidata_raises_too_big_error(
-    fake_post: mock.Mock,
-    query_all_05300: pd.DataFrame,
+def test_apidata_raises_too_big_error_internal(
+    query_all_05300: QueryWholeType,
 ) -> None:
-    fake_post.return_value = fake_post_too_many_values_selected()
-    fake_post.return_value.status_code = 403
+    client = mock_httpx_client(fake_post_too_many_values_selected)
     with pytest.raises(expected_exception=TooBigRequestError) as _:
-        apidata("05300", query_all_05300, include_id=True)
+        apidata_internal(
+            INTERNAL_05300_URL,
+            query_all_05300,
+            include_id=True,
+            client=client,
+        )
 
 
-@mock.patch.object(requests.Session, "post")
-def test_apidata_raises_500(
-    fake_post: mock.Mock,
-    query_all_05300: pd.DataFrame,
+def test_apidata_raises_500_internal(
+    query_all_05300: QueryWholeType,
 ) -> None:
-    fake_post.return_value = fake_post_apidata()
-    fake_post.return_value.status_code = 500
-    with pytest.raises(HTTPError) as _:
-        apidata("05300", query_all_05300, include_id=True)
+    client = mock_httpx_client(fake_post_error)
+    with pytest.raises(httpx.HTTPStatusError) as _:
+        apidata_internal(
+            INTERNAL_05300_URL,
+            query_all_05300,
+            include_id=True,
+            client=client,
+        )
 
 
-def test_apidata_raises_wrong_id(
-    query_all_05300: pd.DataFrame,
-) -> None:
-    with pytest.raises(ValueError, match="statbank ID") as _:
-        apidata("0", query_all_05300, include_id=True)
-
-
-@mock.patch("statbank.get_apidata.apidata")
-def test_apidata_all_raises_wrong_id(
-    fake_apidata: mock.Mock,
-    apidata_05300: pd.DataFrame,
-) -> None:
-    fake_apidata.return_value = apidata_05300
-    with pytest.raises(ValueError, match="statbank ID") as _:
-        apidata_all("0", include_id=True)
-
-
-@mock.patch("statbank.get_apidata.apimetadata")
-def test_check_duplicates_in_selection(fake_metadata_dict: mock.Mock):
-    fake_metadata_dict.return_value = fake_metadata()
-    variable = "Avstand1"
+def test_check_duplicates_in_selection_internal():
+    client = mock_httpx_client(fake_post_variable_error)
     request: QueryWholeType = {
         "query": [
             {
@@ -351,15 +608,20 @@ def test_check_duplicates_in_selection(fake_metadata_dict: mock.Mock):
         "response": {"format": "json-stat2"},
     }
 
-    message = _check_selection(variable, "05300", request)
-    expected = "The value(s) 01 is duplicated for variable Avstand1"
-    assert message == expected
+    expected_message = r"The value\(s\) 01 is duplicated for variable Avstand1"
+    with pytest.raises(
+        StatbankVariableSelectionError,
+        match=expected_message,
+    ):
+        apidata_internal(
+            INTERNAL_05300_URL,
+            request,
+            client=client,
+        )
 
 
-@mock.patch("statbank.get_apidata.apimetadata")
-def test_check_invalid_in_selection(fake_metadata_dict: mock.Mock):
-    fake_metadata_dict.return_value = fake_metadata()
-    variable = "Avstand1"
+def test_check_invalid_in_selection_internal():
+    client = mock_httpx_client(fake_post_variable_error)
     request: QueryWholeType = {
         "query": [
             {
@@ -372,17 +634,23 @@ def test_check_invalid_in_selection(fake_metadata_dict: mock.Mock):
         ],
         "response": {"format": "json-stat2"},
     }
-    message = _check_selection(variable, "05300", request)
-    expected = (
-        "Invalid value(s) 07 and 08 have been specified for the variable Avstand1"
+
+    expected_message = (
+        r"Invalid value\(s\) 07 and 08 have been specified for the variable Avstand1"
     )
-    assert message == expected
+    with pytest.raises(
+        StatbankVariableSelectionError,
+        match=expected_message,
+    ):
+        apidata_internal(
+            INTERNAL_05300_URL,
+            request,
+            client=client,
+        )
 
 
-@mock.patch("statbank.get_apidata.apimetadata")
-def test_check_with_wildcard(fake_metadata_dict: mock.Mock):
-    fake_metadata_dict.return_value = fake_metadata()
-    variable = "Avstand1"
+def test_check_with_wildcard_internal():
+    client = mock_httpx_client(fake_post_variable_error)
     request: QueryWholeType = {
         "query": [
             {
@@ -396,9 +664,311 @@ def test_check_with_wildcard(fake_metadata_dict: mock.Mock):
         "response": {"format": "json-stat2"},
     }
 
-    message = _check_selection(variable, "05300", request)
-    expected = (
-        "One of the values for the variable Avstand1 contains a wildcard character (*)."
+    expected_message = r"One of the values for the variable Avstand1 contains a wildcard character \(\*\)\."
+    with pytest.raises(
+        StatbankVariableSelectionError,
+        match=expected_message,
+    ):
+        apidata_internal(
+            INTERNAL_05300_URL,
+            request,
+            client=client,
+        )
+
+
+def test_convert_all_query(query_all_05300: QueryWholeType):
+    expected = [
+        pxwebapi.query_types.Selection(
+            "Avstand1",
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        ),
+        pxwebapi.query_types.Selection(
+            "Kulturtilbud",
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        ),
+        pxwebapi.query_types.Selection(
+            "ContentsCode",
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        ),
+        pxwebapi.query_types.Selection(
+            "Tid",
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        ),
+    ]
+    result = convert_to_api2_selection(query_all_05300["query"])
+    assert result == expected
+
+
+def test_convert_some_query(query_some_05300: QueryWholeType):
+    expected = [
+        pxwebapi.query_types.Selection(
+            "Avstand1",
+            value_codes=[pxwebapi.expression.RangeExpression("02", "03")],
+        ),
+        pxwebapi.query_types.Selection(
+            "Kulturtilbud",
+            value_codes=[pxwebapi.expression.CodeExpression("*")],
+        ),
+        pxwebapi.query_types.Selection(
+            "ContentsCode",
+            value_codes=[pxwebapi.expression.CodeExpression("Avstand")],
+        ),
+        pxwebapi.query_types.Selection(
+            "Tid",
+            value_codes=[pxwebapi.expression.TopExpression(3)],
+        ),
+    ]
+    result = convert_to_api2_selection(query_some_05300["query"])
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("v0_query", "expected"),
+    [
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "bottom",
+                        "values": ["3"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.BottomExpression(3)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "bottom",
+                        "values": ["3", "1"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.BottomExpression(3, 1)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "top",
+                        "values": ["3", "1"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.TopExpression(3, 1)],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "to",
+                        "values": ["2020"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.ToExpression("2020")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "from",
+                        "values": ["2020"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Tid",
+                    value_codes=[pxwebapi.expression.FromExpression("2020")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Region",
+                    "selection": {
+                        "filter": "agg:Kommune",
+                        "values": ["0301"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Region",
+                    code_list="agg_Kommune",
+                    value_codes=[pxwebapi.expression.CodeExpression("0301")],
+                ),
+            ],
+        ),
+    ],
+    ids=(
+        "valid_top_query",
+        "valid_bottom_query",
+        "valid_offset_bottom_query",
+        "valid_to_query",
+        "valid_from_query",
+        "valid_agg_query",
+    ),
+)
+def test_convert_to_api2_selection_success(
+    v0_query: list[dict[str, Any]],
+    expected: list[pxwebapi.query_types.Selection],
+) -> None:
+    assert convert_to_api2_selection(v0_query) == expected
+
+
+@pytest.mark.parametrize(
+    ("v0_query", "error_match"),
+    [
+        (
+            [
+                {
+                    "code": "Avstand1",
+                    "selection": {
+                        "filter": "range",
+                        "values": ["02"],
+                    },
+                },
+            ],
+            "Invalid RANGE select expression",
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "to",
+                        "values": ["2020", "2021"],
+                    },
+                },
+            ],
+            "Invalid TO select expression",
+        ),
+        (
+            [
+                {
+                    "code": "Tid",
+                    "selection": {
+                        "filter": "from",
+                        "values": [],
+                    },
+                },
+            ],
+            "Invalid FROM select expression",
+        ),
+    ],
+)
+def test_convert_to_api2_selection_invalid(
+    v0_query: list[dict[str, Any]],
+    error_match: str,
+) -> None:
+    with pytest.raises(ValueError, match=error_match):
+        convert_to_api2_selection(v0_query)
+
+
+def test_apidata_new_with_number(
+    query_all_05300: QueryWholeType,
+    df_53000: pd.DataFrame,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata("05300", query_all_05300, include_id=False, client=client)
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/05300/data"),
+        1,
     )
-    assert message is not None
-    assert message.startswith(expected)
+
+    assert result.shape == df_53000.shape
+    pd.testing.assert_index_equal(result.columns, df_53000.columns)
+
+
+def test_apidata_new_include_id(
+    query_all_05300: QueryWholeType,
+    df_53000_with_id: pd.DataFrame,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata("05300", query_all_05300, include_id=True, client=client)
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/05300/data"),
+        1,
+    )
+
+    assert result.shape == df_53000_with_id.shape
+    pd.testing.assert_index_equal(result.columns, df_53000_with_id.columns)
+
+
+def test_apidata_new_with_oldurl(
+    query_all_05300: QueryWholeType,
+    df_53000: pd.DataFrame,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata(
+        "https://data.ssb.no/api/v0/no/table/05300",
+        query_all_05300,
+        include_id=False,
+        client=client,
+    )
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/05300/data"),
+        1,
+    )
+
+    assert result.shape == df_53000.shape
+    pd.testing.assert_index_equal(result.columns, df_53000.columns)
+
+
+def test_apidata_with_aggregation(
+    query_agg_14216: QueryWholeType,
+):
+    handler = _FakeHandler()
+    client = mock_httpx_client(handler)
+    result = apidata(
+        "14216",
+        query_agg_14216,
+        include_id=False,
+        client=client,
+    )
+
+    handler.assert_url_was_called(
+        furl("https://data.ssb.no/api/pxwebapi/v2/tables/14216/data"),
+        1,
+    )
+
+    assert result.shape == (8, 5)
+    assert all(
+        result.columns == ["region", "tettsted", "statistikkvariabel", "år", "value"],
+    )
+    assert result["region"].isin({"Akershus", "Oslo"}).all()

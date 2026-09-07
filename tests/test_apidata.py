@@ -815,16 +815,52 @@ def test_convert_some_query(query_some_05300: QueryWholeType):
                 {
                     "code": "Region",
                     "selection": {
-                        "filter": "agg:Kommune",
-                        "values": ["0301"],
+                        "filter": "agg:KommSummer",
+                        "values": ["K-0301"],
                     },
                 },
             ],
             [
                 pxwebapi.query_types.Selection(
                     "Region",
-                    code_list="agg_Kommune",
-                    value_codes=[pxwebapi.expression.CodeExpression("0301")],
+                    code_list="agg_KommSummer",
+                    value_codes=[pxwebapi.expression.CodeExpression("K-0301")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Region",
+                    "selection": {
+                        "filter": "agg_single:Fylker2024",
+                        "values": ["03"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Region",
+                    code_list="agg_Fylker2024",
+                    value_codes=[pxwebapi.expression.CodeExpression("03")],
+                ),
+            ],
+        ),
+        (
+            [
+                {
+                    "code": "Region",
+                    "selection": {
+                        "filter": "vs:Fylker",
+                        "values": ["03"],
+                    },
+                },
+            ],
+            [
+                pxwebapi.query_types.Selection(
+                    "Region",
+                    code_list="vs_Fylker",
+                    value_codes=[pxwebapi.expression.CodeExpression("03")],
                 ),
             ],
         ),
@@ -836,6 +872,8 @@ def test_convert_some_query(query_some_05300: QueryWholeType):
         "valid_to_query",
         "valid_from_query",
         "valid_agg_query",
+        "valid_agg_single_query",
+        "valid_vs_query",
     ),
 )
 def test_convert_to_api2_selection_success(

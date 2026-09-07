@@ -111,8 +111,14 @@ def convert_to_api2_selection(  # noqa: PLR0912, S3776
             expression = pxwebapi.expression.FromExpression(old_values[0])
             new_values = [expression]
         else:
-            if old_filter not in ("item", "all"):
-                code_list = old_filter.replace(":", "_", 1)
+            prefix, _, suffix = old_filter.partition(":")
+            new_prefix = {"agg": "agg", "agg_single": "agg", "vs": "vs"}.get(prefix)
+            if new_prefix:
+                code_list = f"{new_prefix}_{suffix}"
+            elif old_filter not in ("item", "all"):
+                msg = f"Unknown filter type: {old_filter}"
+                raise ValueError(msg)
+
             new_values = [pxwebapi.expression.CodeExpression(c) for c in old_values]
 
         new_select = pxwebapi.query_types.Selection(

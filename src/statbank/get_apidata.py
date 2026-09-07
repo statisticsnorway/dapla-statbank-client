@@ -221,7 +221,7 @@ def _label_table(  # noqa: S3776
         try:
             code_list_info = next(
                 filter(
-                    lambda cd: cd.id == selection.code_list,
+                    lambda cd: cd.id == selection.code_list,  # noqa: S1515
                     dimension.extension.codelists,
                 ),
             )

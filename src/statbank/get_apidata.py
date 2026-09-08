@@ -35,7 +35,58 @@ STATBANK_TABLE_ID_LENGTH = 5
 STATBANK_API_V0_ENDPOINT = furl("https://data.ssb.no/api/v0/no/table")
 
 
-def convert_to_api2_selection(  # noqa: PLR0912, S3776
+def _as_expression(  # noqa: PLR0911
+    old_filter: str,
+    old_values: list[str],
+) -> pxwebapi.expression.Expression:
+    expression_filter = old_filter.lower()
+    match expression_filter, old_values:
+        case "top", [count]:
+            return pxwebapi.expression.TopExpression(int(count))
+        case "top", [count, offset]:
+            return pxwebapi.expression.TopExpression(int(count), int(offset))
+        case "bottom", [count]:
+            return pxwebapi.expression.BottomExpression(int(count))
+        case "bottom", [count, offset]:
+            return pxwebapi.expression.BottomExpression(int(count), int(offset))
+        case "range", [from_value, to_value]:
+            return pxwebapi.expression.RangeExpression(from_value, to_value)
+        case "to", [value]:
+            return pxwebapi.expression.ToExpression(value)
+        case "from", [value]:
+            return pxwebapi.expression.FromExpression(value)
+
+    msg = f"Invalid {old_filter.upper()} select expression"
+    raise ValueError(msg)
+
+
+def _convert_selection(old_select: QueryPartType) -> pxwebapi.query_types.Selection:
+    variable_code = old_select["code"]
+    old_filter = old_select["selection"]["filter"]
+    old_values = old_select["selection"]["values"]
+    code_list = None
+    new_values: list[pxwebapi.expression.Expression]
+    if old_filter.lower() in ("top", "bottom", "range", "to", "from"):
+        new_values = [_as_expression(old_filter, old_values)]
+    else:
+        prefix, _, suffix = old_filter.partition(":")
+        new_prefix = {"agg": "agg", "agg_single": "agg", "vs": "vs"}.get(prefix)
+        if new_prefix:
+            code_list = f"{new_prefix}_{suffix}"
+        elif old_filter not in ("item", "all"):
+            msg = f"Unknown filter type: {old_filter}"
+            raise ValueError(msg)
+
+        new_values = [pxwebapi.expression.CodeExpression(c) for c in old_values]
+
+    return pxwebapi.query_types.Selection(
+        variable_code,
+        code_list,
+        new_values,
+    )
+
+
+def convert_to_api2_selection(
     old_selections: Iterable[QueryPartType],
 ) -> list[pxwebapi.query_types.Selection]:
     """Converts a Pxweb version 0 selection to a Pxweb version 2 selection.
@@ -47,82 +98,9 @@ def convert_to_api2_selection(  # noqa: PLR0912, S3776
         A list of new selections. This are represented as `msgspec.Struct`s not dicts.
 
     Raises:
-        ValueError: If the old selection could not be converted.
+        ValueError: If the old selection could not be converted. # noqa: DAR402
     """
-    new_selections: list[pxwebapi.query_types.Selection] = []
-    expression: pxwebapi.expression.Expression
-
-    for old_select in old_selections:
-        variable_code = old_select["code"]
-        old_filter = old_select["selection"]["filter"]
-        old_values = old_select["selection"]["values"]
-        new_values: list[pxwebapi.expression.Expression]
-        code_list = None
-        if old_filter.lower() == "top":
-            if len(old_values) == 1:
-                expression = pxwebapi.expression.TopExpression(
-                    int(old_values[0]),
-                )
-            elif len(old_values) == 2:
-                expression = pxwebapi.expression.TopExpression(
-                    int(old_values[0]),
-                    int(old_values[1]),
-                )
-            else:
-                msg = "Invalid TOP select expression"
-                raise ValueError(msg)
-            new_values = [expression]
-
-        elif old_filter.lower() == "bottom":
-            if len(old_values) == 1:
-                expression = pxwebapi.expression.BottomExpression(
-                    int(old_values[0]),
-                )
-            elif len(old_values) == 2:
-                expression = pxwebapi.expression.BottomExpression(
-                    int(old_values[0]),
-                    int(old_values[1]),
-                )
-            else:
-                msg = "Invalid BOTTOM select expression"
-                raise ValueError(msg)
-            new_values = [expression]
-
-        elif old_filter.lower() == "range":
-            if len(old_values) != 2:
-                msg = "Invalid RANGE select expression"
-                raise ValueError(msg)
-            expression = pxwebapi.expression.RangeExpression(
-                old_values[0],
-                old_values[1],
-            )
-            new_values = [expression]
-        elif old_filter.lower() == "to":
-            if len(old_values) != 1:
-                msg = "Invalid TO select expression"
-                raise ValueError(msg)
-            expression = pxwebapi.expression.ToExpression(old_values[0])
-            new_values = [expression]
-
-        elif old_filter.lower() == "from":
-            if len(old_values) != 1:
-                msg = "Invalid FROM select expression"
-                raise ValueError(msg)
-            expression = pxwebapi.expression.FromExpression(old_values[0])
-            new_values = [expression]
-        else:
-            if old_filter not in ("item", "all"):
-                code_list = old_filter.replace(":", "_", 1)
-            new_values = [pxwebapi.expression.CodeExpression(c) for c in old_values]
-
-        new_select = pxwebapi.query_types.Selection(
-            variable_code,
-            code_list,
-            new_values,
-        )
-        new_selections.append(new_select)
-
-    return new_selections
+    return [_convert_selection(old_select) for old_select in old_selections]
 
 
 def _get_table_id(id_or_url: str) -> str | None:

@@ -49,6 +49,15 @@ def _to_tuple(machines: Mapping[str, NetrcRecord]) -> dict[str, _NetrcTuple]:
     }
 
 
+def _escape(s: str) -> str:
+    """Escape a string for use in a .netrc file."""
+    if all(c not in {'"', "\\", " ", "\t", "\n"} for c in s):
+        return s
+
+    s = s.replace("\\", "\\\\").replace('"', '\\"')
+    return f'"{s}"'
+
+
 class Netrc(MutableMapping[str, NetrcRecord]):
     """A mapping of a .netrc file, that can be used as a context manager, and save changes to disk.
 
@@ -117,11 +126,15 @@ class Netrc(MutableMapping[str, NetrcRecord]):
         rep = ""
         for host in self._netrc.hosts.keys():
             attrs = self._netrc.hosts[host]
-            rep += f"machine {host}\n\tlogin {attrs[0]}\n"
+            if host == "default":
+                rep += "default\n"
+            else:
+                rep += f"machine {host}\n"
+            rep += f"\tlogin {_escape(attrs[0])}\n"
             if attrs[1]:
-                rep += f"\taccount {attrs[1]}\n"
+                rep += f"\taccount {_escape(attrs[1])}\n"
             if attrs[2]:
-                rep += f"\tpassword {attrs[2]}\n"
+                rep += f"\tpassword {_escape(attrs[2])}\n"
         for macro in self._netrc.macros.keys():
             rep += f"macdef {macro}\n"
             for line in self._netrc.macros[macro]:

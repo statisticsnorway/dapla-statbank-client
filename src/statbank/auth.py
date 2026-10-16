@@ -187,9 +187,7 @@ class StatbankAuth:
 
         return requests.auth.HTTPBasicAuth(
             auth_record.login,
-            (
-                auth_record.password if auth_record.password is not None else ""
-            ),  # Can be None in Python 3.10
+            auth_record.password,  # Can be None in Python 3.10
         )
 
     def reset_auth(self) -> None:

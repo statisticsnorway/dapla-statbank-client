@@ -14,6 +14,7 @@ from unittest import mock
 import ipywidgets as widgets
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
 import requests
 import requests.auth
@@ -52,13 +53,9 @@ def fake_user():
     return "tbf"
 
 
-# Successful fixtures
 @pytest.fixture
-def uttrekksbeskrivelse_success(
-    config_fixture: StatbankConfig,
-    auth_fixture: requests.auth.AuthBase,
-):
-    bdata = UttrekksBeskrivelseData(
+def uttrekksbeskrivelse_data() -> UttrekksBeskrivelseData:
+    return UttrekksBeskrivelseData(
         tableid=10000,
         tablename="HovedTabellNavn",
         time_retrieved=datetime.datetime(  # noqa: DTZ001
@@ -116,8 +113,16 @@ def uttrekksbeskrivelse_success(
         suppression=None,
     )
 
+
+# Successful fixtures
+@pytest.fixture
+def uttrekksbeskrivelse_success(
+    uttrekksbeskrivelse_data: UttrekksBeskrivelseData,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
     return StatbankUttrekksBeskrivelse(
-        data=bdata,
+        data=uttrekksbeskrivelse_data,
         raise_errors=True,
         config=config_fixture,
         auth=auth_fixture,
@@ -748,6 +753,51 @@ def test_check_round_data_manages_punctum_raises_error(
     datadict[subtable_name]["4"] = pd.Series(["1.15", "2.25", "3.35"])
     with pytest.raises(StatbankValidateError):
         uttrekksbeskrivelse_success.validate(datadict)
+
+
+def test_round_data_pyarrow(
+    uttrekksbeskrivelse_data: UttrekksBeskrivelseData,
+    transfer_data_fixture: dict[str, pd.DataFrame],
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    subtable_name = next(iter(transfer_data_fixture))
+
+    uttrekksbeskrivelse_data.variables[0]["statistikkvariabler"].append(
+        {
+            "kolonnenummer": "5",
+            "Text": "Prosent",
+            "Enhet": "prosent",
+            "Antall_lagrede_desimaler": "1",
+            "Antall_viste_desimaler": "1",
+        },
+    )
+
+    uttrekksbeskrivelse = StatbankUttrekksBeskrivelse(
+        data=uttrekksbeskrivelse_data,
+        raise_errors=True,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+
+    transfer_data_fixture[subtable_name]["3"] = pd.Series(
+        ["1.5", "2.5", "3.5"],
+        dtype=pd.ArrowDtype(pa.decimal128(precision=3, scale=1)),
+    )
+    transfer_data_fixture[subtable_name]["4"] = pd.Series(
+        ["1.15", "2.25", "3.35"],
+        dtype=pd.ArrowDtype(pa.decimal256(precision=4, scale=2)),
+    )
+    transfer_data_fixture[subtable_name]["Prosent"] = pd.Series(
+        ["100.55", "103.55", "106.55"],
+        dtype=pd.ArrowDtype(pa.decimal128(precision=5, scale=2)),
+    )
+    dict_rounded = uttrekksbeskrivelse.round_data(transfer_data_fixture)
+    df_test_rounded = dict_rounded[subtable_name]
+
+    assert df_test_rounded["3"].equals(pd.Series(["2", "3", "4"]))
+    assert df_test_rounded["4"].equals(pd.Series(["1,2", "2,3", "3,4"]))
+    assert df_test_rounded["Prosent"].equals(pd.Series(["100,6", "103,6", "106,6"]))
 
 
 def test_transfer_correct_entry(transfer_fixture: StatbankTransfer):

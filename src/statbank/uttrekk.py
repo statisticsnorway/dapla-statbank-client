@@ -11,7 +11,7 @@ from decimal import ROUND_HALF_UP
 from decimal import Decimal
 from decimal import localcontext
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from typing import Literal
 from typing import Self
 from typing import TypedDict
@@ -19,6 +19,7 @@ from typing import overload
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import requests as r
 import requests.auth
 
@@ -515,10 +516,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                     col_num = int(variabel["kolonnenummer"]) - 1
                     decimal_num = int(variabel["Antall_lagrede_desimaler"])
                     # Nan-handling?
-                    if (
-                        "float"
-                        in str(data_copy[deltabell_name].dtypes.iloc[col_num]).lower()
-                    ):  # If column is passed in as a float, we can handle it
+                    col = data_copy[deltabell_name].iloc[:, col_num]
+                    if _is_roundable(col):
                         logger.info(
                             "Rounding column %s in %s into a string, with %s decimals.",
                             col_num + 1,
@@ -530,15 +529,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                         ] = (
                             data_copy[deltabell_name]
                             .iloc[:, col_num]
-                            .astype("Float64")
                             .apply(self._round, decimals=decimal_num, round_up=round_up)
-                            .astype(str)
-                            .str.replace("<NA>", "", regex=False)
                             .str.replace(".", ",", regex=False)
                         )
                     else:
                         logger.info(
-                            "not a float %s: %s",
+                            "not a roundable column %s: %s",
                             col_num,
                             str(data_copy[deltabell_name].dtypes.iloc[col_num]),
                         )
@@ -546,29 +542,31 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     @staticmethod
     def _round(
-        n: float | str | pd.api.typing.NAType,
+        n: float | str | Decimal | pd.api.typing.NAType | None,
         decimals: int = 0,
         round_up: bool = True,
     ) -> str:
         if pd.isna(n):
-            result: str = ""
-        elif n in [np.inf, -np.inf]:
+            return ""
+
+        n_decimal = Decimal(cast(float | str | Decimal, n))
+
+        if n_decimal.is_infinite():
             warnings.warn(
                 "Found Infinite values in your data, why? Remove them?",
                 stacklevel=1,
             )
-            result = ""
-        elif round_up and decimals and (n or n == 0):
-            with localcontext() as ctx:
+            return ""
+
+        with localcontext() as ctx:
+            if round_up:
                 ctx.rounding = ROUND_HALF_UP
-                result = str(round(Decimal(n), decimals))
-        elif not round_up and decimals and (n or n == 0):
-            result = str(round(Decimal(n), decimals))
-        elif n or n == 0:
-            result = str(Decimal(n).to_integral_value())
-        else:
-            result = str(n)
-        return result
+            if decimals == 0:
+                result = n_decimal.to_integral_value(context=ctx)
+            else:
+                result = round(n_decimal, decimals)
+
+        return str(result)
 
     def _get_uttrekksbeskrivelse(
         self: Self,
@@ -633,3 +631,20 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         }
 
         return json_object
+
+
+def _is_roundable(col: pd.Series) -> bool | np.bool_:
+    """Checks if a column is a float or decimal type."""
+    datatype = col.dtype
+    return (
+        isinstance(datatype, np.dtype) and np.issubdtype(datatype, np.floating)
+    ) or (
+        (
+            isinstance(datatype, pd.ArrowDtype)
+            and (
+                pa.types.is_floating(datatype.pyarrow_dtype)
+                or pa.types.is_decimal(datatype.pyarrow_dtype)
+            )
+        )
+        or col.map(lambda x: isinstance(x, (float, Decimal)), na_action="ignore").all()
+    )

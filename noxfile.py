@@ -30,14 +30,14 @@ python_versions = [
 ]
 python_versions_for_test = python_versions
 nox.needs_version = ">= 2021.6.6"
-nox.options.sessions = (
+nox.options.sessions = [
     "pre-commit",
     "mypy",
     "tests",
     "typeguard",
     "xdoctest",
     "docs-build",
-)
+]
 
 
 def install_poetry_groups(session: Session, groups: Iterable[str]) -> None:

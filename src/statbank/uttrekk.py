@@ -7,11 +7,9 @@ import json
 import math
 import sys
 import warnings
-from decimal import ROUND_HALF_UP
 from decimal import Decimal
-from decimal import localcontext
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 from typing import Literal
 from typing import Self
 from typing import TypedDict
@@ -20,6 +18,7 @@ from typing import overload
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 import requests as r
 import requests.auth
 
@@ -512,61 +511,72 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         for deltabell in self.variables:
             deltabell_name = deltabell["deltabell"]
             for variabel in deltabell["statistikkvariabler"]:
-                if "Antall_lagrede_desimaler" in variabel:
-                    col_num = int(variabel["kolonnenummer"]) - 1
-                    decimal_num = int(variabel["Antall_lagrede_desimaler"])
-                    # Nan-handling?
-                    col = data_copy[deltabell_name].iloc[:, col_num]
-                    if _is_roundable(col):
-                        logger.info(
-                            "Rounding column %s in %s into a string, with %s decimals.",
-                            col_num + 1,
-                            deltabell_name,
-                            decimal_num,
-                        )
-                        data_copy[deltabell_name][
-                            data_copy[deltabell_name].columns[col_num]
-                        ] = (
-                            data_copy[deltabell_name]
-                            .iloc[:, col_num]
-                            .apply(self._round, decimals=decimal_num, round_up=round_up)
-                            .str.replace(".", ",", regex=False)
-                        )
-                    else:
-                        logger.info(
-                            "not a roundable column %s: %s",
-                            col_num,
-                            str(data_copy[deltabell_name].dtypes.iloc[col_num]),
-                        )
+                if "Antall_lagrede_desimaler" not in variabel:
+                    continue  # type: ignore[unreachable]
+
+                col_num = int(variabel["kolonnenummer"]) - 1
+                decimal_num = int(variabel["Antall_lagrede_desimaler"])
+                # Nan-handling?
+                col = data[deltabell_name].iloc[:, col_num]
+                if not _is_roundable(col):
+                    logger.info(
+                        "not a roundable column %s: %s",
+                        col_num,
+                        str(col.dtype),
+                    )
+                    continue
+
+                logger.info(
+                    "Rounding column %s in %s into a string, with %s decimals.",
+                    col_num + 1,
+                    deltabell_name,
+                    decimal_num,
+                )
+                data_copy[deltabell_name][data[deltabell_name].columns[col_num]] = (
+                    col.pipe(self._round, decimals=decimal_num, round_up=round_up)
+                    .map(
+                        "{:.{decimal_num}f}".format,
+                        na_action="ignore",
+                        decimal_num=decimal_num,
+                    )
+                    .str.replace(".", ",", regex=False)
+                    .fillna("")
+                )
+
         return data_copy
 
     @staticmethod
     def _round(
-        n: float | str | Decimal | pd.api.typing.NAType | None,
+        s: pd.Series,
         decimals: int = 0,
         round_up: bool = True,
-    ) -> str:
-        if pd.isna(n):
-            return ""
+    ) -> pd.Series:
+        """Vectorized rounding of a pandas Series using pyarrow.
 
-        n_decimal = Decimal(cast(float | str | Decimal, n))
+        We need a raw pyarrow.Array here because round_options is not available on Series.round(),
+        even though it uses pc.round() when the dtypes is ArrowDtype().
+        """
+        # pa.array() even handles decimal.Decimal to decimal128 conversion.
+        array = pa.array(s, from_pandas=True)
 
-        if n_decimal.is_infinite():
+        infinite_mask = pc.is_inf(array)
+        if any(infinite_mask):
             warnings.warn(
                 "Found Infinite values in your data, why? Remove them?",
                 stacklevel=1,
             )
-            return ""
+            array = pc.replace_with_mask(
+                array,
+                infinite_mask,
+                pa.nulls(infinite_mask.true_count, type=array.type),
+            )
 
-        with localcontext() as ctx:
-            if round_up:
-                ctx.rounding = ROUND_HALF_UP
-            if decimals == 0:
-                result = n_decimal.to_integral_value(context=ctx)
-            else:
-                result = round(n_decimal, decimals)
-
-        return str(result)
+        options = pc.RoundOptions(
+            ndigits=decimals,
+            round_mode="half_up" if round_up else "half_to_even",
+        )
+        rounded = pc.round(array, options=options)
+        return pd.Series(pd.arrays.ArrowExtensionArray(rounded), name=s.name)
 
     def _get_uttrekksbeskrivelse(
         self: Self,

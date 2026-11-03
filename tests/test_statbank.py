@@ -7,6 +7,7 @@ import logging
 import os
 import shutil
 import subprocess
+from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest import mock
@@ -14,6 +15,7 @@ from unittest import mock
 import ipywidgets as widgets
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 import pytest
 import requests
 import requests.auth
@@ -33,32 +35,30 @@ if TYPE_CHECKING:
     from statbank.auth import StatbankConfig
 
 
-def test_round_up_zero():
-    assert StatbankUttrekksBeskrivelse._round(0.0, 0) == "0"  # noqa: SLF001
-
-
-def test_round_handles_inf_values():
-    assert StatbankUttrekksBeskrivelse._round(np.inf, 0) == ""  # noqa: SLF001
-    assert StatbankUttrekksBeskrivelse._round(-np.inf, 0) == ""  # noqa: SLF001
+@pytest.mark.parametrize("value", [np.inf, -np.inf])
+def test_round_handles_inf_values(value: float):
+    assert pd.isna(
+        StatbankUttrekksBeskrivelse._round(  # noqa: SLF001
+            pd.Series([value]),
+            0,
+        ).item(),
+    )
 
 
 @pytest.mark.parametrize("value", [np.inf, -np.inf])
 def test_round_warns_on_inf_values(value: float):
+    s = pd.Series([value])
     with pytest.warns(UserWarning, match="Found Infinite values in your data"):
-        assert StatbankUttrekksBeskrivelse._round(value, 0) == ""  # noqa: SLF001
+        StatbankUttrekksBeskrivelse._round(s, 0)  # noqa: SLF001
 
 
 def fake_user():
     return "tbf"
 
 
-# Successful fixtures
 @pytest.fixture
-def uttrekksbeskrivelse_success(
-    config_fixture: StatbankConfig,
-    auth_fixture: requests.auth.AuthBase,
-):
-    bdata = UttrekksBeskrivelseData(
+def uttrekksbeskrivelse_data() -> UttrekksBeskrivelseData:
+    return UttrekksBeskrivelseData(
         tableid=10000,
         tablename="HovedTabellNavn",
         time_retrieved=datetime.datetime(  # noqa: DTZ001
@@ -116,8 +116,16 @@ def uttrekksbeskrivelse_success(
         suppression=None,
     )
 
+
+# Successful fixtures
+@pytest.fixture
+def uttrekksbeskrivelse_success(
+    uttrekksbeskrivelse_data: UttrekksBeskrivelseData,
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
     return StatbankUttrekksBeskrivelse(
-        data=bdata,
+        data=uttrekksbeskrivelse_data,
         raise_errors=True,
         config=config_fixture,
         auth=auth_fixture,
@@ -750,6 +758,114 @@ def test_check_round_data_manages_punctum_raises_error(
         uttrekksbeskrivelse_success.validate(datadict)
 
 
+def test_round_data_decimal(
+    uttrekksbeskrivelse_data: UttrekksBeskrivelseData,
+    transfer_data_fixture: dict[str, pd.DataFrame],
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    subtable_name = next(iter(transfer_data_fixture))
+
+    uttrekksbeskrivelse_data.variables[0]["statistikkvariabler"].append(
+        {
+            "kolonnenummer": "5",
+            "Text": "Prosent",
+            "Enhet": "prosent",
+            "Antall_lagrede_desimaler": "1",
+            "Antall_viste_desimaler": "1",
+        },
+    )
+
+    uttrekksbeskrivelse = StatbankUttrekksBeskrivelse(
+        data=uttrekksbeskrivelse_data,
+        raise_errors=True,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+
+    transfer_data_fixture[subtable_name]["3"] = pd.Series(
+        ["1.5", "2.5", "3.5"],
+    ).map(Decimal)
+    transfer_data_fixture[subtable_name]["4"] = pd.Series(
+        ["1.15", "2.25", "3.35"],
+    ).map(Decimal)
+    transfer_data_fixture[subtable_name]["Prosent"] = pd.Series(
+        ["100.55", "103.55", "106.55"],
+    ).map(Decimal)
+    dict_rounded = uttrekksbeskrivelse.round_data(transfer_data_fixture)
+    df_test_rounded = dict_rounded[subtable_name]
+
+    assert df_test_rounded["3"].equals(pd.Series(["2", "3", "4"]))
+    assert df_test_rounded["4"].equals(pd.Series(["1,2", "2,3", "3,4"]))
+    assert df_test_rounded["Prosent"].equals(pd.Series(["100,6", "103,6", "106,6"]))
+
+
+def test_round_data_pyarrow(
+    uttrekksbeskrivelse_data: UttrekksBeskrivelseData,
+    transfer_data_fixture: dict[str, pd.DataFrame],
+    config_fixture: StatbankConfig,
+    auth_fixture: requests.auth.AuthBase,
+):
+    subtable_name = next(iter(transfer_data_fixture))
+
+    uttrekksbeskrivelse_data.variables[0]["statistikkvariabler"].append(
+        {
+            "kolonnenummer": "5",
+            "Text": "Prosent",
+            "Enhet": "prosent",
+            "Antall_lagrede_desimaler": "1",
+            "Antall_viste_desimaler": "1",
+        },
+    )
+
+    uttrekksbeskrivelse = StatbankUttrekksBeskrivelse(
+        data=uttrekksbeskrivelse_data,
+        raise_errors=True,
+        config=config_fixture,
+        auth=auth_fixture,
+    )
+
+    transfer_data_fixture[subtable_name]["3"] = pd.Series(
+        ["1.5", "2.5", "3.5"],
+        dtype=pd.ArrowDtype(pa.decimal128(precision=3, scale=1)),
+    )
+    transfer_data_fixture[subtable_name]["4"] = pd.Series(
+        ["1.15", "2.25", "3.35"],
+        dtype=pd.ArrowDtype(pa.decimal256(precision=4, scale=2)),
+    )
+    transfer_data_fixture[subtable_name]["Prosent"] = pd.Series(
+        ["100.55", "103.55", "106.55"],
+        dtype=pd.ArrowDtype(pa.decimal128(precision=5, scale=2)),
+    )
+    dict_rounded = uttrekksbeskrivelse.round_data(transfer_data_fixture)
+    df_test_rounded = dict_rounded[subtable_name]
+
+    assert df_test_rounded["3"].equals(pd.Series(["2", "3", "4"]))
+    assert df_test_rounded["4"].equals(pd.Series(["1,2", "2,3", "3,4"]))
+    assert df_test_rounded["Prosent"].equals(pd.Series(["100,6", "103,6", "106,6"]))
+
+
+def test_round_data_handles_null(
+    uttrekksbeskrivelse_success: StatbankUttrekksBeskrivelse,
+    transfer_data_fixture: dict[str, pd.DataFrame],
+):
+    subtable_name = next(iter(transfer_data_fixture))
+
+    transfer_data_fixture[subtable_name]["3"] = pd.Series(
+        ["1.5", None, "3.5"],
+    ).map(Decimal)
+    transfer_data_fixture[subtable_name]["4"] = pd.Series(
+        ["1.15", None, "3.35"],
+        dtype=pd.ArrowDtype(pa.decimal256(precision=4, scale=2)),
+    )
+
+    dict_rounded = uttrekksbeskrivelse_success.round_data(transfer_data_fixture)
+    df_test_rounded = dict_rounded[subtable_name]
+
+    assert df_test_rounded["3"].equals(pd.Series(["2", "", "4"]))
+    assert df_test_rounded["4"].equals(pd.Series(["1,2", "", "3,4"]))
+
+
 def test_transfer_correct_entry(transfer_fixture: StatbankTransfer):
     # "Lastenummer" is one of the last things set by __init__ and signifies a correctly loaded data-transfer.
     # Is also used to build urls to webpages showing the ingestion status
@@ -787,8 +903,8 @@ def test_get_user_initials(
         "jup@ssb.no" if key == "JUPYTERHUB_USER" else default
     )
     assert StatbankClient._get_user_initials() == "jup"  # noqa: SLF001
-    mock_environ_get.side_effect = (
-        lambda _, default="": default
+    mock_environ_get.side_effect = lambda _, default="": (
+        default
     )  # Reset  env var to not existing
 
     # Test when os.environ.get("DAPLA_USER") and JUPYTERHUB_USER are empty, fallback to git config

@@ -47,8 +47,9 @@ def test_round_handles_inf_values(value: float):
 
 @pytest.mark.parametrize("value", [np.inf, -np.inf])
 def test_round_warns_on_inf_values(value: float):
+    s = pd.Series([value])
     with pytest.warns(UserWarning, match="Found Infinite values in your data"):
-        StatbankUttrekksBeskrivelse._round(pd.Series([value]), 0)  # noqa: SLF001
+        StatbankUttrekksBeskrivelse._round(s, 0)  # noqa: SLF001
 
 
 def fake_user():

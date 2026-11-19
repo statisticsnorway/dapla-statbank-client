@@ -6,6 +6,14 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
 authors = [{ name = "Carl F. Corneil", email = "cfc@ssb.no" }, { name = "Statistics Norway" }]
+classifiers = [
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "License :: OSI Approved :: MIT License",
+  "Development Status :: 5 - Production/Stable",
+  "Typing :: Typed",
+]
 
 dependencies = [
   "IPython >=8.11.0",
@@ -21,9 +29,7 @@ dependencies = [
   "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
   "toml >=0.10.2",
 ]
-dynamic = [
-  "classifiers",
-]
+
 
 [project.urls]
 Changelog = "https://github.com/statisticsnorway/dapla-statbank-client/releases"
@@ -70,9 +76,8 @@ dev = [
 ]
 
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
-# Stubs for Pylance og Mypy
+requires = ["uv_build>=0.13.7,<0.15.0"]
+build-backend = "uv_build"
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -90,7 +95,7 @@ fail_under = 80
 omit = ["*api_types.py"]
 
 [tool.deptry.per_rule_ignores]
-DEP001 = ["nox", "nox_poetry"]  # packages available by default
+DEP001 = ["nox"]  # packages available by default
 
 [tool.mypy]
 strict = true
@@ -108,13 +113,11 @@ module = [
 ]
 ignore_missing_imports = true
 
-[tool.poetry]
-packages = [{ include = "statbank", from = "src" }]
-classifiers = ["Development Status :: 5 - Production/Stable"]
-requires-poetry = ">=2.2.1"
+[tool.uv]
+exclude-newer = "7 days"
 
-[tool.poetry.requires-plugins]
-poetry-plugin-export = ">=1.9"
+[tool.uv.build-backend]
+module-name = "statbank"
 
 [tool.pydoclint]
 style = "google"

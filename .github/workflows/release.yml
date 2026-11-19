@@ -25,16 +25,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Upgrade pip
+      - name: Get uv version from constraints
+        id: uv-version
+        shell: pwsh
         run: |
-          pip install -c ${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pip --version
+          $UV_VERSION = (Get-Content .github/workflows/constraints.txt | Where-Object { $_ -match '^uv==' } | ForEach-Object { ($_ -split '==')[1] })
+          echo "version=$UV_VERSION" >> $env:GITHUB_OUTPUT
 
-      - name: Install Poetry
-        run: |
-          pipx install --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" poetry
-          pipx inject poetry poetry-plugin-export
-          poetry --version
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          enable-cache: true
+          version: ${{ steps.uv-version.outputs.version }}
+          python-version: "3.13"
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -115,13 +118,13 @@ jobs:
       - name: Bump version for developmental release
         if: (!steps.check-version.outputs.tag)
         run: |
-          poetry version patch &&
-          version=$(poetry version | awk '{ print $2 }') &&
-          poetry version $version.dev.$(date +%s)
+          uv version --bump patch --frozen &&
+          version=$(uv version --short) &&
+          uv version $version.dev.$(date +%s) --no-sync
 
       - name: Build package
         run: |
-          poetry build --ansi
+          uv build
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.tag

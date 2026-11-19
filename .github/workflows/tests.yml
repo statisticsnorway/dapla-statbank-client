@@ -49,12 +49,6 @@ jobs:
       - name: Get uv version from constraints
         id: uv-version
         shell: pwsh
-          $UV_VERSION = (Get-Content .github/workflows/constraints.txt | Where-Object { $_ -match '^uv==' } | ForEach-Object { ($_ -split '==')[1] })
-          echo "version=$UV_VERSION" >> $env:GITHUB_OUTPUT
-
-      - name: Get uv version from constraints
-        id: uv-version
-        shell: pwsh
         run: |
           $UV_VERSION = (Get-Content .github/workflows/constraints.txt | Where-Object { $_ -match '^uv==' } | ForEach-Object { ($_ -split '==')[1] })
           echo "version=$UV_VERSION" >> $env:GITHUB_OUTPUT

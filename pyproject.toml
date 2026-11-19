@@ -21,6 +21,9 @@ dependencies = [
     "pathlib-abc >=0.5.2",
     "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
 ]
+dynamic = [
+    "classifiers",
+]
 
 [project.urls]
 homepage = "https://github.com/statisticsnorway/dapla-statbank-client"
@@ -28,42 +31,43 @@ repository = "https://github.com/statisticsnorway/dapla-statbank-client"
 documentation = "https://statisticsnorway.github.io/dapla-statbank-client"
 Changelog = "https://github.com/statisticsnorway/dapla-statbank-client/releases"
 
+
+[dependency-groups]
+dev = [
+    'pygments>=2.10.0',
+    'black[jupyter]>=24.3.0',
+    'coverage[toml]>=6.2',
+    'darglint>=1.8.1 ; python_version >= "3.12" and python_version < "4.0"',
+    'mypy>=0.930',
+    'pre-commit>=2.16.0',
+    'pre-commit-hooks>=4.1.0',
+    'ruff>=0.0.284',
+    'pytest>=6.2.5',
+    'typeguard>=2.13.3',
+    'xdoctest[colors]>=0.15.10',
+    'ipykernel>=6.0.0',
+    'pytest-cov>=7.0.0',
+]
+docs = [
+    'sphinx>=6.2.1',
+    'sphinx-autobuild>=2021.3.14',
+    'sphinx-autodoc-typehints>=1.24.0',
+    'sphinx-click>=3.0.2',
+    'furo>=2021.11.12',
+    'myst-parser>=0.16.1',
+]
+typing = [
+    'pandas-stubs>=2.2.0',
+    'types-requests>=2.28.2',
+    'types-colorama>=0.4.6',
+    'types-toml>=0.10.2',
+    'pyarrow-stubs>=10.0.1 ; python_version >= "3.8" and python_version < "4.0"',
+]
+
 [tool.poetry]
 packages = [{ include = "statbank", from = "src" }]
 classifiers = ["Development Status :: 5 - Production/Stable"]
-requires-poetry = ">=2.0"
-
-[tool.poetry.group.dev.dependencies]
-pygments = ">=2.10.0"
-black = { extras = ["jupyter"], version = ">=24.3.0" }
-coverage = { extras = ["toml"], version = ">=6.2" }
-darglint = {version = ">=1.8.1", python = ">=3.12,<4.0"}
-mypy = ">=0.930"
-pre-commit = ">=2.16.0"
-pre-commit-hooks = ">=4.1.0"
-ruff = ">=0.0.284"
-pytest = ">=6.2.5"
-typeguard = ">=2.13.3"
-xdoctest = { extras = ["colors"], version = ">=0.15.10" }
-ipykernel = ">=6.0.0"
-pytest-cov = ">=7.0.0"
-
-[tool.poetry.group.docs.dependencies]
-sphinx = ">=6.2.1"
-sphinx-autobuild = ">=2021.3.14"
-sphinx-autodoc-typehints = ">=1.24.0"
-sphinx-click = ">=3.0.2"
-furo = ">=2021.11.12"
-myst-parser = { version = ">=0.16.1" }
-
-# Stubs for Pylance og Mypy
-[tool.poetry.group.typing.dependencies]
-pandas-stubs = ">=2.2.0"
-types-requests = ">=2.28.2"
-types-colorama = ">=0.4.6"
-types-toml = ">=0.10.2"
-pyarrow-stubs = {version = ">=10.0.1", python = ">=3.8,<4.0"}
-
+requires-poetry = '>=2.2.1'
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
@@ -171,3 +175,4 @@ classmethod-decorators = ["classmethod", "validator", "root_validator", "pydanti
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+# Stubs for Pylance og Mypy

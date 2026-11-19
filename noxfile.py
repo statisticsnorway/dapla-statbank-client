@@ -37,23 +37,39 @@ def install_with_uv(
     only_groups: list[str] | None = None,
     all_extras: bool = False,
     locked: bool = True,
+    resolution: str | None = None,
 ) -> None:
-    """Install packages using uv, pinned to uv.lock."""
-    cmd = ["uv", "sync"]
-    if locked:
-        cmd.append("--locked")
+    """Install packages using uv."""
+    if resolution is None:
+        cmd = ["uv", "sync"]
+        if locked:
+            cmd.append("--locked")
+    else:
+        cmd = [
+            "uv",
+            "pip",
+            "install",
+            "--resolution",
+            resolution,
+            "--editable",
+            ".",
+        ]
+        only_groups = only_groups or ["dev"]
     if only_groups:
-        groups = only_groups or []  # if only_groups is None or empty, groups becomes []
-        for group in groups:
-            cmd.extend(["--only-group", group])
+        group_flag = "--group" if resolution is not None else "--only-group"
+        for group in only_groups:
+            cmd.extend([group_flag, group])
     if all_extras:
         cmd.append("--all-extras")
     cmd.append(
         f"--python={session.virtualenv.location}"
     )  # Target the nox venv's Python interpreter
-    session.run_install(
-        *cmd, env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location}
-    )
+    if resolution is not None:
+        session.run_install(*cmd)
+    else:
+        session.run_install(
+            *cmd, env={"UV_PROJECT_ENVIRONMENT": session.virtualenv.location}
+        )
 
 
 def activate_virtualenv_in_precommit_hooks(session: Session) -> None:
@@ -177,15 +193,24 @@ def tests(session: Session) -> None:
             "--parallel",
             "-m",
             "pytest",
-            "-o",
-            "pythonpath=",
-            *session.posargs,
             "-m",
             "not integration_dapla",
         )
     finally:
         if session.interactive:
             session.notify("coverage", posargs=[])
+
+
+@session(name="dependency-bounds", python="3.13")
+@nox.parametrize("resolution", ["lowest-direct", "highest"])
+def dependency_bounds(session: Session, resolution: str) -> None:
+    """Run the test suite with lowest-direct and highest dependency versions."""
+    install_with_uv(session, resolution=resolution)
+    session.run(
+        "pytest",
+        "-m",
+        "not integration_dapla",
+    )
 
 
 @session(python="3.13")

@@ -16,14 +16,14 @@ jobs:
       pull-requests: read
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
+          persist-credentials: true
           fetch-depth: 2
-
       - name: Set up Python
-        uses: actions/setup-python@v7.0.0
+        uses: actions/setup-python@v7.1.0
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Upgrade pip
         run: |
@@ -38,16 +38,79 @@ jobs:
 
       - name: Check if there is a parent commit
         id: check-parent-commit
+        shell: bash
         run: |
-          echo "sha=$(git rev-parse --verify --quiet HEAD^)" >> $GITHUB_OUTPUT
+          set -euo pipefail
+
+          if git rev-parse --verify --quiet HEAD^ >/dev/null; then
+            echo "has-parent=true" >> "$GITHUB_OUTPUT"
+            echo "sha=$(git rev-parse --verify HEAD^)" >> "$GITHUB_OUTPUT"
+            echo "Parent commit detected: true"
+          else
+            echo "has-parent=false" >> "$GITHUB_OUTPUT"
+            echo "sha=" >> "$GITHUB_OUTPUT"
+            echo "Parent commit detected: false"
+          fi
 
       - name: Detect and tag new version
         id: check-version
-        if: steps.check-parent-commit.outputs.sha
-        uses: salsify/action-detect-and-tag-new-version@v2.0.3
-        with:
-          version-command: |
-            bash -o pipefail -c "poetry version | cut -f 2 -d' '"
+        if: steps.check-parent-commit.outputs.has-parent == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          read_version_from_file() {
+            python - "$1" <<'PY'
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          data = tomllib.loads(Path(sys.argv[1]).read_text())
+          version = (
+              data.get("project", {}).get("version")
+              or data.get("tool", {}).get("poetry", {}).get("version")
+          )
+
+          if not version:
+              raise SystemExit("Could not find version in [project] or [tool.poetry]")
+
+          print(version)
+          PY
+          }
+
+          PREVIOUS_VERSION="$(read_version_from_file <(git show HEAD~1:pyproject.toml))"
+          CURRENT_VERSION="$(read_version_from_file pyproject.toml)"
+
+          echo "Previous version: $PREVIOUS_VERSION"
+          echo "Current version: $CURRENT_VERSION"
+
+          echo "previous-version=$PREVIOUS_VERSION" >> "$GITHUB_OUTPUT"
+          echo "current-version=$CURRENT_VERSION" >> "$GITHUB_OUTPUT"
+
+          if [ "$CURRENT_VERSION" = "$PREVIOUS_VERSION" ]; then
+            echo "Version has not changed; nothing to tag."
+            exit 0
+          fi
+
+          TAG="v$CURRENT_VERSION"
+
+          git fetch --tags
+
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Creating tag $TAG"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "$TAG" -m "Released version $CURRENT_VERSION"
+          git push origin "$TAG"
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Bump version for developmental release
         if: (!steps.check-version.outputs.tag)

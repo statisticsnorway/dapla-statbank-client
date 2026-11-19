@@ -1,80 +1,78 @@
 [project]
 name = "dapla-statbank-client"
-description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
-license = "MIT"
 version = "1.5.1"
+description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 readme = "README.md"
-authors = [{name = "Carl F. Corneil", email = "cfc@ssb.no"}, {name = "Statistics Norway"}]
 requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "Carl F. Corneil", email = "cfc@ssb.no" }, { name = "Statistics Norway" }]
 
 dependencies = [
-    "pandas >=2.2.0",
-    "pyarrow >=10.0.1",
-    "requests >=2.28.2",
-    "ipywidgets >=8.0.4",
-    "IPython >=8.11.0",
-    "toml >=0.10.2",
-    "python-dotenv >=1.0.1",
-    "colorama >=0.4.6",
-    "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
-    "furl >=2.1.4",
-    "pathlib-abc >=0.5.2",
-    "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
+  "IPython >=8.11.0",
+  "colorama >=0.4.6",
+  "dapla-auth-client >=1.0.1; python_version >= '3.10' and python_version < '4.0'",
+  "furl >=2.1.4",
+  "ipywidgets >=8.0.4",
+  "pandas >=2.2.0",
+  "pathlib-abc >=0.5.2",
+  "pyarrow >=10.0.1",
+  "python-dotenv >=1.0.1",
+  "requests >=2.28.2",
+  "ssb-pxapi2-arrow (>=0.0.3, <0.1.0)",
+  "toml >=0.10.2",
 ]
 dynamic = [
-    "classifiers",
+  "classifiers",
 ]
 
 [project.urls]
+Changelog = "https://github.com/statisticsnorway/dapla-statbank-client/releases"
+documentation = "https://statisticsnorway.github.io/dapla-statbank-client"
 homepage = "https://github.com/statisticsnorway/dapla-statbank-client"
 repository = "https://github.com/statisticsnorway/dapla-statbank-client"
-documentation = "https://statisticsnorway.github.io/dapla-statbank-client"
-Changelog = "https://github.com/statisticsnorway/dapla-statbank-client/releases"
-
 
 [dependency-groups]
-dev = [
-    'pygments>=2.10.0',
-    'black[jupyter]>=24.3.0',
-    'coverage[toml]>=6.2',
-    'darglint>=1.8.1 ; python_version >= "3.12" and python_version < "4.0"',
-    'mypy>=0.930',
-    'pre-commit>=2.16.0',
-    'pre-commit-hooks>=4.1.0',
-    'ruff>=0.0.284',
-    'pytest>=6.2.5',
-    'typeguard>=2.13.3',
-    'xdoctest[colors]>=0.15.10',
-    'ipykernel>=6.0.0',
-    'pytest-cov>=7.0.0',
-]
 docs = [
-    'sphinx>=6.2.1',
-    'sphinx-autobuild>=2021.3.14',
-    'sphinx-autodoc-typehints>=1.24.0',
-    'sphinx-click>=3.0.2',
-    'furo>=2021.11.12',
-    'myst-parser>=0.16.1',
+  "furo>=2021.11.12",
+  "myst-parser>=0.16.1",
+  "sphinx>=6.2.1",
+  "sphinx-autobuild>=2021.3.14",
+  "sphinx-autodoc-typehints>=1.24.0",
+  "sphinx-click>=3.0.2",
+]
+lint = [
+  "black[jupyter]>=25.11.0",
+  "pre-commit>=4.4.0",
+  "pre-commit-hooks>=6.0.0",
+  "pydoclint>=0.8.3",
+  "ruff>=0.14.5",
 ]
 typing = [
-    'pandas-stubs>=2.2.0',
-    'types-requests>=2.28.2',
-    'types-colorama>=0.4.6',
-    'types-toml>=0.10.2',
-    'pyarrow-stubs>=10.0.1 ; python_version >= "3.8" and python_version < "4.0"',
+  "pandas-stubs>=2.2.0",
+  'pyarrow-stubs>=10.0.1 ; python_version >= "3.8" and python_version < "4.0"',
+  "types-colorama>=0.4.6",
+  "types-requests>=2.28.2",
+  "types-toml>=0.10.2",
+]
+dev = [
+  "coverage[toml]>=6.2",
+  "deptry>=0.24.0; python_version < '4.0'",
+  "ipykernel>=6.0.0",
+  "mypy>=0.930",
+  "pygments>=2.19.0",
+  "pytest>=6.2.5",
+  "pytest-cov>=7.0.0",
+  "typeguard>=2.13.3",
+  "xdoctest[colors]>=0.15.10",
+  { include-group = "docs" },
+  { include-group = "lint" },
+  { include-group = "typing" },
 ]
 
-[tool.poetry]
-packages = [{ include = "statbank", from = "src" }]
-classifiers = ["Development Status :: 5 - Production/Stable"]
-requires-poetry = '>=2.2.1'
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-markers = ["integration_dapla: actually runs against the real statbank API, therefore needs username and password"]
-addopts = "-v"
-
-
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+# Stubs for Pylance og Mypy
 
 [tool.coverage.paths]
 source = ["src", "*/site-packages"]
@@ -91,6 +89,9 @@ show_missing = true
 fail_under = 80
 omit = ["*api_types.py"]
 
+[tool.deptry.per_rule_ignores]
+DEP001 = ["nox", "nox_poetry"]  # packages available by default
+
 [tool.mypy]
 strict = true
 warn_unreachable = true
@@ -101,11 +102,33 @@ exclude = ["tests", "docs", "noxfile.py"]
 
 [[tool.mypy.overrides]]
 module = [
-    "ipywidgets.*",
-    "furl.*",
-    "pathlib_abc.*",
+  "ipywidgets.*",
+  "furl.*",
+  "pathlib_abc.*",
 ]
 ignore_missing_imports = true
+
+[tool.poetry]
+packages = [{ include = "statbank", from = "src" }]
+classifiers = ["Development Status :: 5 - Production/Stable"]
+requires-poetry = ">=2.2.1"
+
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.9"
+
+[tool.pydoclint]
+style = "google"
+exclude = '\.git|\.nox'
+arg-type-hints-in-docstring = false
+check-return-types = false
+check-yield-types = false
+allow-init-docstring = true
+quiet = true
+
+[tool.pytest.ini_options]
+addopts = "-v"
+markers = ["integration_dapla: actually runs against the real statbank API, therefore needs username and password"]
+pythonpath = ["src"]
 
 [tool.ruff]
 force-exclude = true  # Apply excludes to pre-commit
@@ -116,34 +139,34 @@ src = ["src", "tests"]
 
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 extend-exclude = [
-    "__pycache__",
-    "old",
-    ".ipynb_checkpoints",
-    "noxfile.py",
-    "docs/conf.py",
-     "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
-     "demo/",
+  "__pycache__",
+  "old",
+  ".ipynb_checkpoints",
+  "noxfile.py",
+  "docs/conf.py",
+  "*.ipynb",  # Custom ignore for klass-package, notebooks are only for "demo", waiting for a B018 ignore on notebooks in ruff
+  "demo/",
 ]
 
 [tool.ruff.lint]
 select = ["ALL"]
 exclude = ["demo"]
 ignore = [
-    "ANN202", # Don't requiere return type annotation for private functions.
-    "ANN401", # Allow type annotation with type Any.
-    "D100",   # Supress undocumented-public-module. Only doc of public api required.
-    "FBT001", # Allow boolean positional arguments in a function.
-    "FBT002", # Allow boolean default positional arguments in a function.
-    "E402",   # Suppress module-import-not-at-top-of-file, needed in jupyter notebooks.
-    "E501",   # Suppress line-too-long warnings: trust black's judgement on this one.
-    "TRY003", # Carl: Ruff wants me to subclass basic exceptions, I don´t agree
-    "FBT001", # Carl: Users will not want to create Enums just to run the function
-    "FBT002", # Carl: Users will not want to create Enums just to run the function
-    "PLR2004", # Allow to compare with unnamed numerical constants.
-    "SIM118", # Allow "for key in dict.keys()" instead of "for key in dict" (more explicit)
-    "TC006" # Allow unquoted type expressions in typing.cast()
+  "ANN202",  # Don't require return type annotation for private functions
+  "ANN401",  # Allow type annotation with type Any.
+  "D100",  # Supress undocumented-public-module. Only doc of public api required.
+  "FBT001",  # Allow boolean positional arguments in a function.
+  "FBT002",  # Allow boolean default positional arguments in a function.
+  "E402",  # Suppress module-import-not-at-top-of-file, needed in jupyter notebooks.
+  "E501",  # Suppress line-too-long warnings: trust black's judgement on this one.
+  "TRY003",  # Carl: Ruff wants me to subclass basic exceptions, I don´t agree
+  "FBT001",  # Carl: Users will not want to create Enums just to run the function
+  "FBT002",  # Carl: Users will not want to create Enums just to run the function
+  "PLR2004",  # Allow to compare with unnamed numerical constants.
+  "SIM118",  # Allow "for key in dict.keys()" instead of "for key in dict" (more explicit)
+  "TC006"  # Allow unquoted type expressions in typing.cast()
 ]
-external = ["S"]
+external = ["S", "DOC"]
 
 [tool.ruff.lint.isort]
 force-single-line = true
@@ -163,16 +186,11 @@ classmethod-decorators = ["classmethod", "validator", "root_validator", "pydanti
 [tool.ruff.lint.per-file-ignores]
 "*/__init__.py" = ["F401"]
 "**/tests/*" = [
-    # asserts are encouraged in pytest
-    "S101",
-    # return annotations don't add value for test functions
-    "ANN201",
-    # docstrings are overkill for test functions
-    "D103",
-    "D100",
+  # asserts are encouraged in pytest
+  "S101",
+  # return annotations don't add value for test functions
+  "ANN201",
+  # docstrings are overkill for test functions
+  "D103",
+  "D100",
 ]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-# Stubs for Pylance og Mypy

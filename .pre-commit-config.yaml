@@ -19,11 +19,11 @@ repos:
       - id: check-toml
       - id: check-ast
 
-  # Darglint docstring checker
-  - repo: https://github.com/terrencepreilly/darglint
-    rev: v1.8.1
+  # Pydoclint docstring checker
+  - repo: https://github.com/jsh9/pydoclint
+    rev: 0.8.3
     hooks:
-      - id: darglint
+      - id: pydoclint
 
   # Ruff linter
   - repo: https://github.com/astral-sh/ruff-pre-commit

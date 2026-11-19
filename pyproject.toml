@@ -1,6 +1,6 @@
 [project]
 name = "dapla-statbank-client"
-version = "1.5.1"
+version = "1.5.2"
 description = "Handles data transfer Statbank <-> Dapla for Statistics Norway"
 readme = "README.md"
 requires-python = ">=3.12"

@@ -33,6 +33,7 @@ jobs:
           - { python: "3.13", os: "ubuntu-latest", session: "typeguard" }
           - { python: "3.13", os: "ubuntu-latest", session: "xdoctest" }
           - { python: "3.13", os: "ubuntu-latest", session: "docs-build" }
+          - { python: "3.13", os: "ubuntu-latest", session: "dependency-bounds" }
 
     env:
       NOXSESSION: ${{ matrix.session }}
@@ -41,38 +42,23 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v7
-
-      - name: Set up Python ${{ matrix.python }}
-        uses: actions/setup-python@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
+          persist-credentials: false
+
+      - name: Get uv version from constraints
+        id: uv-version
+        shell: pwsh
+        run: |
+          $UV_VERSION = (Get-Content .github/workflows/constraints.txt | Where-Object { $_ -match '^uv==' } | ForEach-Object { ($_ -split '==')[1] })
+          echo "version=$UV_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
+        with:
+          enable-cache: true
+          version: ${{ steps.uv-version.outputs.version }}
           python-version: ${{ matrix.python }}
-
-      - name: Upgrade pip
-        run: |
-          pip install -c ${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pip --version
-
-      - name: Upgrade pip in virtual environments
-        shell: python
-        run: |
-          import os
-          import pip
-
-          with open(os.environ["GITHUB_ENV"], mode="a") as io:
-              print(f"VIRTUALENV_PIP={pip.__version__}", file=io)
-
-      - name: Install Poetry
-        run: |
-          pipx install --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" poetry
-          pipx inject poetry poetry-plugin-export
-          poetry --version
-
-      - name: Install Nox
-        run: |
-          pipx install --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" nox
-          pipx inject --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" nox nox-poetry
-          nox --version
 
       - name: Compute pre-commit cache key
         if: matrix.session == 'pre-commit'
@@ -101,7 +87,7 @@ jobs:
 
       - name: Run Nox
         run: |
-          nox --python=${{ matrix.python }}
+          uvx --no-build --constraints "${{ github.workspace }}/.github/workflows/constraints.txt" nox --python=${{ matrix.python }}
 
       - name: Upload coverage data
         if: always() && matrix.session == 'tests'
@@ -123,31 +109,24 @@ jobs:
     needs: tests
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
+          persist-credentials: false
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Set up Python
-        uses: actions/setup-python@v7.0.0
+      - name: Get uv version from constraints
+        id: uv-version
+        shell: pwsh
+        run: |
+          $UV_VERSION = (Get-Content .github/workflows/constraints.txt | Where-Object { $_ -match '^uv==' } | ForEach-Object { ($_ -split '==')[1] })
+          echo "version=$UV_VERSION" >> $env:GITHUB_OUTPUT
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2  # v10.3.3
         with:
-          python-version: "3.13"
-
-      - name: Upgrade pip
-        run: |
-          pip install -c ${{ github.workspace }}/.github/workflows/constraints.txt pip
-          pip --version
-
-      - name: Install Poetry
-        run: |
-          pipx install --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" poetry
-          pipx inject poetry poetry-plugin-export
-          poetry --version
-
-      - name: Install Nox
-        run: |
-          pipx install --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" nox
-          pipx inject --pip-args "-c ${{ github.workspace }}/.github/workflows/constraints.txt" nox nox-poetry
-          nox --version
+          enable-cache: true
+          version: ${{ steps.uv-version.outputs.version }}
+          python-version: ${{ matrix.python }}
 
       - name: Download coverage data
         uses: actions/download-artifact@v8
@@ -157,11 +136,11 @@ jobs:
 
       - name: Combine coverage data and display human readable report
         run: |
-          nox --session=coverage
+          uvx --no-build --constraints "${{ github.workspace }}/.github/workflows/constraints.txt" nox --session=coverage
 
       - name: Create coverage report
         run: |
-          nox --session=coverage -- xml
+          uvx --no-build --constraints "${{ github.workspace }}/.github/workflows/constraints.txt" nox --session=coverage -- xml
 
       # Need to fix coverage source paths for SonarCloud scanning in GitHub actions.
       # Replace root path with /github/workspace (mounted in docker container).

@@ -19,7 +19,6 @@
 [pypi status]: https://pypi.org/project/dapla-statbank-client/
 [documentation]: https://statisticsnorway.github.io/dapla-statbank-client
 [tests]: https://github.com/statisticsnorway/dapla-statbank-client/actions?workflow=Tests
-
 [sonarcov]: https://sonarcloud.io/summary/overall?id=statisticsnorway_dapla-statbank-client
 [sonarquality]: https://sonarcloud.io/summary/overall?id=statisticsnorway_dapla-statbank-client
 [pre-commit]: https://github.com/pre-commit/pre-commit

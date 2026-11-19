@@ -8,6 +8,7 @@ import math
 import sys
 import warnings
 from decimal import Decimal
+from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Literal
@@ -535,9 +536,8 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 data_copy[deltabell_name][data[deltabell_name].columns[col_num]] = (
                     col.pipe(self._round, decimals=decimal_num, round_up=round_up)
                     .map(
-                        "{:.{decimal_num}f}".format,
+                        partial("{:.{decimal_num}f}".format, decimal_num=decimal_num),
                         na_action="ignore",
-                        decimal_num=decimal_num,
                     )
                     .str.replace(".", ",", regex=False)
                     .fillna("")

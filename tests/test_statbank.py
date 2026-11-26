@@ -795,9 +795,14 @@ def test_round_data_decimal(
     dict_rounded = uttrekksbeskrivelse.round_data(transfer_data_fixture)
     df_test_rounded = dict_rounded[subtable_name]
 
-    assert df_test_rounded["3"].equals(pd.Series(["2", "3", "4"]))
-    assert df_test_rounded["4"].equals(pd.Series(["1,2", "2,3", "3,4"]))
-    assert df_test_rounded["Prosent"].equals(pd.Series(["100,6", "103,6", "106,6"]))
+    expected_rounded_3 = pd.Series(["2", "3", "4"])
+    expected_rounded_4 = pd.Series(["1,2", "2,3", "3,4"])
+    expected_rounded_prosent = pd.Series(["100,6", "103,6", "106,6"])
+
+    # Bug in pandas.Series.equals() with pyarrow backed strings, using .eq().all() instead
+    assert df_test_rounded["3"].eq(expected_rounded_3).all()
+    assert df_test_rounded["4"].eq(expected_rounded_4).all()
+    assert df_test_rounded["Prosent"].eq(expected_rounded_prosent).all()
 
 
 def test_round_data_pyarrow(
@@ -840,9 +845,14 @@ def test_round_data_pyarrow(
     dict_rounded = uttrekksbeskrivelse.round_data(transfer_data_fixture)
     df_test_rounded = dict_rounded[subtable_name]
 
-    assert df_test_rounded["3"].equals(pd.Series(["2", "3", "4"]))
-    assert df_test_rounded["4"].equals(pd.Series(["1,2", "2,3", "3,4"]))
-    assert df_test_rounded["Prosent"].equals(pd.Series(["100,6", "103,6", "106,6"]))
+    expected_rounded_3 = pd.Series(["2", "3", "4"])
+    expected_rounded_4 = pd.Series(["1,2", "2,3", "3,4"])
+    expected_rounded_prosent = pd.Series(["100,6", "103,6", "106,6"])
+
+    # Bug in pandas.Series.equals() with pyarrow backed strings, using .eq().all() instead
+    assert df_test_rounded["3"].eq(expected_rounded_3).all()
+    assert df_test_rounded["4"].eq(expected_rounded_4).all()
+    assert df_test_rounded["Prosent"].eq(expected_rounded_prosent).all()
 
 
 def test_round_data_handles_null(
@@ -862,8 +872,9 @@ def test_round_data_handles_null(
     dict_rounded = uttrekksbeskrivelse_success.round_data(transfer_data_fixture)
     df_test_rounded = dict_rounded[subtable_name]
 
-    assert df_test_rounded["3"].equals(pd.Series(["2", "", "4"]))
-    assert df_test_rounded["4"].equals(pd.Series(["1,2", "", "3,4"]))
+    # Bug in pandas.Series.equals() with pyarrow backed strings, using .eq().all() instead
+    assert df_test_rounded["3"].eq(pd.Series(["2", "", "4"])).all(skipna=False)
+    assert df_test_rounded["4"].eq(pd.Series(["1,2", "", "3,4"])).all(skipna=False)
 
 
 def test_transfer_correct_entry(transfer_fixture: StatbankTransfer):

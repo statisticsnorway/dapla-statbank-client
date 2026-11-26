@@ -8,11 +8,6 @@ class StatbankAuthError(requests.HTTPError):
 
     Extends ``requests.HTTPError`` with an optional ``response_content`` attribute
     that can hold parsed JSON from the response.
-
-    Args:
-        *args: Positional arguments forwarded to ``requests.HTTPError``.
-        response_content: Optional JSON-decoded payload to attach.
-        **kwargs: Keyword arguments forwarded to ``requests.HTTPError``.
     """
 
     def __init__(

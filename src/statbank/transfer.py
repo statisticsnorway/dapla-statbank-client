@@ -42,47 +42,10 @@ if TYPE_CHECKING:
 
 
 class StatbankTransfer(StatbankAuth):
-    """Class for talking with the "transfer-API", which actually recieves the data from the user and sends it to Statbank.
-
-    Attributes:
-        data (dict[str, pd.DataFrame]):  name of "deltabell.dat" as keys.
-            Number of DataFrames needs to match the number of "deltabeller" in
-            the uttakksbeskrivelse.
-            Dict-shape can be retrieved and validated before transfer with the
-            Uttakksbeskrivelses-class.
-        tableid (str): The numeric id of the table, matching the one found on the website.
-            Should be a 5-length numeric-string. Alternatively it should be possible to send in the "hovedtabellnavn" instead of the tableid.
-        shortuser (str): The abbrivation of username at ssb. Three letters, like "cfc"
-        date (str): Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01".
-            Statbanken only allows publishing four months into the future?
-        cc (str): First person to be notified by email of transfer. Defaults to the same as "shortuser"
-        bcc (str): Second person to be notified by email of transfer. Defaults to the same as "cc"
-        overwrite (bool):
-            - False = no overwrite
-            - True = overwrite
-        approve (Approve | str | int):
-            - 0 = MANUAL approval
-            - 1 = AUTOMATIC approval at transfer-time (immediately)
-            - 2 = JIT (Just In Time), approval right before publishing time
-        use_db (UseDb | str | None):
-            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
-            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
-            Be aware that metadata tends to be outdated in the test-database.
-        validation (bool):
-            - True, if you want the python-validation code to run user-side.
-            - False, if its slow and unnecessary.
-        boundary (str): String that defines the splitting of the body in the transfer-post-request.
-            Kept here for uniform choice through the class.
-        urls (dict[str, str]): Urls for transfer, observing the result etc.,
-            built from environment variables.
-        params (dict[str, str]): This dict will be built into the post request.
-            Keep it in this nice shape for later introspection.
-        body (str): The data parsed into the body-shape the Statbank-API expects in the transfer-post-request.
-        response (requests.Response): The resulting response from the transfer-request. Headers might be deleted without warning.
-    """
+    """Class for talking with the "transfer-API", which actually recieves the data from the user and sends it to Statbank."""
 
     @overload
-    def __init__(
+    def __init__(  # noqa: S107
         self,
         data: dict[str, pd.DataFrame],
         tableid: str = ...,
@@ -103,7 +66,7 @@ class StatbankTransfer(StatbankAuth):
 
     @overload
     @deprecated("Headers parameter not used, use auth attribute to pass in auth")
-    def __init__(
+    def __init__(  # noqa: S107
         self,
         data: dict[str, pd.DataFrame],
         tableid: str = ...,
@@ -122,7 +85,7 @@ class StatbankTransfer(StatbankAuth):
         auth: requests.auth.AuthBase | None = ...,
     ) -> None: ...
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913, S107
         self,
         data: dict[str, pd.DataFrame],
         tableid: str = "",
@@ -142,7 +105,39 @@ class StatbankTransfer(StatbankAuth):
     ) -> None:
         """Make the transfer to statbanken at the end of initializing the object.
 
-        May run the validations from the StatbankValidation class before the transfer.
+        Args:
+            data:  name of "deltabell.dat" as keys.
+                Number of DataFrames needs to match the number of "deltabeller" in
+                the uttakksbeskrivelse.
+                Dict-shape can be retrieved and validated before transfer with the
+                Uttakksbeskrivelses-class.
+            tableid: The numeric id of the table, matching the one found on the website.
+                Should be a 5-length numeric-string. Alternatively it should be possible to send in the "hovedtabellnavn" instead of the tableid.
+            shortuser: The abbrivation of username at ssb. Three letters, like "cfc"
+            date: Date for publishing the transfer. Shape should be "yyyy-mm-dd", like "2022-01-01".
+                Statbanken only allows publishing four months into the future?
+            cc: First person to be notified by email of transfer. Defaults to the same as "shortuser"
+            bcc: Second person to be notified by email of transfer. Defaults to the same as "cc"
+            overwrite: Don't overwrite existing time periods in Statbank if False, overwrites if True. Defaults to True.
+            approve:
+                - 0 = MANUAL approval
+                - 1 = AUTOMATIC approval at transfer-time (immediately)
+                - 2 = JIT (Just In Time), approval right before publishing time
+            use_db:
+                If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
+                When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+                Be aware that metadata tends to be outdated in the test-database.
+            validation:
+                - True, if you want the python-validation code to run user-side.
+                - False, if its slow and unnecessary.
+            delay: If True, the transfer will not be sent to Statbanken at initialization.
+            headers: Deprecated parameter. Auth headers are set with a requests.auth.AuthBase instance, client headers are set with config parameter.
+            config: A optional StatbankConfig instance, to use other Statbank endpoints than the default ones.
+            auth: A optional requests.auth.AuthBase instance, to customize authentication.
+
+        Raises:
+            ValueError: If a username was passed. (Deprecated behavior, use the auth parameter instead)
+            TypeError: If the date could not be converted to a datetime.date object.
         """
         super().__init__(use_db=use_db, config=config, auth=auth)
         self._set_user_attrs(shortuser=shortuser, cc=cc, bcc=bcc)
@@ -206,8 +201,7 @@ class StatbankTransfer(StatbankAuth):
         Will only work if the transfer has not already been sent, meaning it was "delayed".
 
         Args:
-            headers (dict[str, str] | None): Mostly for internal use by the package.
-                Needs to be a finished compiled headers for a request including Authorization.
+            headers: Deprecated parameter. Auth headers are set with a requests.auth.AuthBase instance, client headers are set with config parameter.
 
         Raises:
             ValueError: If the transfer is already transferred.
@@ -276,7 +270,7 @@ class StatbankTransfer(StatbankAuth):
         otherwise will return a json-string for you to handle like you wish.
 
         Args:
-            path (str): if provided, will try to write a json to a local path.
+            path: if provided, will try to write a json to a local path.
 
         Returns:
             None: If path is provided, tries to write a json there and returns nothing.

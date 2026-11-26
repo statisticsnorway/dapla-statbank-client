@@ -21,7 +21,7 @@ def stack_categories(varcodes: dict[str, list[str]]) -> pd.DataFrame:
     """Stacks the categories of the variables (in the correct order) from the response into a DataFrame.
 
     Args:
-        varcodes (dict[str, list[Any]]): A dictionary where the keys are variable names and the values are lists of codes.
+        varcodes: A dictionary where the keys are variable names and the values are lists of codes.
 
     Returns:
         pd.DataFrame: A pandas DataFrame containing the stacked categories.
@@ -59,7 +59,7 @@ def response_to_pandas(
 
     Args:
         response: The response object from the API.
-        include_id (bool): Whether to include the ID columns in the output. Defaults to False.
+        include_id: Whether to include the ID columns in the output. Defaults to False.
 
     Returns:
         pd.DataFrame: A pandas DataFrame containing the data from the response.

@@ -58,31 +58,6 @@ class StatbankClient(StatbankAuth):
     - get transfer/data description (filbeskrivelse): .get_description()
     - set the publish date with a datepicker: .date_picker() + .set_publish_date()
     - get published data from the external or internal API of statbanken: apidata_all() / apidata()
-
-    Attributes:
-        date (dt.datetime): Date for publishing the transfer.
-            Statbanken only allows publishing four months into the future?
-        shortuser (str): The abbrivation of username at ssb. Three letters, like "cfc".
-            If not specified,
-            we will try to get this from daplas environement variables.
-        cc (str): First person to be notified by email of transfer.
-            Defaults to the same as "shortuser"
-        bcc (str): Second person to be notified by email of transfer.
-            Defaults to the same as "cc"
-        overwrite (bool): False = no overwrite
-            True = overwrite
-        approve (Approve | str | int):
-            0 = MANUAL approval
-            1 = AUTOMATIC approval at transfer-time (immediately)
-            2 = JIT (Just In Time), approval right before publishing time
-        log (list[str]): Each "action" (method used) on the client is appended to the log.
-            Nice to use for appending to your own logging after you are done,
-            or printing it in a try-except-block to see what the last actions were,
-            before error being raised.
-        use_db (UseDb | str | None):
-            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
-            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
-            Be aware that metadata tends to be outdated in the test-database.
     """
 
     def __init__(  # noqa: PLR0913
@@ -101,7 +76,34 @@ class StatbankClient(StatbankAuth):
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:
-        """Initialize the client, storing password etc. on the client."""
+        """Initialize the client, storing password etc. on the client.
+
+        Args:
+            date: Date for publishing the transfer.
+                Statbanken only allows publishing four months into the future?
+            shortuser: The abbrivation of username at ssb. Three letters, like "cfc".
+                If not specified,
+                we will try to get this from daplas environement variables.
+            cc: First person to be notified by email of transfer.
+                Defaults to the same as "shortuser"
+            bcc: Second person to be notified by email of transfer.
+                Defaults to the same as "cc"
+            overwrite: Don't overwrite existing time periods in Statbank if False, overwrites if True. Defaults to True.
+            approve:
+                0 = MANUAL approval
+                1 = AUTOMATIC approval at transfer-time (immediately)
+                2 = JIT (Just In Time), approval right before publishing time
+            check_username_password: If true, check credentials early.
+            use_db:
+                If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
+                When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+                Be aware that metadata tends to be outdated in the test-database.
+            config: A optional StatbankConfig instance, to use other Statbank endpoints than the default ones.
+            auth: A optional requests.auth.AuthBase instance, to customize authentication.
+
+        Raises:
+            ValueError: If a username was passed. (Deprecated behavior, use the auth parameter instead)
+        """
         super().__init__(use_db=use_db, config=config, auth=auth)
         self.shortuser = shortuser
         self.cc = cc
@@ -204,7 +206,7 @@ class StatbankClient(StatbankAuth):
         Hours, minutes and seconds are replaced with statbankens publish time: 08:00:00
 
         Args:
-            date (datetime): date-picker widget, or a date-string formatted as 2000-12-31
+            date: date-picker widget, or a date-string formatted as 2000-12-31
 
         Raises:
             TypeError: If the date-parameter is of type other than datetime, string, or ipywidgets.DatePicker.
@@ -246,7 +248,7 @@ class StatbankClient(StatbankAuth):
         itself in Statbankens system, like ID, name and content of codelists.
 
         Args:
-            tableid (str): The tableid of the "hovedtabell" in statbanken, a 5 digit string.
+            tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string.
 
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
@@ -273,7 +275,7 @@ class StatbankClient(StatbankAuth):
         Inserts first layer in json as attributes under a blank StatbankUttrekksBeskrivelse-object.
 
         Args:
-            json_path_or_str (str): Either a path on local storage, or a loaded json-string
+            json_path_or_str: Either a path on local storage, or a loaded json-string
 
         Returns:
             StatbankUttrekksBeskrivelse: An instance of the class StatbankUttrekksBeskrivelse, which is comparable to the old "filbeskrivelse".
@@ -311,10 +313,10 @@ class StatbankClient(StatbankAuth):
         being sent to statbanken using this method.
 
         Args:
-            dfs (dict[str, pd.DataFrame): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-            tableid (str): The tableid of the "hovedtabell" in statbanken, a 5 digit string. Defaults to "00000".
-            raise_errors (bool): True/False based on if you want the method to raise its own errors or not. Defaults to False.
-            ignore_codes_not_in_data (bool): If set to True, will hide messages about codes in klass that are missing from the data.
+            dfs: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+            tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string. Defaults to "00000".
+            raise_errors: True/False based on if you want the method to raise its own errors or not. Defaults to False.
+            ignore_codes_not_in_data: If set to True, will hide messages about codes in klass that are missing from the data.
 
         Returns:
             dict[str, str]: A dictionary of the errors the validation wants to raise.
@@ -346,8 +348,8 @@ class StatbankClient(StatbankAuth):
         Make sure you've set the publish-date correctly before sending.
 
         Args:
-            dfs (dict[str, pd.DataFrame]): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-            tableid (str): The tableid of the "hovedtabell" in statbanken, a 5 digit string.
+            dfs: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+            tableid: The tableid of the "hovedtabell" in statbanken, a 5 digit string.
 
         Returns:
             StatbankTransfer: An instance of the class StatbankTransfer, which details the content of a successful transfer.
@@ -378,7 +380,7 @@ class StatbankClient(StatbankAuth):
         Inserts first layer in json as attributes under a blank StatbankTransfer-object.
 
         Args:
-            json_path_or_str (str): Either a path on local storage, or a loaded json-string
+            json_path_or_str: Either a path on local storage, or a loaded json-string
 
         Returns:
             StatbankTransfer: An instance of the class StatbankTransfer, missing the data transferred and some other bits probably.
@@ -408,9 +410,9 @@ class StatbankClient(StatbankAuth):
         """Get the contents of a published statbank-table as a pandas Dataframe, specifying a query to limit the return.
 
         Args:
-            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-            payload (dict[str, str]|None): a dict of the query to include with the request, can be copied from the statbank-webpage.
-            include_id (bool): If you want to include "codes" in the dataframe, set this to True
+            id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            payload: a dict of the query to include with the request, can be copied from the statbank-webpage.
+            include_id: If you want to include "codes" in the dataframe, set this to True
 
         Returns:
             pd.DataFrame: A pandas dataframe with the table-content
@@ -428,8 +430,8 @@ class StatbankClient(StatbankAuth):
         """Get ALL the contents of a published statbank-table as a pandas Dataframe.
 
         Args:
-            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-            include_id (bool): If you want to include "codes" in the dataframe, set this to True
+            id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            include_id: If you want to include "codes" in the dataframe, set this to True
 
         Returns:
             pd.DataFrame: A pandas dataframe with the table-content
@@ -441,7 +443,7 @@ class StatbankClient(StatbankAuth):
         """Get the metadata of a published statbank-table as a dict.
 
         Args:
-            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
 
         Returns:
             dict[str, Any]: The metadata of the table as the json returned from the API-get-request.
@@ -456,11 +458,11 @@ class StatbankClient(StatbankAuth):
         """Get one specific or all the codelists of a published statbank-table as a dict or nested dicts.
 
         Args:
-            id_or_url (str): The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
-            codelist_name (str): The name of the specific codelist to get.
+            id_or_url: The id of the STATBANK-table to get the total query for, or supply the total url, if the table is "internal".
+            codelist_name: The name of the specific codelist to get.
 
         Returns:
-            dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+            The codelist of the table as a dict or a nested dict.
         """
         return apicodelist(id_or_url=id_or_url, codelist_name=codelist_name)
 
@@ -473,9 +475,9 @@ class StatbankClient(StatbankAuth):
         """Rotate the dataframe so that time is used as the index.
 
         Args:
-            df (pd.dataframe): dataframe (from <get_from_ssb> function
-            ind (str): string of column name denoting time
-            val (str): string of column name denoting values
+            df: dataframe (from <get_from_ssb> function
+            ind: string of column name denoting time
+            val: string of column name denoting values
 
         Returns:
             pd.DataFrame: pivoted dataframe

@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
-  "commit": "0d33fca0d1c29c79aef9c7053e36d9e7cdd2bd20",
+  "commit": "9bcf1a4225d41ff99ff3f048568165f38b525daa",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -16,6 +16,8 @@
       "license": "MIT",
       "development_status": "Development Status :: 5 - Production/Stable",
       "code_quality_level": "High",
+      "dependency_manager_tool": "uv",
+      "department_number": "",
       "_copy_without_render": [
         "*.rst_t"
       ],
@@ -24,7 +26,7 @@
         "trim_blocks": true
       },
       "_template": "https://github.com/statisticsnorway/ssb-pypitemplate.git",
-      "_commit": "0d33fca0d1c29c79aef9c7053e36d9e7cdd2bd20"
+      "_commit": "9bcf1a4225d41ff99ff3f048568165f38b525daa"
     }
   },
   "directory": null

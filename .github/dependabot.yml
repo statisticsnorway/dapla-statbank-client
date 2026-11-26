@@ -4,6 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 99
     groups:
       github-action-dependencies:
@@ -13,20 +15,22 @@ updates:
     directory: "/.github/workflows"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 99
     groups:
       workflows-dependencies:
         patterns:
           - "*"
-  - package-ecosystem: "pip"
+  - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "monthly"
+    cooldown:
+      default-days: 7
     versioning-strategy: lockfile-only
-    allow:
-      - dependency-type: "all"
     open-pull-requests-limit: 99
     groups:
-      poetry-dependencies:
+      python-dependencies:
         patterns:
           - "*"

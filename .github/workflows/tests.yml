@@ -43,6 +43,9 @@ jobs:
     steps:
       - name: Check out the repository
         uses: actions/checkout@v7.0.1
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v7.1.0
         with:
           persist-credentials: false
 
@@ -157,4 +160,4 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         # No need to run SonarCloud analysis if dependabot update or token not defined
         if: env.SONAR_TOKEN != '' && (github.actor != 'dependabot[bot]')
-        uses: SonarSource/sonarqube-scan-action@v8.2.2
+        uses: SonarSource/sonarqube-scan-action@v8.4.0

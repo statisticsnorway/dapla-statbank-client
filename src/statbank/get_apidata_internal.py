@@ -109,7 +109,7 @@ def apidata_all_internal(
 
     Args:
         url: A url to a internal Statbank table, or other Pxweb v0 compatible API.
-        include_id (bool): If you want to include "codes" in the dataframe, set this to True
+        include_id: If you want to include "codes" in the dataframe, set this to True
         client: A optional `httpx.Client` to use, to fetch the data.
 
     Returns:
@@ -160,11 +160,11 @@ def apicodelist_internal(
 
     Args:
         url: A url to a internal Statbank table, or other Pxweb v0 compatible API.
-        codelist_name (str): The name of the specific codelist to get.
+        codelist_name: The name of the specific codelist to get.
         client: A optional `httpx.Client` to use, to fetch the data.
 
     Returns:
-        dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+        The codelist of the table as a dict or a nested dict.
 
     Raises:
         ValueError: If the specified codelist_name is not in the returned metadata.

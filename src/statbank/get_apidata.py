@@ -98,8 +98,8 @@ def convert_to_api2_selection(
         A list of new selections. This are represented as `msgspec.Struct`s not dicts.
 
     Raises:
-        ValueError: If the old selection could not be converted. # noqa: DAR402
-    """
+        ValueError: If the old selection could not be converted.
+    """  # noqa: DOC502
     return [_convert_selection(old_select) for old_select in old_selections]
 
 
@@ -367,11 +367,11 @@ def apicodelist(
 
     Args:
         id_or_url: The id of the Statbank-table or a URL to that table on any compatible pxweb v0 API.
-        codelist_name (str): The name of the specific codelist to get.
+        codelist_name: The name of the specific codelist to get.
         client: A optional `httpx.Client` to use, to fetch the data.
 
     Returns:
-        dict[str, str] | dict[str, dict[str, str]]: The codelist of the table as a dict or a nested dict.
+        The codelist of the table as a dict or a nested dict.
 
     Raises:
         ValueError: If the specified codelist_name is not in the returned metadata.
@@ -420,9 +420,9 @@ def apidata_rotate(
     """Rotate the dataframe so that years are used as the index.
 
     Args:
-        df (pd.DataFrame): dataframe (from <get_from_ssb> function)
-        ind (str): string of column name denoting time
-        val (str): string of column name denoting values
+        df: dataframe (from <get_from_ssb> function)
+        ind: string of column name denoting time
+        val: string of column name denoting values
 
     Returns:
         pd.DataFrame: pivoted dataframe

@@ -64,19 +64,7 @@ class _UttrekksBeskrivelseDump(TypedDict):
 
 
 class UttrekksBeskrivelseData:
-    """Holds parsed data for StatbankUttrekksBeskrivelse.
-
-    Attributes:
-        time_retrieved: Time of getting the Uttrekksbeskrivelse
-        tableid: The ID of the main table.
-        tablename: The name of the main table in Statbanken.
-        subtables: Names and descriptions of the individual "table-parts"
-          that needs to be sent in as different DataFrames.
-        variables: Metadata about the columns in the different table-parts.
-        codelists: Metadata about column-contents, like formatting on time, or possible values ("codes").
-        suppression: Details around extra columns which describe main column's "prikking", meaning their suppression-type.
-        headers: Deprecated attribute. Authinfo not stored here anymore.
-    """
+    """Holds parsed data for StatbankUttrekksBeskrivelse."""
 
     __slots__ = (
         "codelists",
@@ -88,7 +76,7 @@ class UttrekksBeskrivelseData:
         "variables",
     )
 
-    def __init__(  # noqa: D107
+    def __init__(
         self: Self,
         *,
         tableid: int,
@@ -99,6 +87,18 @@ class UttrekksBeskrivelseData:
         codelists: dict[str, KodelisteTypeParsed],
         suppression: list[SuppressionCodeListType] | None,
     ) -> None:
+        """Init with parsed data.
+
+        Args:
+            tableid: The ID of the main table.
+            tablename: The name of the main table in Statbanken.
+            time_retrieved: Time of getting the Uttrekksbeskrivelse
+            subtables: Names and descriptions of the individual "table-parts"
+                       that needs to be sent in as different DataFrames.
+            variables: Metadata about the columns in the different table-parts.
+            codelists: Metadata about column-contents, like formatting on time, or possible values ("codes").
+            suppression: Details around extra columns which describe main column's "prikking", meaning their suppression-type.
+        """
         self.tableid: int = tableid
         self.tablename: str = tablename
         self.time_retrieved: datetime.datetime = time_retrieved
@@ -174,15 +174,6 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
 
     And metadata about the table itself in Statbankens system,
     like ID, name of codelists etc.
-
-    Attributes:
-        url (str): Main url for transfer
-        filbeskrivelse (dict): The "raw" json returned from the API-get-request, loaded into a dict.
-        use_db (UseDb | str | None):
-            If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
-            When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
-            Be aware that metadata tends to be outdated in the test-database.
-
     """
 
     @overload
@@ -236,7 +227,26 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         config: StatbankConfig | None = None,
         auth: requests.auth.AuthBase | None = None,
     ) -> None:
-        """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values."""
+        """Makes a request to the Statbank-API, populates the objects attributes with parts of the return values.
+
+        Can be initialized with a table id, table name or with a UttrekksBeskrivelseData instance.
+
+        Args:
+            tableid: The numeric id of the table, matching the one found on the website.
+                Should be a 5-length numeric-string. Alternatively it should be possible to send in the "hovedtabellnavn" instead of the tableid.
+            raise_errors: If set to True, will raise errors if the data is not valid when using the validate method.
+            headers: Deprecated parameter. Auth headers are set with a requests.auth.AuthBase instance, client headers are set with config parameter.
+            use_db:
+                If you are in PROD-dapla and want to send to statbank test-database, set this to "TEST".
+                When sending from TEST-environments you can only send to TEST-db, so this parameter is then ignored.
+                Be aware that metadata tends to be outdated in the test-database.
+            data: If not None, will use this data instead of making a request to the API.
+            config: A optional StatbankConfig instance, to use other Statbank endpoints than the default ones.
+            auth: A optional requests.auth.AuthBase instance, to customize authentication.
+
+        Raises:
+            ValueError: If neither table id nor data is provided.
+        """
         super().__init__(use_db, config=config, auth=auth)
         self.url = self._build_urls()["uttak"]
         self.raise_errors = raise_errors
@@ -342,16 +352,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         If we didnt use a dictionary we would have to rely on the order of a list of "deltabeller".
         Instead we chose to explicitly name the deltabller in this package, and make you check this after creation.
 
-        Parameters
-        -------
-        dfs: if provided, will try to use pandas dataframes sent in to populate the dict returned by the method.
-            Send in one dataframe, several, a list of dataframes or similar.
-            ORDER IS IMPORTANT make sure the result is what you expect.
+        Args:
+            dfs: if provided, will try to use pandas dataframes sent in to populate the dict returned by the method.
+                Send in one dataframe, several, a list of dataframes or similar.
+                ORDER IS IMPORTANT make sure the result is what you expect.
 
         Returns:
-        -------
-        A dictionary with correct keys, but placeholders for where the dataframes should go if no Dataframes are passed.
-        A dict of dataframes as values if a list of Dataframes are sent in, or dataframes as individual parameters.
+            A dictionary with correct keys, but placeholders for where the dataframes should go if no Dataframes are passed.
+            A dict of dataframes as values if a list of Dataframes are sent in, or dataframes as individual parameters.
+
+        Raises:
+            TypeError: If any of the provided dataframes are not pandas DataFrames.
+            ValueError: If the number of provided dataframes does not match the number of deltabeller.
         """
         # If sending in a list, unwrap one layer
         if dfs is not None:
@@ -364,7 +376,7 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
                 error_msg = (
                     "Number of dataframes in must match the number of subtables."
                 )
-                raise KeyError(error_msg)
+                raise ValueError(error_msg)
             template = {k: dfs[i] for i, k in enumerate(self.subtables.keys())}
             msg = "{\n"
             for k, v in template.items():
@@ -386,18 +398,18 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
     @overload
     def to_json(self, path: None) -> str: ...
 
-    def to_json(self, path: str | Path | WritablePath | None = None) -> None | str:
+    def to_json(self, path: str | Path | WritablePath | None = None) -> str | None:
         """Store a copy of the current state of the uttrekk-object as a json.
 
         If path is provided, tries to write to it,
         otherwise will return a json-string for you to handle like you wish.
 
         Args:
-            path (str): if provided, will try to write a json to a local path
+            path: if provided, will try to write a json to a local path
 
         Returns:
-            None | str: If path is provided, tries to write a json to a file and returns nothing.
-                If path is not provided, returns the json-string for you to handle as you wish.
+            If path is provided, tries to write a json to a file and returns nothing.
+            If path is not provided, returns the json-string for you to handle as you wish.
         """
         content = self.to_mapping()
 
@@ -424,12 +436,12 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         being sent to statbanken using this method.
 
         Args:
-            data (dict[str, pd.DataFrame]): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-            raise_errors (bool): True/False based on if you want the method to raise its own errors or not.
-            ignore_codes_not_in_data (bool): If set to True, will hide messages about codes in klass that are missing from the data.
+            data: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+            raise_errors: True/False based on if you want the method to raise its own errors or not.
+            ignore_codes_not_in_data: If set to True, will hide messages about codes in klass that are missing from the data.
 
         Returns:
-            dict[str, ValueError]: A dictionary of the errors the validation wants to raise.
+            A dictionary of the errors the validation wants to raise.
 
         Raises:
             StatbankValidateError: if raise_errors is set to True and there are validation errors.
@@ -502,11 +514,11 @@ class StatbankUttrekksBeskrivelse(StatbankAuth, StatbankUttrekkValidators):
         This is maybe the behaviour staticians are used to from Excel, SAS etc.
 
         Args:
-            data (dict[str, pd.DataFrame]): The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
-            round_up (bool): Default behaviour is rounding up like Excel or SAS. Setting this to False will instead use Python's default "Round towards equal" / "Banker's rounding"
+            data: The data to validate in a dictionary of deltabell-names as keys and pandas-dataframes as values.
+            round_up: Default behaviour is rounding up like Excel or SAS. Setting this to False will instead use Python's default "Round towards equal" / "Banker's rounding"
 
         Returns:
-            dict[str, pd.DataFrame]: A dictionary in the same shape as sent in, but with dataframes altered to correct for rounding.
+            A dictionary in the same shape as sent in, but with dataframes altered to correct for rounding.
         """
         data_copy = copy.deepcopy(data)
         for deltabell in self.variables:

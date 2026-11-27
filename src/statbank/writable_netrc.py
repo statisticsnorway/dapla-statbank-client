@@ -64,7 +64,7 @@ class Netrc(MutableMapping[str, NetrcRecord]):
     Attributes:
         filepath: Path where .netrc is stored.
         machines: A dict storing netrc records.
-    """
+    """  # noqa: DOC602, DOC603 # The Google style guide disagrees with pydoclint. Attributes can be used to document instance attributes, and not just class attributes.
 
     def __init__(self: Self, filepath: Path | None = None) -> None:
         """Reads .netrc, or create one if none exists.
